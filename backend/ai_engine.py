@@ -97,36 +97,57 @@ def _parse_json_response(response_text: str) -> dict:
     Raises:
         ValueError: If JSON cannot be parsed
     """
-    # Strategy 1: Direct JSON parsing
-    try:
-        return json.loads(response_text)
-    except json.JSONDecodeError:
-        pass
+    def try_load_json(text: str) -> dict:
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return None
 
-    # Strategy 2: Extract JSON from text (handles markdown code blocks, extra text)
+    def clean_json_string(json_str: str) -> str:
+        json_str = json_str.strip()
+        json_str = json_str.replace('\r\n', '\n').replace('\r', '\n')
+        json_str = re.sub(r'```json\s*|```\s*|```', '', json_str, flags=re.IGNORECASE)
+        return json_str.strip()
+
+    # Strategy 1: Direct JSON parsing
+    parsed = try_load_json(response_text)
+    if parsed is not None:
+        return parsed
+
+    # Strategy 2: Extract JSON from fenced code blocks or raw text
     json_patterns = [
-        r'```json\s*(\{.*?\})\s*```',  # Markdown code block
-        r'```\s*(\{.*?\})\s*```',        # Generic code block
-        r'(\{.*\})',                      # Raw JSON object
+        r'```json\s*(\{[\s\S]*?\})\s*```',  # JSON fenced code block
+        r'```\s*(\{[\s\S]*?\})\s*```',       # Generic fenced code block
+        r'(\{[\s\S]*\})',                     # Raw JSON object
     ]
 
     for pattern in json_patterns:
-        match = re.search(pattern, response_text, re.DOTALL)
+        match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
         if match:
-            try:
-                json_str = match.group(1)
-                return json.loads(json_str)
-            except (json.JSONDecodeError, IndexError):
-                continue
+            json_str = clean_json_string(match.group(1))
+            parsed = try_load_json(json_str)
+            if parsed is not None:
+                return parsed
 
-    # Strategy 3: Cleanup and retry (remove control characters, etc.)
-    try:
-        cleaned = response_text.replace('\n', ' ').replace('\r', ' ')
-        match = re.search(r'\{.*\}', cleaned, re.DOTALL)
-        if match:
-            return json.loads(match.group())
-    except (json.JSONDecodeError, AttributeError):
-        pass
+            # Try a simple cleanup for trailing commas and duplicate whitespace
+            repaired = re.sub(r',\s*([}\]])', r'\1', json_str)
+            parsed = try_load_json(repaired)
+            if parsed is not None:
+                return parsed
+
+    # Strategy 3: Fallback content cleanup and raw extraction
+    cleaned = response_text.replace('\n', ' ').replace('\r', ' ')
+    match = re.search(r'(\{[\s\S]*\})', cleaned)
+    if match:
+        json_str = clean_json_string(match.group(1))
+        parsed = try_load_json(json_str)
+        if parsed is not None:
+            return parsed
+
+        repaired = re.sub(r',\s*([}\]])', r'\1', json_str)
+        parsed = try_load_json(repaired)
+        if parsed is not None:
+            return parsed
 
     raise ValueError(f"Could not parse valid JSON from response: {response_text[:200]}")
 
