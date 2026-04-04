@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI API Security Scanner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #results {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .results-count {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .no-vulnerabilities {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-radius: 12px;
+            color: #155724;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .vulnerability-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vulnerability-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .vulnerability-card.high {
+            border-left-color: #dc3545;
+            background: linear-gradient(135deg, #fff5f5, #fed7d7);
+        }
+
+        .vulnerability-card.medium {
+            border-left-color: #ffc107;
+            background: linear-gradient(135deg, #fffbf0, #fef3c7);
+        }
+
+        .vulnerability-card.low {
+            border-left-color: #28a745;
+            background: linear-gradient(135deg, #f0f9f0, #d4edda);
+        }
+
+        .vulnerability-card.unknown {
+            border-left-color: #6c757d;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .vulnerability-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+        }
+
+        .high .severity-badge {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .medium .severity-badge {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .low .severity-badge {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .unknown .severity-badge {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .vulnerability-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .vulnerability-section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-content {
+            color: #6c757d;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border-radius: 8px;
+            color: #721c24;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .vulnerability-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 AI API Security Scanner</h1>
+        <p class="subtitle">Enter your code below and click Scan to check for security vulnerabilities</p>
+
+        <textarea id="codeInput" placeholder="Paste your code here...
+
+Example vulnerable code:
+query = 'SELECT * FROM users WHERE id = ' + user_input
+password = 'secret123'
+"></textarea>
+        <button id="scanButton">🔍 Scan Code</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('scanButton').addEventListener('click', async function() {
+            const code = document.getElementById('codeInput').value;
+            const button = document.getElementById('scanButton');
+            const resultsDiv = document.getElementById('results');
+
+            // Disable button and show loading
+            button.disabled = true;
+            button.textContent = '🔍 Scanning...';
+            resultsDiv.innerHTML = `
+                <div class="container">
+                    <div class="loading">
+                        🔄 Analyzing your code for security vulnerabilities...<br>
+                        <small>This may take a few seconds</small>
+                    </div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('http://localhost:8000/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                // Handle different response types
+                if (data.error) {
+                    // Empty input or other error
+                    resultsDiv.innerHTML = `
+                        <div class="container">
+                            <div class="error">
+                                ⚠️ ${data.message || data.error}
+                            </div>
+                        </div>
+                    `;
+                } else if (data.message && (!data.vulnerabilities || data.vulnerabilities.length === 0)) {
+                    // No vulnerabilities found
+                    resultsDiv.innerHTML = `
+                        <div class="container">
+                            <div class="no-vulnerabilities">
+                                ✅ ${data.message}<br>
+                                <small>Your code appears to be secure.</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Display vulnerabilities
+                    displayResults(data.vulnerabilities || []);
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="container">
+                        <div class="error">
+                            ❌ Error: ${error.message}<br>
+                            <small>Please check if the backend server is running</small>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                // Re-enable button
+                button.disabled = false;
+                button.textContent = 'Scan Code';
+            }
+        });
+        
+        function displayResults(vulnerabilities) {
+            const resultsDiv = document.getElementById('results');
+
+            if (vulnerabilities.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="container">
+                        <div class="no-vulnerabilities">
+                            ✅ No vulnerabilities found!<br>
+                            <small>Your code appears to be secure.</small>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="container">
+                    <div class="results-header">
+                        <div class="results-count">🚨 Found ${vulnerabilities.length} potential vulnerability(ies)</div>
+                    </div>
+            `;
+
+            vulnerabilities.forEach((vuln, index) => {
+                const severityClass = vuln.severity.toLowerCase();
+                const severityEmoji = {
+                    'high': '🔴',
+                    'medium': '🟡',
+                    'low': '🟢',
+                    'unknown': '⚪'
+                }[severityClass] || '⚪';
+
+                html += `
+                    <div class="vulnerability-card ${severityClass}">
+                        <div class="vulnerability-header">
+                            <h3 class="vulnerability-title">${severityEmoji} ${vuln.name}</h3>
+                            <span class="severity-badge">${vuln.severity}</span>
+                        </div>
+
+                        <div class="vulnerability-section">
+                            <div class="section-title">📖 Explanation</div>
+                            <p class="section-content">${vuln.explanation}</p>
+                        </div>
+
+                        <div class="vulnerability-section">
+                            <div class="section-title">💥 Potential Impact</div>
+                            <p class="section-content">${vuln.impact}</p>
+                        </div>
+
+                        <div class="vulnerability-section">
+                            <div class="section-title">🔧 Recommended Fix</div>
+                            <p class="section-content">${vuln.fix}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
