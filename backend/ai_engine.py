@@ -1,7 +1,8 @@
 import os
 import json
+import re
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class VulnerabilityExplanation(BaseModel):
@@ -62,36 +63,18 @@ Respond ONLY with the JSON object, no additional text or formatting."""
         # Extract the response content
         response_text = response.choices[0].message.content.strip()
 
-        # Try to parse JSON response
-        try:
-            vulnerability_data = json.loads(response_text)
-        except json.JSONDecodeError:
-            # If JSON parsing fails, try to extract JSON from the response
-            import re
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                try:
-                    vulnerability_data = json.loads(json_match.group())
-                except json.JSONDecodeError:
-                    raise ValueError("Could not parse JSON from OpenAI response")
-            else:
-                raise ValueError("No JSON found in OpenAI response")
+        # Parse JSON with multiple fallback strategies
+        vulnerability_data = _parse_json_response(response_text)
 
-        # Validate required fields
-        required_fields = ["name", "severity", "explanation", "impact", "fix"]
-        for field in required_fields:
-            if field not in vulnerability_data:
-                vulnerability_data[field] = f"Missing {field} information"
+        # Validate and sanitize the data
+        vulnerability_data = _validate_vulnerability_data(vulnerability_data)
 
-        # Ensure severity is valid
-        valid_severities = ["Low", "Medium", "High", "Critical"]
-        if vulnerability_data.get("severity", "").title() not in valid_severities:
-            vulnerability_data["severity"] = "Medium"
-
+        # Create and return the validated model
         return VulnerabilityExplanation(**vulnerability_data)
 
     except Exception as e:
         # Fallback for any errors
+        print(f"Error analyzing vulnerability: {str(e)}")
         return VulnerabilityExplanation(
             name="Analysis Error",
             severity="Unknown",
@@ -99,3 +82,93 @@ Respond ONLY with the JSON object, no additional text or formatting."""
             impact="Unable to determine potential impact due to analysis error",
             fix="Please review the code manually or try again later"
         )
+
+
+def _parse_json_response(response_text: str) -> dict:
+    """
+    Parse JSON from OpenAI response with multiple fallback strategies.
+
+    Args:
+        response_text: The raw text response from OpenAI
+
+    Returns:
+        dict: Parsed JSON data
+
+    Raises:
+        ValueError: If JSON cannot be parsed
+    """
+    # Strategy 1: Direct JSON parsing
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        pass
+
+    # Strategy 2: Extract JSON from text (handles markdown code blocks, extra text)
+    json_patterns = [
+        r'```json\s*(\{.*?\})\s*```',  # Markdown code block
+        r'```\s*(\{.*?\})\s*```',        # Generic code block
+        r'(\{.*\})',                      # Raw JSON object
+    ]
+
+    for pattern in json_patterns:
+        match = re.search(pattern, response_text, re.DOTALL)
+        if match:
+            try:
+                json_str = match.group(1)
+                return json.loads(json_str)
+            except (json.JSONDecodeError, IndexError):
+                continue
+
+    # Strategy 3: Cleanup and retry (remove control characters, etc.)
+    try:
+        cleaned = response_text.replace('\n', ' ').replace('\r', ' ')
+        match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    except (json.JSONDecodeError, AttributeError):
+        pass
+
+    raise ValueError(f"Could not parse valid JSON from response: {response_text[:200]}")
+
+
+def _validate_vulnerability_data(data: dict) -> dict:
+    """
+    Validate and sanitize vulnerability data, filling in defaults.
+
+    Args:
+        data: The parsed JSON data
+
+    Returns:
+        dict: Validated and sanitized data
+    """
+    # Ensure it's a dictionary
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected dict, got {type(data).__name__}")
+
+    # Define defaults
+    defaults = {
+        "name": "Security Issue",
+        "severity": "Medium",
+        "explanation": "A security vulnerability was detected.",
+        "impact": "This vulnerability may compromise system security.",
+        "fix": "Review and update the affected code."
+    }
+
+    # Validate and sanitize each required field
+    for field, default_value in defaults.items():
+        if field not in data or not isinstance(data[field], str) or not data[field].strip():
+            data[field] = default_value
+        else:
+            # Ensure it's a string and strip whitespace
+            data[field] = str(data[field]).strip()
+
+    # Validate severity field specifically
+    valid_severities = ["Low", "Medium", "High", "Critical", "Unknown"]
+    severity = data.get("severity", "").title()
+    if severity not in valid_severities:
+        data["severity"] = "Medium"
+    else:
+        data["severity"] = severity
+
+    return data
+
