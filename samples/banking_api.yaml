@@ -1,0 +1,330 @@
+openapi: "3.0.3"
+info:
+  title: "SecureBank API"
+  description: "Enterprise banking API with comprehensive security controls"
+  version: "2.1.0"
+  contact:
+    name: "Security Team"
+    email: "security@securebank.example.com"
+
+servers:
+  - url: "https://api.securebank.example.com/v2"
+    description: "Production"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /accounts:
+    get:
+      operationId: listAccounts
+      summary: "List user accounts"
+      tags: ["Accounts"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: "Account list"
+    post:
+      operationId: createAccount
+      summary: "Create new account"
+      tags: ["Accounts"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["accountType"]
+              properties:
+                accountType:
+                  type: string
+                  enum: ["checking", "savings"]
+                currency:
+                  type: string
+                  default: "USD"
+      responses:
+        "201":
+          description: "Account created"
+
+  /accounts/{accountId}:
+    get:
+      operationId: getAccount
+      summary: "Get account details"
+      tags: ["Accounts"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Account details"
+        "404":
+          description: "Account not found"
+
+  /accounts/{accountId}/transactions:
+    get:
+      operationId: listTransactions
+      summary: "List account transactions"
+      tags: ["Transactions"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: "Transaction list"
+
+  /transfers:
+    post:
+      operationId: createTransfer
+      summary: "Initiate a fund transfer"
+      tags: ["Transfers"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["fromAccountId", "toAccountId", "amount", "currency"]
+              properties:
+                fromAccountId:
+                  type: string
+                  format: uuid
+                toAccountId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  format: decimal
+                  minimum: 0.01
+                currency:
+                  type: string
+                  enum: ["USD", "EUR", "GBP"]
+                description:
+                  type: string
+                  maxLength: 250
+                idempotencyKey:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: "Transfer initiated"
+        "400":
+          description: "Invalid transfer"
+        "409":
+          description: "Duplicate transfer"
+
+  /transfers/{transferId}:
+    get:
+      operationId: getTransfer
+      summary: "Get transfer status"
+      tags: ["Transfers"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transferId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Transfer details"
+
+  /payments/initialize:
+    post:
+      operationId: initializePayment
+      summary: "Initialize a payment"
+      tags: ["Payments"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["accountId", "amount", "paymentMethod"]
+              properties:
+                accountId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  minimum: 0.01
+                paymentMethod:
+                  type: string
+                  enum: ["card", "ach", "wire"]
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "201":
+          description: "Payment initialized"
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: "User authentication"
+      tags: ["Authentication"]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["email", "password"]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: "Login successful"
+        "401":
+          description: "Invalid credentials"
+
+  /auth/mfa/verify:
+    post:
+      operationId: verifyMFA
+      summary: "Verify MFA code"
+      tags: ["Authentication"]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["token", "code"]
+              properties:
+                token:
+                  type: string
+                code:
+                  type: string
+                  pattern: "^[0-9]{6}$"
+      responses:
+        "200":
+          description: "MFA verified"
+
+  /admin/audit-log:
+    get:
+      operationId: getAuditLog
+      summary: "Access audit logs (admin only)"
+      tags: ["Administration"]
+      security:
+        - bearerAuth: []
+        - adminAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: ["login", "transfer", "payment", "account_open", "account_close"]
+      responses:
+        "200":
+          description: "Audit log entries"
+        "403":
+          description: "Insufficient permissions"
+
+  /webhooks:
+    post:
+      operationId: registerWebhook
+      summary: "Register event webhook"
+      tags: ["Webhooks"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["url", "events"]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                events:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - "transfer.completed"
+                      - "transfer.failed"
+                      - "payment.received"
+                      - "account.updated"
+                secret:
+                  type: string
+      responses:
+        "201":
+          description: "Webhook registered"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    adminAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Token

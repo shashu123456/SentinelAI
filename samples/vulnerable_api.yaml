@@ -1,0 +1,255 @@
+openapi: "3.0.3"
+info:
+  title: "ShopEasy E-Commerce API"
+  description: "A fictional e-commerce API with intentional security flaws for demonstration"
+  version: "2.1.0"
+
+paths:
+  /api/v1/users/{id}:
+    get:
+      summary: "Get user by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+
+  /api/v1/users/{id}/orders:
+    get:
+      summary: "Get user orders"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User orders
+
+  /api/v1/orders:
+    get:
+      summary: "List all orders"
+      responses:
+        "200":
+          description: All orders
+
+    post:
+      summary: "Create order"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                product_id:
+                  type: integer
+                quantity:
+                  type: integer
+                payment_token:
+                  type: string
+                admin_override:
+                  type: boolean
+                internal_notes:
+                  type: string
+      responses:
+        "201":
+          description: Order created
+
+  /api/v1/orders/{orderId}:
+    get:
+      summary: "Get order by ID"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order details
+
+    put:
+      summary: "Update order"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                is_admin:
+                  type: boolean
+      responses:
+        "200":
+          description: Order updated
+
+    delete:
+      summary: "Cancel order"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order cancelled
+
+  /api/v1/payments/process:
+    post:
+      summary: "Process payment"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                order_id:
+                  type: integer
+                amount:
+                  type: number
+                card_number:
+                  type: string
+                callback_url:
+                  type: string
+                redirect_url:
+                  type: string
+      responses:
+        "200":
+          description: Payment processed
+
+  /api/v1/admin/users:
+    get:
+      summary: "List all users (admin)"
+      responses:
+        "200":
+          description: User list
+
+    delete:
+      summary: "Delete user (admin)"
+      responses:
+        "200":
+          description: User deleted
+
+  /api/v1/admin/config:
+    get:
+      summary: "Get system config"
+      responses:
+        "200":
+          description: System configuration
+
+  /api/v1/webhooks/register:
+    post:
+      summary: "Register webhook"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                webhook_url:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Webhook registered
+
+  /api/v1/search:
+    get:
+      summary: "Search products"
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+
+  /api/v1/products:
+    get:
+      summary: "List products"
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product list
+
+  /api/v1/auth/login:
+    post:
+      summary: "User login"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+
+  /api/v1/auth/register:
+    post:
+      summary: "User registration"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+      responses:
+        "201":
+          description: Registration successful
+
+  /api/v2/users:
+    get:
+      summary: "List users (v2)"
+      responses:
+        "200":
+          description: User list
+
+  /api/v2/orders:
+    get:
+      summary: "List orders (v2)"
+      responses:
+        "200":
+          description: Order list
+
+  /api/v1/debug/health:
+    get:
+      summary: "Debug health check"
+      responses:
+        "200":
+          description: Health status

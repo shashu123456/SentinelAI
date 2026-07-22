@@ -1,0 +1,323 @@
+openapi: "3.0.3"
+info:
+  title: "ShopEasy E-Commerce API (Secured)"
+  description: "A properly secured e-commerce API following OWASP API Security Top 10 best practices"
+  version: "3.0.0"
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    OrderRequest:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+          maximum: 100
+      required:
+        - product_id
+        - quantity
+
+    PaymentRequest:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        amount:
+          type: number
+        payment_method_id:
+          type: string
+      required:
+        - order_id
+        - amount
+        - payment_method_id
+
+    WebhookRegistration:
+      type: object
+      properties:
+        webhook_url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum:
+              - order.created
+              - order.paid
+              - order.shipped
+
+paths:
+  /api/v1/users/{userId}:
+    get:
+      summary: "Get user profile"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile
+
+  /api/v1/users/{userId}/orders:
+    get:
+      summary: "Get user's own orders"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: User orders
+
+  /api/v1/orders:
+    get:
+      summary: "List current user's orders"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Order list
+
+    post:
+      summary: "Create order"
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        "201":
+          description: Order created
+
+  /api/v1/orders/{orderId}:
+    get:
+      summary: "Get order details"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order details
+
+    put:
+      summary: "Update order status"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [cancelled]
+      responses:
+        "200":
+          description: Order updated
+
+    delete:
+      summary: "Cancel order"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order cancelled
+
+  /api/v1/payments/process:
+    post:
+      summary: "Process payment"
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        "200":
+          description: Payment processed
+
+  /api/v1/admin/users:
+    get:
+      summary: "List all users (admin only)"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User list
+
+    delete:
+      summary: "Delete user (admin only)"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User deleted
+
+  /api/v1/admin/config:
+    get:
+      summary: "Get system config (admin only)"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Configuration
+
+  /api/v1/webhooks/register:
+    post:
+      summary: "Register webhook"
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRegistration'
+      responses:
+        "201":
+          description: Webhook registered
+
+  /api/v1/search:
+    get:
+      summary: "Search products"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Search results
+
+  /api/v1/products:
+    get:
+      summary: "List products"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Product list
+
+  /api/v1/auth/login:
+    post:
+      summary: "User login"
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+
+  /api/v1/auth/register:
+    post:
+      summary: "User registration"
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        "201":
+          description: Registration successful

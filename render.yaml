@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: sentinelai-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: "sqlite:///./sentinelai.db"
+      - key: CORS_ALLOW_ALL
+        value: "true"
+      - key: OLLAMA_URL
+        value: ""
+      - key: OLLAMA_MODEL
+        value: "mistral"
+    healthCheckPath: /api/health
+    autoDeploy: true

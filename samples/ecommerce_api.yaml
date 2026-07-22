@@ -1,0 +1,396 @@
+openapi: "3.0.3"
+info:
+  title: "ShopStream E-Commerce API"
+  description: "Full-featured e-commerce platform API with security controls"
+  version: "3.2.0"
+  contact:
+    name: "Platform Team"
+    email: "platform@shopstream.example.com"
+
+servers:
+  - url: "https://api.shopstream.example.com/v3"
+    description: "Production"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /products:
+    get:
+      operationId: listProducts
+      summary: "List products with filtering"
+      tags: ["Catalog"]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: ["price_asc", "price_desc", "newest", "popular"]
+      responses:
+        "200":
+          description: "Product catalog"
+
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      summary: "Get product details"
+      tags: ["Catalog"]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Product details"
+
+  /cart:
+    get:
+      operationId: getCart
+      summary: "Get shopping cart"
+      tags: ["Cart"]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Cart contents"
+
+    put:
+      operationId: updateCart
+      summary: "Update cart item quantity"
+      tags: ["Cart"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["productId", "quantity"]
+              properties:
+                productId:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 0
+                  maximum: 99
+      responses:
+        "200":
+          description: "Cart updated"
+
+  /cart/checkout:
+    post:
+      operationId: checkout
+      summary: "Complete purchase"
+      tags: ["Cart"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["shippingAddress", "paymentMethod"]
+              properties:
+                shippingAddress:
+                  $ref: "#/components/schemas/Address"
+                paymentMethod:
+                  type: object
+                  required: ["type"]
+                  properties:
+                    type:
+                      type: string
+                      enum: ["card", "paypal", "apple_pay"]
+                    token:
+                      type: string
+                promoCode:
+                  type: string
+                giftMessage:
+                  type: string
+                  maxLength: 500
+      responses:
+        "201":
+          description: "Order placed"
+        "400":
+          description: "Invalid checkout data"
+
+  /orders:
+    get:
+      operationId: listOrders
+      summary: "List user orders"
+      tags: ["Orders"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: ["pending", "processing", "shipped", "delivered", "cancelled"]
+      responses:
+        "200":
+          description: "Order list"
+
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+      summary: "Get order details"
+      tags: ["Orders"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Order details"
+
+  /orders/{orderId}/cancel:
+    post:
+      operationId: cancelOrder
+      summary: "Cancel an order"
+      tags: ["Orders"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: ["changed_mind", "wrong_item", "duplicate", "other"]
+      responses:
+        "200":
+          description: "Order cancelled"
+
+  /users/profile:
+    get:
+      operationId: getProfile
+      summary: "Get user profile"
+      tags: ["Users"]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "User profile"
+
+    patch:
+      operationId: updateProfile
+      summary: "Update user profile"
+      tags: ["Users"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+      responses:
+        "200":
+          description: "Profile updated"
+
+  /users/addresses:
+    get:
+      operationId: listAddresses
+      summary: "List saved addresses"
+      tags: ["Users"]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "Address list"
+
+    post:
+      operationId: addAddress
+      summary: "Add shipping address"
+      tags: ["Users"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Address"
+      responses:
+        "201":
+          description: "Address added"
+
+  /reviews:
+    post:
+      operationId: submitReview
+      summary: "Submit product review"
+      tags: ["Reviews"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["productId", "rating"]
+              properties:
+                productId:
+                  type: string
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                title:
+                  type: string
+                  maxLength: 100
+                body:
+                  type: string
+                  maxLength: 2000
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+                  maxItems: 5
+      responses:
+        "201":
+          description: "Review submitted"
+
+  /admin/products:
+    post:
+      operationId: createProduct
+      summary: "Create product (admin)"
+      tags: ["Administration"]
+      security:
+        - bearerAuth: []
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["name", "price", "category"]
+              properties:
+                name:
+                  type: string
+                price:
+                  type: number
+                  minimum: 0
+                category:
+                  type: string
+                inventory:
+                  type: integer
+                  minimum: 0
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+      responses:
+        "201":
+          description: "Product created"
+
+  /analytics/events:
+    post:
+      operationId: trackEvent
+      summary: "Track analytics event"
+      tags: ["Analytics"]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["event", "timestamp"]
+              properties:
+                event:
+                  type: string
+                  enum: ["page_view", "add_to_cart", "purchase", "search"]
+                productId:
+                  type: string
+                timestamp:
+                  type: string
+                  format: date-time
+                metadata:
+                  type: object
+      responses:
+        "204":
+          description: "Event tracked"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    adminAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+
+  schemas:
+    Address:
+      type: object
+      required: ["street", "city", "state", "zip", "country"]
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
