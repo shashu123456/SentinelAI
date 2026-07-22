@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'https://sentinelai-backend-3lru.onrender.com';
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://sentinelai-backend-3lru.onrender.com') + '/api';
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('sentinelai_token');

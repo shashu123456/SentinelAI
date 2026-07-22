@@ -4,12 +4,8 @@ import { scans } from '../services/api';
 import { ArrowLeft, Terminal, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import './ScanLive.css';
 
-const API_HOST = import.meta.env.VITE_API_URL
-  ? new URL(import.meta.env.VITE_API_URL).host
-  : window.location.host;
-const WS_BASE = import.meta.env.VITE_API_URL
-  ? (import.meta.env.VITE_API_URL.startsWith('https') ? 'wss:' : 'ws:')
-  : (window.location.protocol === 'https:' ? 'wss:' : 'ws:');
+const API_HOST = 'sentinelai-backend-3lru.onrender.com';
+const WS_BASE = 'wss:';
 const WS_HOST = API_HOST;
 
 export default function ScanLive() {
