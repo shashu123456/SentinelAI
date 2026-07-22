@@ -1,0 +1,36 @@
+{
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/new-scan",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/scan/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/live/:taskId",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/sast",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/deps",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/copilot",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    }
+  ]
+}
