@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { scans } from '../services/api';
+import { WS_BASE } from '../config';
 import { ArrowLeft, Terminal, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import './ScanLive.css';
-
-const API_HOST = 'sentinelai-backend-3lru.onrender.com';
-const WS_BASE = 'wss:';
-const WS_HOST = API_HOST;
 
 export default function ScanLive() {
   const { taskId } = useParams();
@@ -23,7 +20,7 @@ export default function ScanLive() {
   useEffect(() => {
     if (!taskId) return;
 
-    const wsUrl = `${WS_BASE}//${WS_HOST}/ws/scan/${taskId}`;
+    const wsUrl = `${WS_BASE}/ws/scan/${taskId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
