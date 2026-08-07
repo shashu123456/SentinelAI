@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass, field
 
 from app.core.security_engine.parser import parse_openapi_spec
-from app.core.security_engine.scanner import run_owasp_scan
+from app.core.security_engine.scanner import run_owasp_scan, CHECK_REGISTRY
 from app.core.risk_engine.scorer import calculate_risk_score
 from app.core.ai_engine.analyzer import analyze_vulnerabilities
 from app.utils.logger import logger
@@ -125,18 +125,12 @@ async def run_scan_task(
         task.progress = 32
         await publish_progress(task)
 
-        owasp_checks = [
-            ("API1", "Broken Object Level Authorization", 35),
-            ("API2", "Broken Authentication", 40),
-            ("API3", "Broken Object Property Level Authorization", 45),
-            ("API4", "Unrestricted Resource Consumption", 50),
-            ("API5", "Broken Function Level Authorization", 55),
-            ("API6", "Unrestricted Access to Sensitive Business Flows", 60),
-            ("API7", "Server Side Request Forgery", 63),
-            ("API8", "Security Misconfiguration", 66),
-            ("API9", "Improper Inventory Management", 69),
-            ("API10", "Unsafe Consumption of APIs", 72),
-        ]
+        owasp_checks = []
+        total_checks = len(CHECK_REGISTRY)
+        progress_start, progress_end = 35, 74
+        for i, check in enumerate(CHECK_REGISTRY):
+            progress = progress_start + int((i / max(total_checks, 1)) * (progress_end - progress_start))
+            owasp_checks.append((check["category"], check["name"], progress))
 
         findings = run_owasp_scan(parsed_api)
 
@@ -149,7 +143,7 @@ async def run_scan_task(
             task.message = f"  [{check_id}] {check_name}..."
             task.progress = progress
             await publish_progress(task)
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.03)
 
             cat_findings = check_findings_map.get(check_id, [])
             for f in cat_findings:

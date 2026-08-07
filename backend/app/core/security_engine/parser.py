@@ -21,6 +21,7 @@ def parse_openapi_spec(spec: dict) -> dict:
             parameters = _extract_parameters(operation, spec)
             request_body = _extract_request_body(operation, spec)
             responses = operation.get("responses", {})
+            response_schemas = _extract_response_schemas(operation, spec)
             security = operation.get("security", [])
             deprecated = operation.get("deprecated", False)
 
@@ -35,6 +36,7 @@ def parse_openapi_spec(spec: dict) -> dict:
                 "parameters": parameters,
                 "request_body": request_body,
                 "responses": responses,
+                "response_schemas": response_schemas,
                 "security": security,
                 "deprecated": deprecated,
                 "auth_required": endpoint_security["auth_required"],
@@ -47,6 +49,7 @@ def parse_openapi_spec(spec: dict) -> dict:
         "description": info.get("description", ""),
         "endpoints": endpoints,
         "security_schemes": security_schemes,
+        "servers": spec.get("servers", []),
         "total_endpoints": len(endpoints),
     }
 
@@ -79,6 +82,26 @@ def _extract_request_body(operation: dict, spec: dict) -> dict | None:
     if "$ref" in request_body:
         request_body = _resolve_ref(request_body["$ref"], spec)
     return request_body
+
+
+def _extract_response_schemas(operation: dict, spec: dict) -> list[dict]:
+    """Extract resolved schemas for every response of an operation."""
+    schemas = []
+    responses = operation.get("responses", {}) or {}
+    for status_code, response in responses.items():
+        if not isinstance(response, dict):
+            continue
+        if "$ref" in response:
+            response = _resolve_ref(response["$ref"], spec)
+        content = response.get("content", {}) or {}
+        for media_type, media in content.items():
+            if not isinstance(media, dict) or "schema" not in media:
+                continue
+            schema = media["schema"]
+            if "$ref" in schema:
+                schema = _resolve_ref(schema["$ref"], spec)
+            schemas.append({"status_code": status_code, "schema": schema})
+    return schemas
 
 
 def _analyze_endpoint_security(security: list, security_schemes: dict) -> dict:

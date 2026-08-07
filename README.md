@@ -48,7 +48,7 @@ Modern applications expose 90%+ of their surface area through APIs. SentinelAI p
 
 ### Dependency Security Analysis
 - Parse requirements.txt, package.json, pom.xml
-- Cross-reference against curated CVE database (50+ known vulnerabilities)
+- Cross-reference against curated CVE database (70+ known vulnerabilities)
 - Covers critical packages: Django, Flask, requests, lodash, axios, Spring, etc.
 - Severity scoring with CVSS, fix version guidance
 
@@ -105,7 +105,7 @@ Modern applications expose 90%+ of their surface area through APIs. SentinelAI p
           │
           ├── Dependency Scanner
           │   ├── Manifest Parser   ── requirements.txt, package.json, pom.xml
-          │   ├── CVE Database      ── 50+ curated vulnerability entries
+          │   ├── CVE Database      ── 70+ curated vulnerability entries
           │   └── Version Analyzer  ── Installed vs. fixed version comparison
           │
           ├── AI Engine
@@ -282,7 +282,7 @@ curl http://localhost:11434/api/tags
 ```bash
 # Upload requirements.txt, package.json, or pom.xml
 # Detects known CVEs with fix versions
-# 38 curated CVE entries covering Django, Flask, requests, lodash, etc.
+# 70 curated CVE entries covering Django, Flask, requests, lodash, etc.
 ```
 
 ### Additional Sample APIs

@@ -66,7 +66,7 @@ Client (React) → API Layer (FastAPI) → Core Engines → Database
 
 #### Dependency Scanner (`core/dep_scanner/`)
 - Parses requirements.txt, package.json, pom.xml
-- Curated CVE database with 50+ known vulnerabilities
+- Curated CVE database with 70+ known vulnerabilities
 - Semantic version comparison to determine affected packages
 - Covers critical packages: Django, Flask, Spring, lodash, axios, etc.
 

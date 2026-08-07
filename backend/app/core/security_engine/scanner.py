@@ -1,7 +1,6 @@
 import re
 from typing import Any
 
-
 OWASP_CATEGORIES = {
     "API1": "Broken Object Level Authorization",
     "API2": "Broken Authentication",
@@ -31,16 +30,13 @@ OWASP_TO_CWE = {
 
 def run_owasp_scan(parsed_api: dict) -> list[dict]:
     findings = []
-    findings.extend(_check_api1_broken_object_level_authorization(parsed_api))
-    findings.extend(_check_api2_broken_authentication(parsed_api))
-    findings.extend(_check_api3_broken_object_property_level_authorization(parsed_api))
-    findings.extend(_check_api4_unrestricted_resource_consumption(parsed_api))
-    findings.extend(_check_api5_broken_function_level_authorization(parsed_api))
-    findings.extend(_check_api6_unrestricted_access_to_sensitive_business_flows(parsed_api))
-    findings.extend(_check_api7_server_side_request_forgery(parsed_api))
-    findings.extend(_check_api8_security_misconfiguration(parsed_api))
-    findings.extend(_check_api9_improper_inventory_management(parsed_api))
-    findings.extend(_check_api10_unsafe_consumption_of_apis(parsed_api))
+    executed = set()
+    for check in CHECK_REGISTRY:
+        fn = check["check"]
+        if fn in executed:
+            continue
+        executed.add(fn)
+        findings.extend(fn(parsed_api))
     return findings
 
 
@@ -56,11 +52,12 @@ def _make_finding(
     method: str = None,
     confidence: int = 85,
     detection_reason: str = "",
+    cwe_id: str = None,
 ) -> dict:
     return {
         "vulnerability_name": vuln_name,
         "owasp_category": owasp_cat,
-        "cwe_id": OWASP_TO_CWE.get(owasp_cat, "N/A"),
+        "cwe_id": cwe_id or OWASP_TO_CWE.get(owasp_cat, "N/A"),
         "severity": severity,
         "confidence": confidence,
         "description": description,
@@ -73,6 +70,10 @@ def _make_finding(
         "false_positive_note": "This is a potential vulnerability identified through static analysis of the API specification. Manual verification is recommended to confirm exploitability in the deployed environment.",
     }
 
+
+# =============================================================================
+# API1 — Broken Object Level Authorization
+# =============================================================================
 
 def _check_api1_broken_object_level_authorization(parsed_api: dict) -> list[dict]:
     findings = []
@@ -119,6 +120,10 @@ def _check_api1_broken_object_level_authorization(parsed_api: dict) -> list[dict
 
     return findings
 
+
+# =============================================================================
+# API2 — Broken Authentication
+# =============================================================================
 
 def _check_api2_broken_authentication(parsed_api: dict) -> list[dict]:
     findings = []
@@ -172,6 +177,82 @@ def _check_api2_broken_authentication(parsed_api: dict) -> list[dict]:
     return findings
 
 
+def _check_weak_auth_scheme(parsed_api: dict) -> list[dict]:
+    findings = []
+    schemes = parsed_api.get("security_schemes", {}).get("schemes", {}) or {}
+
+    for name, scheme in schemes.items():
+        if not isinstance(scheme, dict):
+            continue
+        scheme_type = scheme.get("type", "")
+        scheme_name = str(scheme.get("scheme", "")).lower()
+
+        if scheme_type == "http" and scheme_name in ("basic", "digest"):
+            findings.append(_make_finding(
+                vuln_name="Weak Authentication Scheme (HTTP Basic)",
+                owasp_cat="API2",
+                severity="High",
+                description=(
+                    f"Security scheme '{name}' relies on HTTP {scheme.get('scheme')} authentication, "
+                    "which transmits credentials in a weak, replayable encoding."
+                ),
+                evidence=f"Security scheme '{name}' uses type=http scheme={scheme.get('scheme')}",
+                impact=(
+                    "Credentials sent via HTTP Basic are trivially base64-decoded and can be "
+                    "replayed or brute-forced, leading to account takeover."
+                ),
+                remediation=(
+                    "Replace HTTP Basic/Digest authentication with OAuth 2.0, OpenID Connect, "
+                    "or signed token (JWT) mechanisms enforced over TLS."
+                ),
+                confidence=80,
+                detection_reason=f"Security scheme '{name}' is defined with the weak HTTP Basic/Digest authentication protocol.",
+                cwe_id="CWE-287",
+            ))
+        elif scheme_type == "apiKey" and scheme.get("in") == "query":
+            findings.append(_make_finding(
+                vuln_name=f"API Key in Query String: '{name}'",
+                owasp_cat="API2",
+                severity="Medium",
+                description=(
+                    f"Security scheme '{name}' passes API keys via query parameters, which "
+                    "leak secrets into logs, browser history, and proxies."
+                ),
+                evidence=f"Security scheme '{name}' uses apiKey in=query",
+                impact="API keys can be exposed in access logs, browser history, referrer headers, and shared URLs.",
+                remediation="Transmit API keys via the Authorization header instead of the query string.",
+                confidence=85,
+                detection_reason=f"Security scheme '{name}' is defined as an apiKey transported in the query string.",
+                cwe_id="CWE-598",
+            ))
+
+    return findings
+
+
+# =============================================================================
+# API3 — Broken Object Property Level Authorization
+# =============================================================================
+
+SENSITIVE_PROPERTY_PATTERNS = [
+    "password", "passwd", "pwd", "secret", "token", "api_key", "apikey",
+    "admin", "role", "permission", "is_admin", "is_superuser",
+    "internal", "debug", "credit_card", "ssn", "salary", "card_number",
+    "cvv", "private_key", "client_secret", "otp", "pin",
+]
+
+SENSITIVE_QUERY_PARAMS = [
+    "password", "passwd", "pwd", "token", "access_token", "auth_token",
+    "api_key", "apikey", "secret", "session", "session_id", "credential",
+    "pin", "otp", "private_key",
+]
+
+SENSITIVE_RESPONSE_PROPERTIES = [
+    "password", "passwd", "secret", "api_key", "apikey", "access_token",
+    "refresh_token", "card_number", "cardnumber", "cvv", "ssn",
+    "credit_card", "private_key", "client_secret", "internal_note", "otp",
+]
+
+
 def _check_api3_broken_object_property_level_authorization(parsed_api: dict) -> list[dict]:
     findings = []
 
@@ -188,15 +269,9 @@ def _check_api3_broken_object_property_level_authorization(parsed_api: dict) -> 
             continue
 
         properties = schema.get("properties", {})
-        sensitive_patterns = [
-            "password", "secret", "token", "api_key", "apikey",
-            "admin", "role", "permission", "is_admin", "is_superuser",
-            "internal", "debug", "credit_card", "ssn", "salary",
-        ]
-
         for prop_name, prop_def in properties.items():
             prop_lower = prop_name.lower()
-            for pattern in sensitive_patterns:
+            for pattern in SENSITIVE_PROPERTY_PATTERNS:
                 if pattern in prop_lower:
                     findings.append(_make_finding(
                         vuln_name=f"Exposed Sensitive Property: '{prop_name}'",
@@ -227,6 +302,85 @@ def _check_api3_broken_object_property_level_authorization(parsed_api: dict) -> 
 
     return findings
 
+
+def _check_sensitive_query_params(parsed_api: dict) -> list[dict]:
+    findings = []
+
+    for ep in parsed_api["endpoints"]:
+        for p in ep.get("parameters", []):
+            name = p.get("name", "")
+            if p.get("in") == "query" and name.lower() in SENSITIVE_QUERY_PARAMS:
+                findings.append(_make_finding(
+                    vuln_name=f"Sensitive Data in Query Parameter: '{name}'",
+                    owasp_cat="API3",
+                    severity="Medium",
+                    description=(
+                        f"Parameter '{name}' on '{ep['method']} {ep['path']}' carries "
+                        "sensitive data in the query string."
+                    ),
+                    evidence=f"Query parameter '{name}' defined on {ep['method']} {ep['path']}",
+                    impact=(
+                        "Secrets and sensitive data in URLs are logged by servers and proxies "
+                        "and exposed in browser history and referrer headers."
+                    ),
+                    remediation=(
+                        "Move sensitive data into the request body or Authorization header; "
+                        "enforce TLS and redact query strings in logs."
+                    ),
+                    endpoint=ep["path"],
+                    method=ep["method"],
+                    confidence=85,
+                    detection_reason=f"Query parameter named '{name}' matches known sensitive-data naming patterns.",
+                    cwe_id="CWE-598",
+                ))
+
+    return findings
+
+
+def _check_sensitive_response_fields(parsed_api: dict) -> list[dict]:
+    findings = []
+
+    for ep in parsed_api["endpoints"]:
+        seen = set()
+        for response in ep.get("response_schemas", []):
+            schema = response.get("schema", {}) or {}
+            properties = schema.get("properties", {}) or {}
+            for prop_name in properties:
+                prop_lower = prop_name.lower()
+                if prop_lower in seen:
+                    continue
+                seen.add(prop_lower)
+                if any(pattern in prop_lower for pattern in SENSITIVE_RESPONSE_PROPERTIES):
+                    findings.append(_make_finding(
+                        vuln_name=f"Sensitive Data in Response Schema: '{prop_name}'",
+                        owasp_cat="API3",
+                        severity="High",
+                        description=(
+                            f"Response schema of '{ep['method']} {ep['path']}' exposes "
+                            f"sensitive field '{prop_name}'."
+                        ),
+                        evidence=f"Property '{prop_name}' in {response.get('status_code', '?')} response",
+                        impact=(
+                            "Over-exposure of credentials, tokens, or PII in API responses "
+                            "enables data theft and privilege escalation."
+                        ),
+                        remediation=(
+                            "Remove sensitive fields from response payloads, return masked or "
+                            "truncated values, and scope responses to least privilege."
+                        ),
+                        endpoint=ep["path"],
+                        method=ep["method"],
+                        confidence=70,
+                        detection_reason=f"Response property '{prop_name}' matches known sensitive-data patterns (credentials, tokens, financial data).",
+                        cwe_id="CWE-200",
+                    ))
+
+    return findings
+
+
+# =============================================================================
+# API4 — Unrestricted Resource Consumption
+# =============================================================================
 
 def _check_api4_unrestricted_resource_consumption(parsed_api: dict) -> list[dict]:
     findings = []
@@ -266,15 +420,120 @@ def _check_api4_unrestricted_resource_consumption(parsed_api: dict) -> list[dict
     return findings
 
 
-def _check_api5_broken_function_level_authorization(parsed_api: dict) -> list[dict]:
+AUTH_PATH_PATTERNS = [
+    r"login", r"signin", r"sign-in", r"auth", r"token", r"oauth",
+    r"password", r"session", r"credential", r"register", r"signup",
+    r"sign-up", r"otp", r"verify",
+]
+
+
+def _check_auth_rate_limiting(parsed_api: dict) -> list[dict]:
     findings = []
-    admin_patterns = [
-        r"/admin", r"/manage", r"/internal", r"/system",
-        r"/debug", r"/_internal", r"/console", r"/panel",
-    ]
 
     for ep in parsed_api["endpoints"]:
-        for pattern in admin_patterns:
+        if ep["method"] != "POST":
+            continue
+        if not any(re.search(pattern, ep["path"], re.IGNORECASE) for pattern in AUTH_PATH_PATTERNS):
+            continue
+
+        responses = ep.get("responses", {}) or {}
+        has_429 = "429" in responses
+        if not has_429:
+            findings.append(_make_finding(
+                vuln_name="Authentication Endpoint Missing Rate Limiting",
+                owasp_cat="API4",
+                severity="Medium",
+                description=(
+                    f"Authentication-related endpoint '{ep['method']} {ep['path']}' does not "
+                    "define rate limiting (HTTP 429) controls."
+                ),
+                evidence=f"No 429 Too Many Requests response defined on {ep['method']} {ep['path']}",
+                impact="Brute-force attacks on credentials, OTP guessing, and account enumeration are unmitigated.",
+                remediation=(
+                    "Enforce per-IP/per-account rate limiting with account lockout, CAPTCHA, "
+                    "and monitor for credential stuffing."
+                ),
+                endpoint=ep["path"],
+                method=ep["method"],
+                confidence=65,
+                detection_reason=f"Endpoint '{ep['path']}' is authentication-related and lacks a 429 rate-limit response definition.",
+                cwe_id="CWE-770",
+            ))
+
+    return findings
+
+
+def _check_unbounded_body(parsed_api: dict) -> list[dict]:
+    findings = []
+
+    for ep in parsed_api["endpoints"]:
+        request_body = ep.get("request_body")
+        if not request_body:
+            continue
+
+        schema = _get_request_schema(request_body)
+        if not schema:
+            continue
+
+        properties = schema.get("properties", {}) or {}
+        unbounded_fields = []
+        for prop_name, prop_def in properties.items():
+            if not isinstance(prop_def, dict):
+                continue
+            prop_type = prop_def.get("type")
+            if prop_type == "string" and "maxLength" not in prop_def:
+                unbounded_fields.append(prop_name)
+            elif prop_type in ("array", "object") and "maxItems" not in prop_def and "maxProperties" not in prop_def:
+                unbounded_fields.append(prop_name)
+            elif prop_type == "integer" and "maximum" not in prop_def:
+                unbounded_fields.append(prop_name)
+
+        if unbounded_fields:
+            findings.append(_make_finding(
+                vuln_name="Unbounded Request Body Fields",
+                owasp_cat="API4",
+                severity="Medium",
+                description=(
+                    f"Request body of '{ep['method']} {ep['path']}' defines fields without "
+                    f"size or maximum constraints: {unbounded_fields}."
+                ),
+                evidence=f"Unbounded fields: {unbounded_fields}",
+                impact="Oversized or deeply nested payloads can exhaust server memory and CPU, enabling denial of service.",
+                remediation=(
+                    "Define maxLength/maxItems/maximum constraints on all input fields and "
+                    "enforce payload size limits at the gateway."
+                ),
+                endpoint=ep["path"],
+                method=ep["method"],
+                confidence=60,
+                detection_reason=f"Request body fields {unbounded_fields} lack size constraints (maxLength/maxItems/maximum).",
+                cwe_id="CWE-770",
+            ))
+
+    return findings
+
+
+# =============================================================================
+# API5 — Broken Function Level Authorization
+# =============================================================================
+
+ADMIN_PATH_PATTERNS = [
+    r"/admin", r"/manage", r"/internal", r"/system",
+    r"/debug", r"/_internal", r"/console", r"/panel",
+]
+
+DEBUG_PATH_PATTERNS = [
+    r"/debug", r"/internal", r"/actuator", r"/metrics", r"/trace",
+    r"/env", r"/heapdump", r"/threaddump", r"/console", r"/api-docs",
+    r"/swagger", r"/graphql", r"/druid", r"/h2-console",
+]
+
+
+def _check_api5_broken_function_level_authorization(parsed_api: dict) -> list[dict]:
+    findings = []
+
+    for ep in parsed_api["endpoints"]:
+        for pattern in ADMIN_PATH_PATTERNS:
             if re.search(pattern, ep["path"], re.IGNORECASE):
                 if not ep.get("auth_required"):
                     findings.append(_make_finding(
@@ -318,6 +577,46 @@ def _check_api5_broken_function_level_authorization(parsed_api: dict) -> list[di
 
     return findings
 
+
+def _check_debug_endpoints(parsed_api: dict) -> list[dict]:
+    findings = []
+
+    for ep in parsed_api["endpoints"]:
+        if ep.get("auth_required"):
+            continue
+        if not any(re.search(pattern, ep["path"], re.IGNORECASE) for pattern in DEBUG_PATH_PATTERNS):
+            continue
+
+        findings.append(_make_finding(
+            vuln_name="Exposed Debug/Info Endpoint",
+            owasp_cat="API5",
+            severity="High",
+            description=(
+                f"Endpoint '{ep['method']} {ep['path']}' is a debug/internal/introspection "
+                "endpoint exposed without authentication."
+            ),
+            evidence="Path matches debug/introspection pattern and has no security requirements.",
+            impact=(
+                "Information disclosure of internals, environment variables, metrics, or schema "
+                "introspection aids reconnaissance and exploitation."
+            ),
+            remediation=(
+                "Restrict debug and introspection endpoints to authenticated administrators on "
+                "isolated networks, or disable them in production."
+            ),
+            endpoint=ep["path"],
+            method=ep["method"],
+            confidence=75,
+            detection_reason=f"Path '{ep['path']}' matches debug/internal/introspection patterns and requires no authentication.",
+            cwe_id="CWE-200",
+        ))
+
+    return findings
+
+
+# =============================================================================
+# API6 — Unrestricted Access to Sensitive Business Flows
+# =============================================================================
 
 def _check_api6_unrestricted_access_to_sensitive_business_flows(parsed_api: dict) -> list[dict]:
     findings = []
@@ -364,6 +663,14 @@ def _check_api6_unrestricted_access_to_sensitive_business_flows(parsed_api: dict
     return findings
 
 
+# =============================================================================
+# API7 — Server Side Request Forgery
+# =============================================================================
+
+SSRF_URL_KEYWORDS = ("url", "uri", "link", "href", "webhook", "callback", "redirect", "proxy", "target", "host")
+REDIRECT_KEYWORDS = ("redirect", "return", "next", "callback", "continue", "goto", "url", "dest", "target", "link", "forward")
+
+
 def _check_api7_server_side_request_forgery(parsed_api: dict) -> list[dict]:
     findings = []
 
@@ -374,7 +681,7 @@ def _check_api7_server_side_request_forgery(parsed_api: dict) -> list[dict]:
         url_params = []
         for p in params:
             name_lower = p.get("name", "").lower()
-            if any(kw in name_lower for kw in ("url", "uri", "link", "href", "webhook", "callback", "redirect", "proxy", "target", "host")):
+            if any(kw in name_lower for kw in SSRF_URL_KEYWORDS):
                 url_params.append(p["name"])
 
         if request_body:
@@ -382,7 +689,7 @@ def _check_api7_server_side_request_forgery(parsed_api: dict) -> list[dict]:
             if schema:
                 for prop_name, prop_def in schema.get("properties", {}).items():
                     prop_lower = prop_name.lower()
-                    if any(kw in prop_lower for kw in ("url", "uri", "link", "webhook", "callback", "redirect")):
+                    if any(kw in prop_lower for kw in SSRF_URL_KEYWORDS):
                         url_params.append(prop_name)
 
         if url_params:
@@ -412,6 +719,53 @@ def _check_api7_server_side_request_forgery(parsed_api: dict) -> list[dict]:
 
     return findings
 
+
+def _check_open_redirect(parsed_api: dict) -> list[dict]:
+    findings = []
+
+    for ep in parsed_api["endpoints"]:
+        redirect_params = []
+        for p in ep.get("parameters", []):
+            name = p.get("name", "").lower()
+            if p.get("in") == "query" and any(kw in name for kw in REDIRECT_KEYWORDS):
+                redirect_params.append(p["name"])
+
+        request_body = ep.get("request_body")
+        if request_body:
+            schema = _get_request_schema(request_body)
+            if schema:
+                for prop_name in (schema.get("properties", {}) or {}):
+                    if any(kw in prop_name.lower() for kw in REDIRECT_KEYWORDS):
+                        redirect_params.append(prop_name)
+
+        if redirect_params:
+            findings.append(_make_finding(
+                vuln_name="Unvalidated Redirect/Callback URL",
+                owasp_cat="API7",
+                severity="Medium",
+                description=(
+                    f"Endpoint '{ep['method']} {ep['path']}' accepts redirect/callback URLs "
+                    f"({redirect_params}) without apparent allowlist validation."
+                ),
+                evidence=f"Redirect parameters: {redirect_params}",
+                impact="Open redirects enable phishing, credential harvesting, and OAuth token theft via crafted callback URLs.",
+                remediation=(
+                    "Validate redirect targets against an explicit allowlist of trusted origins "
+                    "and never trust client-supplied URLs."
+                ),
+                endpoint=ep["path"],
+                method=ep["method"],
+                confidence=68,
+                detection_reason=f"Parameter(s) {redirect_params} accept redirect/return URLs without documented allowlist validation.",
+                cwe_id="CWE-601",
+            ))
+
+    return findings
+
+
+# =============================================================================
+# API8 — Security Misconfiguration
+# =============================================================================
 
 def _check_api8_security_misconfiguration(parsed_api: dict) -> list[dict]:
     findings = []
@@ -464,26 +818,42 @@ def _check_api8_security_misconfiguration(parsed_api: dict) -> list[dict]:
                 detection_reason="Endpoint marked as deprecated but still present in the active specification.",
             ))
 
-        if ep["method"] == "OPTIONS":
-            findings.append(_make_finding(
-                vuln_name="OPTIONS Method Exposed",
-                owasp_cat="API8",
-                severity="Info",
-                description=(
-                    f"OPTIONS method is explicitly defined at '{ep['path']}'. "
-                    "This may leak CORS configuration details."
-                ),
-                evidence="OPTIONS method found in path definition.",
-                impact="Information disclosure about CORS policies and supported methods.",
-                remediation="Remove explicit OPTIONS definitions unless required. Configure CORS at the server level.",
-                endpoint=ep["path"],
-                method=ep["method"],
-                confidence=40,
-                detection_reason="OPTIONS method explicitly defined, which may expose CORS configuration.",
-            ))
+    return findings
+
+
+def _check_insecure_transport(parsed_api: dict) -> list[dict]:
+    findings = []
+    servers = parsed_api.get("servers", []) or []
+    insecure = []
+
+    for server in servers:
+        url = server.get("url", "") if isinstance(server, dict) else str(server)
+        if url.startswith("http://"):
+            insecure.append(url)
+
+    if insecure:
+        findings.append(_make_finding(
+            vuln_name="Insecure Transport (HTTP)",
+            owasp_cat="API8",
+            severity="High",
+            description=(
+                f"API server URLs use plain HTTP: {insecure}. "
+                "Traffic is transmitted without TLS encryption."
+            ),
+            evidence=f"HTTP server URLs: {insecure}",
+            impact="API traffic can be intercepted, tampered with, or replayed (MITM), exposing credentials and sensitive data.",
+            remediation="Serve the API exclusively over HTTPS/TLS and enforce HTTP Strict Transport Security (HSTS).",
+            confidence=80,
+            detection_reason=f"Server URL(s) {insecure} use the insecure HTTP scheme.",
+            cwe_id="CWE-319",
+        ))
 
     return findings
 
+
+# =============================================================================
+# API9 — Improper Inventory Management
+# =============================================================================
 
 def _check_api9_improper_inventory_management(parsed_api: dict) -> list[dict]:
     findings = []
@@ -533,6 +903,10 @@ def _check_api9_improper_inventory_management(parsed_api: dict) -> list[dict]:
 
     return findings
 
+
+# =============================================================================
+# API10 — Unsafe Consumption of APIs
+# =============================================================================
 
 def _check_api10_unsafe_consumption_of_apis(parsed_api: dict) -> list[dict]:
     findings = []
@@ -597,3 +971,179 @@ def _is_sensitive_path(path: str) -> bool:
 def _is_health_or_meta(path: str) -> bool:
     meta_paths = ["/health", "/healthz", "/ready", "/version", "/docs", "/openapi.json", "/swagger"]
     return any(path.lower().startswith(m) for m in meta_paths)
+
+
+# =============================================================================
+# Check registry — the authoritative list of every distinct security check.
+# =============================================================================
+
+CHECK_REGISTRY = [
+    {
+        "id": "SA-01",
+        "name": "Broken Object Level Authorization (BOLA)",
+        "category": "API1",
+        "cwe_id": "CWE-639",
+        "description": "Detects resource-by-ID endpoints without user-scoping authorization checks.",
+        "check": _check_api1_broken_object_level_authorization,
+    },
+    {
+        "id": "SA-02",
+        "name": "Unauthenticated Endpoint",
+        "category": "API2",
+        "cwe_id": "CWE-287",
+        "description": "Detects state-changing or sensitive endpoints exposed without authentication.",
+        "check": _check_api2_broken_authentication,
+    },
+    {
+        "id": "SA-03",
+        "name": "Weak Authentication Scheme",
+        "category": "API2",
+        "cwe_id": "CWE-287",
+        "description": "Detects HTTP Basic/Digest authentication or API keys transported in the query string.",
+        "check": _check_weak_auth_scheme,
+    },
+    {
+        "id": "SA-04",
+        "name": "Sensitive Property in Request Body",
+        "category": "API3",
+        "cwe_id": "CWE-200",
+        "description": "Detects over-exposed sensitive properties in request schemas (credentials, roles, PII).",
+        "check": _check_api3_broken_object_property_level_authorization,
+    },
+    {
+        "id": "SA-05",
+        "name": "Sensitive Data in Query Parameters",
+        "category": "API3",
+        "cwe_id": "CWE-598",
+        "description": "Detects credentials and secrets passed as query string parameters.",
+        "check": _check_sensitive_query_params,
+    },
+    {
+        "id": "SA-06",
+        "name": "Sensitive Data in Response Schema",
+        "category": "API3",
+        "cwe_id": "CWE-200",
+        "description": "Detects sensitive fields exposed in response schemas.",
+        "check": _check_sensitive_response_fields,
+    },
+    {
+        "id": "SA-07",
+        "name": "Missing Pagination / Resource Limits",
+        "category": "API4",
+        "cwe_id": "CWE-770",
+        "description": "Detects GET endpoints without pagination or rate-limit controls.",
+        "check": _check_api4_unrestricted_resource_consumption,
+    },
+    {
+        "id": "SA-08",
+        "name": "Auth Endpoint Missing Rate Limiting",
+        "category": "API4",
+        "cwe_id": "CWE-770",
+        "description": "Detects authentication endpoints lacking HTTP 429 rate-limit controls.",
+        "check": _check_auth_rate_limiting,
+    },
+    {
+        "id": "SA-09",
+        "name": "Unbounded Request Body",
+        "category": "API4",
+        "cwe_id": "CWE-770",
+        "description": "Detects request body fields without maxLength/maxItems/maximum constraints.",
+        "check": _check_unbounded_body,
+    },
+    {
+        "id": "SA-10",
+        "name": "Admin Endpoint Authorization",
+        "category": "API5",
+        "cwe_id": "CWE-862",
+        "description": "Detects administrative endpoints without authentication or role verification.",
+        "check": _check_api5_broken_function_level_authorization,
+    },
+    {
+        "id": "SA-11",
+        "name": "Exposed Debug/Internal Endpoint",
+        "category": "API5",
+        "cwe_id": "CWE-200",
+        "description": "Detects debug, introspection, and management endpoints exposed without auth.",
+        "check": _check_debug_endpoints,
+    },
+    {
+        "id": "SA-12",
+        "name": "Unprotected Sensitive Business Flow",
+        "category": "API6",
+        "cwe_id": "CWE-284",
+        "description": "Detects authentication gaps in financial, account-creation, and communication flows.",
+        "check": _check_api6_unrestricted_access_to_sensitive_business_flows,
+    },
+    {
+        "id": "SA-13",
+        "name": "SSRF via URL Parameter",
+        "category": "API7",
+        "cwe_id": "CWE-918",
+        "description": "Detects URL-type inputs that could enable Server-Side Request Forgery.",
+        "check": _check_api7_server_side_request_forgery,
+    },
+    {
+        "id": "SA-14",
+        "name": "Unvalidated Redirect/Callback URL",
+        "category": "API7",
+        "cwe_id": "CWE-601",
+        "description": "Detects open-redirect and unvalidated callback parameters.",
+        "check": _check_open_redirect,
+    },
+    {
+        "id": "SA-15",
+        "name": "No Security Schemes Defined",
+        "category": "API8",
+        "cwe_id": "CWE-16",
+        "description": "Detects specs with no authentication mechanisms defined.",
+        "check": _check_api8_security_misconfiguration,
+    },
+    {
+        "id": "SA-16",
+        "name": "No Global Security Requirements",
+        "category": "API8",
+        "cwe_id": "CWE-16",
+        "description": "Detects specs without root-level security requirements.",
+        "check": _check_api8_security_misconfiguration,
+    },
+    {
+        "id": "SA-17",
+        "name": "Insecure Transport (HTTP)",
+        "category": "API8",
+        "cwe_id": "CWE-319",
+        "description": "Detects API server URLs served over plain HTTP without TLS.",
+        "check": _check_insecure_transport,
+    },
+    {
+        "id": "SA-18",
+        "name": "Deprecated Endpoint Exposed",
+        "category": "API8",
+        "cwe_id": "CWE-16",
+        "description": "Detects deprecated endpoints still present in the active specification.",
+        "check": _check_api8_security_misconfiguration,
+    },
+    {
+        "id": "SA-19",
+        "name": "Multiple API Versions Exposed",
+        "category": "API9",
+        "cwe_id": "CWE-200",
+        "description": "Detects concurrent exposure of multiple API versions.",
+        "check": _check_api9_improper_inventory_management,
+    },
+    {
+        "id": "SA-20",
+        "name": "Deprecated Endpoints in Specification",
+        "category": "API9",
+        "cwe_id": "CWE-200",
+        "description": "Counts deprecated endpoints that remain declared in the specification.",
+        "check": _check_api9_improper_inventory_management,
+    },
+    {
+        "id": "SA-21",
+        "name": "Unsafe API Consumption",
+        "category": "API10",
+        "cwe_id": "CWE-918",
+        "description": "Detects external API URLs consumed by the server without validation.",
+        "check": _check_api10_unsafe_consumption_of_apis,
+    },
+]
