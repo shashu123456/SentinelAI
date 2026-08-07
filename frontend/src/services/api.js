@@ -1,23 +1,55 @@
 import { API_BASE } from '../config';
 
+let refreshPromise = null;
+
+function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE}/auth/refresh`, { method: 'POST', credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Refresh failed');
+        const data = await res.json();
+        localStorage.setItem('sentinelai_token', data.access_token);
+        localStorage.setItem('sentinelai_user', JSON.stringify(data.user));
+        window.dispatchEvent(new Event('sentinelai:auth-refresh'));
+        return data;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
+function redirectToLogin() {
+  localStorage.removeItem('sentinelai_token');
+  localStorage.removeItem('sentinelai_user');
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+}
+
 async function request(path, options = {}) {
-  const token = localStorage.getItem('sentinelai_token');
   const headers = { ...options.headers };
+  const token = localStorage.getItem('sentinelai_token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const doFetch = () => fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
+
+  let response = await doFetch();
+
+  if (response.status === 401 && path !== '/auth/refresh') {
+    try {
+      await refreshSession();
+      response = await doFetch();
+    } catch {
+      redirectToLogin();
+      throw new Error('Unauthorized');
+    }
   }
-
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (response.status === 401) {
-    localStorage.removeItem('sentinelai_token');
-    localStorage.removeItem('sentinelai_user');
-    window.location.href = '/login';
+    redirectToLogin();
     throw new Error('Unauthorized');
   }
 
@@ -39,6 +71,11 @@ export const auth = {
   register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request('/auth/me'),
+  refresh: () => request('/auth/refresh', { method: 'POST' }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  logoutAll: () => request('/auth/logout-all', { method: 'POST' }),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, new_password: newPassword }) }),
 };
 
 export const scans = {

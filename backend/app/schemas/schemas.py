@@ -1,12 +1,41 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from typing import Optional
+from enum import Enum
+
+from app.config import get_settings
+
+_settings = get_settings()
+
+
+class Role(str, Enum):
+    user = "user"
+    analyst = "analyst"
+    viewer = "viewer"
+    admin = "admin"
+
+
+def validate_password_strength(password: str) -> str:
+    if len(password) < _settings.PASSWORD_MIN_LENGTH:
+        raise ValueError(f"Password must be at least {_settings.PASSWORD_MIN_LENGTH} characters")
+    if _settings.PASSWORD_REQUIRE_UPPER and not any(c.isupper() for c in password):
+        raise ValueError("Password must contain an uppercase letter")
+    if _settings.PASSWORD_REQUIRE_NUMBER and not any(c.isdigit() for c in password):
+        raise ValueError("Password must contain a number")
+    if _settings.PASSWORD_REQUIRE_SPECIAL and not any(not c.isalnum() for c in password):
+        raise ValueError("Password must contain a special character")
+    return password
 
 
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    password: str = Field(..., min_length=6, max_length=128)
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def _password_strength(cls, v: str) -> str:
+        return validate_password_strength(v)
 
 
 class UserLogin(BaseModel):
@@ -18,6 +47,8 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    role: Role = Role.user
+    is_active: bool = True
     created_at: datetime
 
     class Config:
@@ -28,6 +59,46 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    reset_token: Optional[str] = None
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def _new_password_strength(cls, v: str) -> str:
+        return validate_password_strength(v)
+
+
+class MessageResponse(BaseModel):
+    detail: str
+
+
+class RoleUpdateRequest(BaseModel):
+    role: Role
+
+
+class SessionInfo(BaseModel):
+    id: int
+    created_at: datetime
+    expires_at: datetime
+    revoked_at: Optional[datetime] = None
+    replaced_by: Optional[str] = None
+    ip_address: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 
 
 class ScanCreate(BaseModel):

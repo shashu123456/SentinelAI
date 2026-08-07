@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -28,6 +29,22 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    const onAuthRefresh = () => {
+      const savedToken = localStorage.getItem('sentinelai_token');
+      const savedUser = localStorage.getItem('sentinelai_user');
+      if (!savedToken || !savedUser) return;
+      setToken(savedToken);
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        setUser(null);
+      }
+    };
+    window.addEventListener('sentinelai:auth-refresh', onAuthRefresh);
+    return () => window.removeEventListener('sentinelai:auth-refresh', onAuthRefresh);
+  }, []);
+
   const login = (tokenStr, userData) => {
     localStorage.setItem('sentinelai_token', tokenStr);
     localStorage.setItem('sentinelai_user', JSON.stringify(userData));
@@ -42,8 +59,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const logoutAll = async () => {
+    try {
+      await auth.logoutAll();
+    } catch {
+      // proceed with local logout even if the server call fails
+    }
+    logout();
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, logoutAll, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

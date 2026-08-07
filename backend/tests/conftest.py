@@ -25,6 +25,16 @@ def client():
         yield c
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    """Reset slowapi's in-memory counters so rate-limit tests never bleed into
+    other tests (all TestClient requests share the same source IP)."""
+    from app.utils.ratelimit import limiter
+
+    yield
+    limiter.reset()
+
+
 @pytest.fixture()
 def user_token(client):
     """Register a fresh user and return (username, access_token)."""

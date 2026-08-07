@@ -1,19 +1,18 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import time
 import logging
 
 from app.config import get_settings
 from app.database.database import init_db
-from app.api.routes import auth, scans, websocket, security
+from app.api.routes import auth, admin, scans, websocket, security
 from app.utils.logger import logger
+from app.utils.ratelimit import limiter
 
 settings = get_settings()
-limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -53,6 +52,27 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    if settings.ENABLE_SECURITY_HEADERS:
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault("X-XSS-Protection", "0")
+        is_secure = (request.headers.get("x-forwarded-proto") or request.url.scheme) == "https"
+        if is_secure:
+            response.headers.setdefault("Strict-Transport-Security", f"max-age={settings.HSTS_MAX_AGE}; includeSubDomains")
+        if request.url.path not in ("/docs", "/redoc", "/openapi.json"):
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self' data:",
+            )
+    return response
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
@@ -63,6 +83,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(scans.router)
 app.include_router(websocket.router)
 app.include_router(security.router)
