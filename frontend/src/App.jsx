@@ -1,11 +1,17 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { OrgProvider } from './context/OrgContext';
 import { ToastProvider } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
+import CommandPalette from './components/CommandPalette';
+import { KeyboardShortcutsProvider } from './components/KeyboardShortcuts';
+import Breadcrumbs from './components/Breadcrumbs';
 import './App.css';
 
+const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const NewScan = lazy(() => import('./pages/NewScan'));
@@ -14,6 +20,17 @@ const ScanLive = lazy(() => import('./pages/ScanLive'));
 const SASTScan = lazy(() => import('./pages/SASTScan'));
 const DepScan = lazy(() => import('./pages/DepScan'));
 const Copilot = lazy(() => import('./pages/Copilot'));
+const VulnerabilityExplorer = lazy(() => import('./pages/VulnerabilityExplorer'));
+const AuditCenter = lazy(() => import('./pages/AuditCenter'));
+const ReportCenter = lazy(() => import('./pages/ReportCenter'));
+const Settings = lazy(() => import('./pages/Settings'));
+const SystemHealth = lazy(() => import('./pages/SystemHealth'));
+const OrgDashboard = lazy(() => import('./pages/OrgDashboard'));
+const TeamManagement = lazy(() => import('./pages/TeamManagement'));
+const ApiKeys = lazy(() => import('./pages/ApiKeys'));
+const OrgSettings = lazy(() => import('./pages/OrgSettings'));
+const Invitations = lazy(() => import('./pages/Invitations'));
+const SecurityEvents = lazy(() => import('./pages/SecurityEvents'));
 
 function PageLoader() {
   return (
@@ -35,11 +52,18 @@ function PublicRoute() {
   return isAuthenticated ? <Navigate to="/dashboard" /> : <Outlet />;
 }
 
+function LandingRoute() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div className="loading-screen"><div className="spinner" /><p>Loading...</p></div>;
+  return isAuthenticated ? <Navigate to="/dashboard" /> : <Outlet />;
+}
+
 function AppLayout() {
   return (
     <div className="app-layout">
       <Navbar />
       <main className="main-content">
+        <Breadcrumbs />
         <Suspense fallback={<PageLoader />}>
           <Outlet />
         </Suspense>
@@ -50,31 +74,50 @@ function AppLayout() {
 
 function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary>        <ThemeProvider>
       <AuthProvider>
+      <OrgProvider>
         <ToastProvider>
           <BrowserRouter>
+            <KeyboardShortcutsProvider>
+            <CommandPalette />
             <Routes>
+              <Route element={<LandingRoute />}>
+                <Route path="/" element={<Suspense fallback={<PageLoader />}><Landing /></Suspense>} />
+              </Route>
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Suspense fallback={<PageLoader />}><Login /></Suspense>} />
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppLayout />}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/new-scan" element={<NewScan />} />
-                  <Route path="/scan/:id" element={<ScanResult />} />
-                  <Route path="/live/:taskId" element={<ScanLive />} />
-                  <Route path="/sast" element={<SASTScan />} />
-                  <Route path="/deps" element={<DepScan />} />
-                  <Route path="/copilot" element={<Copilot />} />
+                  <Route path="/dashboard" element={<ErrorBoundary pageLevel><Dashboard /></ErrorBoundary>} />
+                  <Route path="/new-scan" element={<ErrorBoundary pageLevel><NewScan /></ErrorBoundary>} />
+                  <Route path="/scan/:id" element={<ErrorBoundary pageLevel><ScanResult /></ErrorBoundary>} />
+                  <Route path="/live/:taskId" element={<ErrorBoundary pageLevel><ScanLive /></ErrorBoundary>} />
+                  <Route path="/sast" element={<ErrorBoundary pageLevel><SASTScan /></ErrorBoundary>} />
+                  <Route path="/deps" element={<ErrorBoundary pageLevel><DepScan /></ErrorBoundary>} />
+                  <Route path="/copilot" element={<ErrorBoundary pageLevel><Copilot /></ErrorBoundary>} />
+                  <Route path="/vulnerabilities" element={<ErrorBoundary pageLevel><VulnerabilityExplorer /></ErrorBoundary>} />
+                  <Route path="/audit" element={<ErrorBoundary pageLevel><AuditCenter /></ErrorBoundary>} />
+                  <Route path="/reports" element={<ErrorBoundary pageLevel><ReportCenter /></ErrorBoundary>} />
+                  <Route path="/settings" element={<ErrorBoundary pageLevel><Settings /></ErrorBoundary>} />
+                  <Route path="/health" element={<ErrorBoundary pageLevel><SystemHealth /></ErrorBoundary>} />
+                  <Route path="/org/dashboard" element={<ErrorBoundary pageLevel><OrgDashboard /></ErrorBoundary>} />
+                  <Route path="/org/teams" element={<ErrorBoundary pageLevel><TeamManagement /></ErrorBoundary>} />
+                  <Route path="/org/api-keys" element={<ErrorBoundary pageLevel><ApiKeys /></ErrorBoundary>} />
+                  <Route path="/org/settings" element={<ErrorBoundary pageLevel><OrgSettings /></ErrorBoundary>} />
+                  <Route path="/org/invitations" element={<ErrorBoundary pageLevel><Invitations /></ErrorBoundary>} />
+                  <Route path="/security-events" element={<ErrorBoundary pageLevel><SecurityEvents /></ErrorBoundary>} />
                 </Route>
               </Route>
-              <Route path="*" element={<Navigate to="/dashboard" />} />
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
+            </KeyboardShortcutsProvider>
           </BrowserRouter>
         </ToastProvider>
+      </OrgProvider>
       </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

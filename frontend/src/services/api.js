@@ -167,6 +167,100 @@ export const security = {
   },
 };
 
+export const analytics = {
+  getDashboard: () => request('/scans/analytics'),
+};
+
+export const organizations = {
+  list: () => request('/organizations'),
+  create: (data) => request('/organizations', { method: 'POST', body: JSON.stringify(data) }),
+  get: (id) => request(`/organizations/${id}`),
+  update: (id, data) => request(`/organizations/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getSettings: (orgId) => request(`/organizations/${orgId}/settings`),
+  updateSettings: (orgId, data) => request(`/organizations/${orgId}/settings`, { method: 'PATCH', body: JSON.stringify(data) }),
+  dashboard: (orgId) => request(`/organizations/${orgId}/dashboard`),
+  analytics: (orgId) => request(`/organizations/${orgId}/analytics`),
+  // Members
+  listMembers: (orgId) => request(`/organizations/${orgId}/members`),
+  inviteMember: (orgId, data) => request(`/organizations/${orgId}/members`, { method: 'POST', body: JSON.stringify(data) }),
+  updateMemberRole: (orgId, userId, data) => request(`/organizations/${orgId}/members/${userId}/role`, { method: 'PATCH', body: JSON.stringify(data) }),
+  removeMember: (orgId, userId) => request(`/organizations/${orgId}/members/${userId}`, { method: 'DELETE' }),
+  // Projects
+  listProjects: (orgId) => request(`/organizations/${orgId}/projects`),
+  createProject: (orgId, data) => request(`/organizations/${orgId}/projects`, { method: 'POST', body: JSON.stringify(data) }),
+  getProject: (orgId, projectId) => request(`/organizations/${orgId}/projects/${projectId}`),
+  addProjectMember: (orgId, projectId, data) => request(`/organizations/${orgId}/projects/${projectId}/members`, { method: 'POST', body: JSON.stringify(data) }),
+  removeProjectMember: (orgId, projectId, userId) => request(`/organizations/${orgId}/projects/${projectId}/members/${userId}`, { method: 'DELETE' }),
+};
+
+export const teams = {
+  list: (orgId) => request(`/organizations/${orgId}/teams`),
+  create: (orgId, data) => request(`/organizations/${orgId}/teams`, { method: 'POST', body: JSON.stringify(data) }),
+  get: (orgId, teamId) => request(`/organizations/${orgId}/teams/${teamId}`),
+  addMember: (orgId, teamId, data) => request(`/organizations/${orgId}/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
+  removeMember: (orgId, teamId, userId) => request(`/organizations/${orgId}/teams/${teamId}/members/${userId}`, { method: 'DELETE' }),
+  delete: (orgId, teamId) => request(`/organizations/${orgId}/teams/${teamId}`, { method: 'DELETE' }),
+};
+
+export const invitations = {
+  list: (orgId) => request(`/organizations/${orgId}/invitations`),
+  send: (orgId, data) => request(`/organizations/${orgId}/invitations`, { method: 'POST', body: JSON.stringify(data) }),
+  revoke: (orgId, inviteId) => request(`/organizations/${orgId}/invitations/${inviteId}`, { method: 'DELETE' }),
+  accept: (orgId, token) => request(`/organizations/${orgId}/invitations/accept`, { method: 'POST', body: JSON.stringify({ token }) }),
+  cleanup: (orgId) => request(`/organizations/${orgId}/invitations/cleanup`, { method: 'POST' }),
+};
+
+export const apiKeys = {
+  list: (orgId) => request(`/organizations/${orgId}/api-keys`),
+  create: (orgId, data) => request(`/organizations/${orgId}/api-keys`, { method: 'POST', body: JSON.stringify(data) }),
+  revoke: (orgId, keyId) => request(`/organizations/${orgId}/api-keys/${keyId}`, { method: 'DELETE' }),
+};
+
+export const audit = {
+  list: (params = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+    });
+    return request(`/audit/logs?${qs.toString()}`);
+  },
+  get: (id) => request(`/audit/logs/${id}`),
+  stats: () => request('/audit/stats'),
+  modules: () => request('/audit/modules'),
+  actions: (module) => {
+    const qs = module ? `?module=${module}` : '';
+    return request(`/audit/actions${qs}`);
+  },
+  exportCsv: async (params = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+    });
+    const token = localStorage.getItem('sentinelai_token');
+    const response = await fetch(`${API_BASE}/audit/export?${qs.toString()}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Export failed');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
+};
+
+export const testimonials = {
+  list: () => request('/testimonials'),
+};
+
 export const health = {
   check: () => request('/health'),
+  detailed: () => request('/health/detailed'),
+  metrics: () => fetch(`${API_BASE.replace('/api', '')}/metrics`).then(r => r.text()),
 };
+
+export { request };

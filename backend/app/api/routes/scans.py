@@ -1,50 +1,63 @@
 import json
+from collections.abc import Callable
+
 import yaml
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from app.database.database import get_db, SessionLocal
-from app.models.models import User, Scan, Finding
-from app.schemas.schemas import (
-    ScanCreate, ScanResponse, ScanDetailResponse,
-    FindingResponse, AIAnalysisResponse, RiskScoreResponse, DashboardStats,
-)
-from app.services.scan_service import execute_scan, build_report_data
-from app.reports.generator import generate_pdf_report, generate_json_report
-from app.utils.security import get_current_user
-from app.utils.logger import logger
-from app.config import get_settings
-from app.tasks import create_scan_task, get_task
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.config import get_settings
+from app.database.database import SessionLocal, get_db
+from app.models.models import Finding, Scan, User
+from app.reports.generator import generate_json_report, generate_pdf_report
+from app.repositories.reports import ReportRepository
+from app.repositories.scans import ScanRepository
+from app.schemas.schemas import (
+    AIAnalysisResponse,
+    AnalyticsResponse,
+    DashboardStats,
+    FindingResponse,
+    ScanDetailResponse,
+    ScanResponse,
+)
+from app.services.audit_service import record_report_export, record_scan_event
+from app.services.scan_service import build_report_data, execute_scan
+from app.tasks import create_scan_task, get_task
+from app.utils.cache import cache
+from app.utils.logger import logger
+from app.utils.security import get_current_user
 
 settings = get_settings()
 router = APIRouter(prefix="/api/scans", tags=["Scans"])
 
 MAX_FILE_SIZE = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+VALID_SPEC_EXTENSIONS = (".json", ".yaml", ".yml")
 
 
-@router.post("/upload", response_model=ScanResponse)
-async def upload_and_scan(
-    file: UploadFile = File(...),
-    api_name: str = Form(""),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
+def _read_and_validate_spec(file: UploadFile, api_name: str) -> tuple[str, dict]:
+    """Validate an uploaded OpenAPI/Swagger spec and return (api_name, spec)."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
-    valid_extensions = (".json", ".yaml", ".yml")
-    if not file.filename.lower().endswith(valid_extensions):
-        raise HTTPException(status_code=400, detail=f"Invalid file type. Allowed: {valid_extensions}")
+    if not file.filename.lower().endswith(VALID_SPEC_EXTENSIONS):
+        raise HTTPException(
+            status_code=400, detail=f"Invalid file type. Allowed: {VALID_SPEC_EXTENSIONS}"
+        )
 
-    content = await file.read()
+    content = file.file.read()
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail=f"File too large. Max: {settings.MAX_UPLOAD_SIZE_MB}MB")
+        raise HTTPException(
+            status_code=400, detail=f"File too large. Max: {settings.MAX_UPLOAD_SIZE_MB}MB"
+        )
 
     try:
         content_str = content.decode("utf-8")
     except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded")
+        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded") from None
 
     try:
         if file.filename.lower().endswith((".yaml", ".yml")):
@@ -52,22 +65,76 @@ async def upload_and_scan(
         else:
             spec = json.loads(content_str)
     except (json.JSONDecodeError, yaml.YAMLError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid specification format: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid specification format: {e}") from None
 
     if not isinstance(spec, dict):
         raise HTTPException(status_code=400, detail="Specification must be a JSON/YAML object")
 
     if "openapi" not in spec and "swagger" not in spec:
-        raise HTTPException(status_code=400, detail="Not a valid OpenAPI/Swagger specification (missing 'openapi' or 'swagger' field)")
+        raise HTTPException(
+            status_code=400,
+            detail="Not a valid openapi/swagger specification: missing 'openapi' or 'swagger' version key",
+        )
 
     if not api_name:
         api_name = spec.get("info", {}).get("title", file.filename)
 
+    return api_name, spec
+
+
+def _get_owned_scan(db: Session, scan_id: int, user_id: int):
+    scan = ScanRepository(db).get_owned(scan_id, user_id)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return scan
+
+
+@router.post("/upload", response_model=ScanResponse)
+async def upload_and_scan(
+    file: UploadFile = File(...),
+    api_name: str = Form(""),
+    organization_id: int | None = Form(None),
+    project_id: int | None = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    api_name, spec = _read_and_validate_spec(file, api_name)
+
+    # Validate org/project membership if provided
+    if organization_id is not None:
+        from app.repositories.organizations import OrganizationRepository
+
+        org_repo = OrganizationRepository(db)
+        if not org_repo.is_member(organization_id, current_user.id):
+            raise HTTPException(status_code=403, detail="Not a member of this organization")
+
+    if project_id is not None:
+        from app.models.models import Project
+
+        project = db.get(Project, project_id)
+        if project is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+        if organization_id is None:
+            organization_id = project.organization_id
+
     try:
         scan = execute_scan(db, current_user.id, api_name, spec)
+        # Associate with organization/project if provided
+        if organization_id is not None:
+            scan.organization_id = organization_id
+        if project_id is not None:
+            scan.project_id = project_id
+        db.commit()
     except Exception as e:
         logger.error(f"Scan execution failed: {e}")
-        raise HTTPException(status_code=500, detail="Scan execution failed")
+        raise HTTPException(status_code=500, detail="Scan execution failed") from None
+
+    # Invalidate dashboard/analytics cache
+    cache.invalidate_prefix(f"dashboard:{current_user.id}")
+    cache.invalidate_prefix(f"analytics:{current_user.id}")
+    if organization_id:
+        cache.invalidate_prefix(f"org_dashboard:{organization_id}")
+        cache.invalidate_prefix(f"org_analytics:{organization_id}")
 
     return scan
 
@@ -77,40 +144,11 @@ async def upload_and_scan_async(
     file: UploadFile = File(...),
     api_name: str = Form(""),
     enable_ai: bool = Form(True),
+    organization_id: int | None = Form(None),
+    project_id: int | None = Form(None),
     current_user: User = Depends(get_current_user),
 ):
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-
-    valid_extensions = (".json", ".yaml", ".yml")
-    if not file.filename.lower().endswith(valid_extensions):
-        raise HTTPException(status_code=400, detail=f"Invalid file type. Allowed: {valid_extensions}")
-
-    content = await file.read()
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail=f"File too large. Max: {settings.MAX_UPLOAD_SIZE_MB}MB")
-
-    try:
-        content_str = content.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded")
-
-    try:
-        if file.filename.lower().endswith((".yaml", ".yml")):
-            spec = yaml.safe_load(content_str)
-        else:
-            spec = json.loads(content_str)
-    except (json.JSONDecodeError, yaml.YAMLError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid specification format: {e}")
-
-    if not isinstance(spec, dict):
-        raise HTTPException(status_code=400, detail="Specification must be a JSON/YAML object")
-
-    if "openapi" not in spec and "swagger" not in spec:
-        raise HTTPException(status_code=400, detail="Not a valid OpenAPI/Swagger specification")
-
-    if not api_name:
-        api_name = spec.get("info", {}).get("title", file.filename)
+    api_name, spec = _read_and_validate_spec(file, api_name)
 
     task_id = create_scan_task(
         spec=spec,
@@ -120,7 +158,12 @@ async def upload_and_scan_async(
         enable_ai=enable_ai,
     )
 
-    return {"task_id": task_id, "message": "Scan started"}
+    return {
+        "task_id": task_id,
+        "message": "Scan started",
+        "organization_id": organization_id,
+        "project_id": project_id,
+    }
 
 
 @router.get("/task/{task_id}")
@@ -144,12 +187,61 @@ def list_scans(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    scans = (
-        db.query(Scan)
-        .filter(Scan.user_id == current_user.id)
-        .order_by(Scan.created_at.desc())
-        .limit(50)
-        .all()
+    return ScanRepository(db).list_by_user(current_user.id, limit=50)
+
+
+@router.get("/org/{organization_id}", response_model=list[ScanResponse])
+def list_scans_by_org(
+    organization_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List scans for a specific organization. Requires org membership."""
+    from app.repositories.organizations import OrganizationRepository
+
+    org_repo = OrganizationRepository(db)
+    if not org_repo.is_member(organization_id, current_user.id):
+        raise HTTPException(status_code=403, detail="Not a member of this organization")
+
+    scan_repo = ScanRepository(db)
+    from app.models.models import Scan
+
+    scans = scan_repo.list(
+        Scan.organization_id == organization_id,
+        Scan.deleted_at.is_(None),
+        order_by=Scan.created_at.desc(),
+        limit=50,
+    )
+    return scans
+
+
+@router.get("/project/{project_id}", response_model=list[ScanResponse])
+def list_scans_by_project(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List scans for a specific project. Requires project/organization membership."""
+    from app.models.models import Project
+
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    from app.repositories.organizations import OrganizationRepository
+
+    org_repo = OrganizationRepository(db)
+    if not org_repo.is_member(project.organization_id, current_user.id):
+        raise HTTPException(status_code=403, detail="Not a member of this project's organization")
+
+    scan_repo = ScanRepository(db)
+    from app.models.models import Scan
+
+    scans = scan_repo.list(
+        Scan.project_id == project_id,
+        Scan.deleted_at.is_(None),
+        order_by=Scan.created_at.desc(),
+        limit=50,
     )
     return scans
 
@@ -159,43 +251,114 @@ def get_dashboard(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    total_scans = db.query(Scan).filter(Scan.user_id == current_user.id).count()
-    total_vulns = (
-        db.query(func.coalesce(func.sum(Scan.total_vulnerabilities), 0))
-        .filter(Scan.user_id == current_user.id)
-        .scalar()
-    )
-    avg_score = (
-        db.query(func.coalesce(func.avg(Scan.risk_score), 0))
-        .filter(Scan.user_id == current_user.id, Scan.status == "completed")
-        .scalar()
-    )
+    # Check cache first
+    cache_key = f"dashboard:{current_user.id}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return DashboardStats(**cached)
 
-    recent = (
-        db.query(Scan)
-        .filter(Scan.user_id == current_user.id)
-        .order_by(Scan.created_at.desc())
-        .limit(10)
-        .all()
-    )
+    scan_repo = ScanRepository(db)
 
-    severity_dist = dict(
-        db.query(Finding.severity, func.count(Finding.id))
-        .join(Scan)
-        .filter(Scan.user_id == current_user.id)
-        .group_by(Finding.severity)
-        .all()
-    )
-    for sev in ["Critical", "High", "Medium", "Low", "Info"]:
-        severity_dist.setdefault(sev, 0)
+    total_scans = scan_repo.count_for_user(current_user.id)
+    total_vulns = scan_repo.total_vulnerabilities_for_user(current_user.id)
+    avg_score = scan_repo.average_risk_for_user(current_user.id)
+    recent = scan_repo.recent_for_user(current_user.id, limit=10)
+    severity_dist = scan_repo.severity_distribution_for_user(current_user.id)
 
-    return DashboardStats(
+    stats = DashboardStats(
         total_scans=total_scans,
         total_vulnerabilities=total_vulns,
-        average_risk_score=round(float(avg_score), 1),
+        average_risk_score=round(avg_score, 1),
         recent_scans=[ScanResponse.model_validate(s) for s in recent],
         severity_distribution=severity_dist,
     )
+
+    # Cache for configured TTL
+    cache.set(cache_key, stats.model_dump(), ttl=settings.DASHBOARD_CACHE_TTL)
+    return stats
+
+
+@router.get("/analytics", response_model=AnalyticsResponse)
+def get_analytics(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return time-series analytics data for dashboard charts."""
+    # Check cache first
+    cache_key = f"analytics:{current_user.id}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return AnalyticsResponse(**cached)
+
+    user_id = current_user.id
+    now = datetime.now(UTC)
+
+    # Scan activity over last 30 days
+    scan_activity = []
+    for i in range(29, -1, -1):
+        day = (now - timedelta(days=i)).date()
+        day_start = datetime.combine(day, datetime.min.time()).replace(tzinfo=UTC)
+        day_end = datetime.combine(day, datetime.max.time()).replace(tzinfo=UTC)
+        count = (
+            db.scalar(
+                select(func.count(Scan.id)).where(
+                    Scan.user_id == user_id,
+                    Scan.created_at >= day_start,
+                    Scan.created_at <= day_end,
+                    Scan.deleted_at.is_(None),
+                )
+            )
+            or 0
+        )
+        scan_activity.append(
+            {
+                "date": day.isoformat(),
+                "scans": count,
+            }
+        )
+
+    # Risk score trend over time
+    risk_trend = []
+    rows = db.execute(
+        select(Scan.created_at, Scan.risk_score)
+        .where(
+            Scan.user_id == user_id,
+            Scan.status == "completed",
+            Scan.deleted_at.is_(None),
+        )
+        .order_by(Scan.created_at.asc())
+    ).all()
+    for created_at, risk_score in rows:
+        risk_trend.append(
+            {
+                "date": (
+                    created_at.date().isoformat()
+                    if hasattr(created_at, "date")
+                    else str(created_at)
+                ),
+                "score": risk_score,
+            }
+        )
+
+    # Findings by OWASP category
+    owasp_stmt = (
+        select(Finding.owasp_category, func.count(Finding.id))
+        .join(Scan, Finding.scan_id == Scan.id)
+        .where(Scan.user_id == user_id, Scan.deleted_at.is_(None))
+        .group_by(Finding.owasp_category)
+        .order_by(func.count(Finding.id).desc())
+    )
+    owasp_dist = [{"category": cat, "count": cnt} for cat, cnt in db.execute(owasp_stmt).all()]
+
+    response = AnalyticsResponse(
+        scan_activity=scan_activity,
+        risk_trend=risk_trend,
+        owasp_distribution=owasp_dist,
+    )
+
+    # Cache for configured TTL
+    cache.set(cache_key, response.model_dump(), ttl=settings.ANALYTICS_CACHE_TTL)
+    return response
 
 
 @router.get("/{scan_id}", response_model=ScanDetailResponse)
@@ -204,9 +367,7 @@ def get_scan_detail(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    scan = db.query(Scan).filter(Scan.id == scan_id, Scan.user_id == current_user.id).first()
-    if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
+    scan = _get_owned_scan(db, scan_id, current_user.id)
 
     response = ScanDetailResponse.model_validate(scan)
     response.findings = [FindingResponse.model_validate(f) for f in scan.findings]
@@ -215,21 +376,48 @@ def get_scan_detail(
     return response
 
 
+def _get_or_create_report(
+    db: Session,
+    scan,
+    format: str,
+    current_user: User,
+    generate: Callable[[dict], bytes],
+) -> tuple[bytes, bool]:
+    """Return (report_bytes, generated_now). Reads a stored report when present."""
+    report_repo = ReportRepository(db)
+    existing = report_repo.get_for_scan(scan.id, format)
+    if existing is not None:
+        return existing.content, False
+
+    report_data = build_report_data(scan)
+    content = generate(report_data)
+    report_repo.create(scan, format, content)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = report_repo.get_for_scan(scan.id, format)
+        if existing is not None:
+            return existing.content, False
+        raise
+
+    record_report_export(db, user_id=current_user.id, scan_id=scan.id, format=format)
+    db.commit()
+
+    return content, True
+
+
 @router.get("/{scan_id}/report/pdf")
 def download_pdf_report(
     scan_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    scan = db.query(Scan).filter(Scan.id == scan_id, Scan.user_id == current_user.id).first()
-    if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
-
-    report_data = build_report_data(scan)
-    pdf_bytes = generate_pdf_report(report_data)
+    scan = _get_owned_scan(db, scan_id, current_user.id)
+    content, _ = _get_or_create_report(db, scan, "pdf", current_user, generate_pdf_report)
 
     return Response(
-        content=pdf_bytes,
+        content=content,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="sentinelai-report-{scan_id}.pdf"'},
     )
@@ -241,15 +429,15 @@ def download_json_report(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    scan = db.query(Scan).filter(Scan.id == scan_id, Scan.user_id == current_user.id).first()
-    if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
+    scan = _get_owned_scan(db, scan_id, current_user.id)
 
-    report_data = build_report_data(scan)
-    json_str = generate_json_report(report_data)
+    def _generate(data: dict) -> bytes:
+        return generate_json_report(data).encode("utf-8")
+
+    content, _ = _get_or_create_report(db, scan, "json", current_user, _generate)
 
     return Response(
-        content=json_str,
+        content=content,
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="sentinelai-report-{scan_id}.json"'},
     )
@@ -261,9 +449,15 @@ def delete_scan(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    scan = db.query(Scan).filter(Scan.id == scan_id, Scan.user_id == current_user.id).first()
-    if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
+    scan = _get_owned_scan(db, scan_id, current_user.id)
 
-    db.delete(scan)
-    db.commit()
+    scan_repo = ScanRepository(db)
+    scan_repo.soft_delete(scan)
+    scan_repo.commit()
+
+    record_scan_event(db, "scan.deleted", user_id=current_user.id, scan_id=scan.id)
+    scan_repo.commit()
+
+    # Invalidate cache after deletion
+    cache.invalidate_prefix(f"dashboard:{current_user.id}")
+    cache.invalidate_prefix(f"analytics:{current_user.id}")
