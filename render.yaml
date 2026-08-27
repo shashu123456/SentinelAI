@@ -1,22 +1,51 @@
+# SentinelAI — Render Blueprint
+# Deploy: Connect GitHub repo → Render auto-detects this file
+
 services:
+  # ── Backend API ─────────────────────────────────────────────
   - type: web
     name: sentinelai-backend
     runtime: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: standard
+    buildCommand: pip install -r requirements.txt && python -m alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        value: "sqlite:///./sentinelai.db"
-      - key: CORS_ALLOW_ALL
+        fromDatabase:
+          name: sentinelai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: sentinelai-redis
+          type: redis
+          property: connectionString
+      - key: SENTINEL_ENV
+        value: production
+      - key: CORS_ORIGINS
+        value: '["https://sentinelai.onrender.com"]'
+      - key: REFRESH_TOKEN_COOKIE_SECURE
         value: "true"
-      - key: OLLAMA_URL
-        value: ""
-      - key: OLLAMA_MODEL
-        value: "mistral"
-    healthCheckPath: /api/health
+      - key: ENABLE_SECURITY_HEADERS
+        value: "true"
+    healthCheckPath: /api/v1/ready
     autoDeploy: true
+
+  # ── PostgreSQL Database ─────────────────────────────────────
+  - type: pserv
+    name: sentinelai-db
+    runtime: python
+    plan: free
+    disk:
+      name: sentinelai-db-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # ── Redis ──────────────────────────────────────────────────
+  - type: redis
+    name: sentinelai-redis
+    plan: free
+    ipAllowList: []

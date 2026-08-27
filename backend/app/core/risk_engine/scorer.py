@@ -34,10 +34,7 @@ def calculate_risk_score(findings: list[dict]) -> dict:
         if severity in counts:
             counts[severity] += 1
 
-    raw_score = sum(
-        counts[sev] * SEVERITY_WEIGHTS[sev]
-        for sev in counts
-    )
+    raw_score = sum(counts[sev] * SEVERITY_WEIGHTS[sev] for sev in counts)
 
     max_possible = max(len(findings) * SEVERITY_WEIGHTS["Critical"], 1)
     normalized_score = min(int((raw_score / max_possible) * 100), 100)

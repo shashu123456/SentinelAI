@@ -1,6 +1,6 @@
 # SentinelAI
 
-> **AI-Native Application Security Intelligence Platform**
+> **AI-Powered Application Security Intelligence Platform**
 
 <p align="center">
   <strong>Automated API security, static analysis, dependency scanning, and AI-powered security intelligence</strong>
@@ -10,7 +10,8 @@
   <a href="#quick-start">Quick Start</a> · 
   <a href="#platform-capabilities">Capabilities</a> · 
   <a href="#architecture">Architecture</a> · 
-  <a href="#api-endpoints">API</a>
+  <a href="#api-endpoints">API</a> ·
+  <a href="#design-system">Design</a>
 </p>
 
 ---
@@ -124,18 +125,48 @@ Modern applications expose 90%+ of their surface area through APIs. SentinelAI p
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 18, Vite 6, React Router 6, Lucide Icons |
+| **Frontend** | React 18, Vite 6, React Router 6, Recharts, Lucide Icons |
 | **Backend** | Python 3.11, FastAPI, SQLAlchemy, Pydantic v2 |
-| **Auth** | JWT (python-jose), bcrypt (passlib) |
+| **Auth** | JWT (python-jose), bcrypt (passlib), CSRF tokens |
 | **AI** | Ollama (Mistral), with rule-based fallback |
 | **SAST** | Custom regex-based rules engine (Python/JS/Java) |
 | **Dependency Scanning** | Custom parsers + curated CVE database |
 | **Reports** | ReportLab (PDF), native JSON |
 | **Real-time** | WebSocket (FastAPI native) |
-| **Database** | SQLite (dev), PostgreSQL-ready |
-| **CLI** | Click framework |
-| **CI/CD** | GitHub Actions (test, build, security scan, Docker) |
-| **Testing** | pytest (131 tests) |
+| **Database** | PostgreSQL 16 (prod), SQLite (dev) |
+| **Cache** | Redis 7 (token blacklist, dashboard cache) |
+| **Monitoring** | Prometheus metrics, Grafana dashboards |
+| **Logging** | Structured JSON logs, correlation IDs, Sentry |
+| **CI/CD** | GitHub Actions (lint, test, coverage, Docker, CodeQL, Gitleaks) |
+| **Deployment** | Docker Compose, Render, Railway |
+| **Testing** | pytest (150+ tests), Vitest |
+
+---
+
+## Design System
+
+SentinelAI features a professional cybersecurity design with:
+
+### Visual Identity
+- **Dark/Light Mode** — Full theme system with localStorage persistence
+- **SIEM Aesthetic** — Neon cyan accents, grid overlays, scanline effects
+- **Typography** — Space Grotesk (display), DM Sans (body), JetBrains Mono (code)
+- **Threat Radar** — Animated signature element on landing page
+
+### Landing Page
+- Hero with animated threat radar visualization
+- Feature cards with hover effects and color-coded tags
+- How-it-works section with numbered steps
+- Animated stat counters with intersection observer
+- Dynamic testimonials from database
+- CTA section with conversion-optimized design
+
+### Dashboard
+- Threat gauge with severity-weighted scoring
+- Severity matrix with animated progress bars
+- Quick access cards for all security tools
+- Recent operations with risk scores
+- System status bar with live indicators
 
 ---
 
@@ -171,16 +202,52 @@ npm run dev
 
 App runs at `http://localhost:5173` with API proxying to `http://localhost:8000`.
 
-### Docker (Production)
+### Docker Compose (Full Stack)
 
 ```bash
-# Start everything with Docker Compose
-docker-compose up --build
+# Copy environment template
+cp .env.example .env
+# Edit .env with your SECRET_KEY and passwords
 
-# Frontend: http://localhost:80
+# Start all services (Postgres, Redis, Backend, Frontend)
+docker compose up --build
+
+# With AI engine (Ollama)
+docker compose --profile ai up --build
+
+# With monitoring (Prometheus + Grafana)
+docker compose --profile observability up --build
+
+# Smoke test
+./scripts/smoke-test.sh
+
+# Frontend:    http://localhost:80
 # Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
+# API Docs:    http://localhost:8000/docs
+# Prometheus:  http://localhost:9090 (with observability profile)
+# Grafana:     http://localhost:3001 (with observability profile)
 ```
+
+### Cloud Deployment
+
+**Render (one-click):**
+1. Push to GitHub
+2. Connect repo on [render.com](https://render.com) — `render.yaml` blueprint auto-detected
+3. PostgreSQL + Redis provisioned automatically
+4. Deploy → live at `https://sentinelai-backend.onrender.com`
+
+**Railway:**
+1. Connect repo on [railway.app](https://railway.app)
+2. Add PostgreSQL plugin → set `DATABASE_URL`
+3. Add Redis plugin → set `REDIS_URL`
+4. Set `SECRET_KEY` env var
+5. Deploy → `railway.json` configures build + health check
+
+**Vercel (frontend only):**
+1. Import repo on [vercel.com](https://vercel.com) → Root: `frontend/`
+2. Framework: Vite → auto-detected
+3. Set `VITE_API_URL` to your backend URL
+4. Deploy → update `vercel.json` rewrite targets
 
 ---
 
@@ -326,6 +393,24 @@ curl http://localhost:11434/api/tags
 | POST | `/api/security/copilot/clear` | Yes | Clear copilot context |
 | GET | `/api/security/copilot/commands` | No | List copilot capabilities |
 
+### Organizations & Projects
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/organizations` | Yes | Create organization |
+| GET | `/api/organizations` | Yes | List user's organizations |
+| GET | `/api/organizations/{id}` | Yes | Get organization details |
+| POST | `/api/organizations/{id}/members` | Yes | Add member (admin only) |
+| DELETE | `/api/organizations/{id}/members/{user_id}` | Yes | Remove member |
+| POST | `/api/organizations/{id}/projects` | Yes | Create project |
+| GET | `/api/organizations/{id}/projects` | Yes | List org projects |
+
+### Public Endpoints
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/testimonials` | No | Get active testimonials |
+| GET | `/api/metrics` | No | Prometheus metrics |
+| GET | `/health/detailed` | No | Detailed health check |
+
 ### WebSocket
 | Protocol | Endpoint | Description |
 |----------|----------|-------------|
@@ -338,13 +423,19 @@ curl http://localhost:11434/api/tags
 ```bash
 cd backend
 python -m pytest tests/ -v
-# 131 tests covering:
+# 150+ tests covering:
 # - OpenAPI parser (10 tests)
 # - OWASP scanner (14 tests)
 # - Risk engine (14 tests)
 # - SAST engine (35 tests)
 # - Dependency scanner (24 tests)
 # - Security copilot (38 tests)
+# - Organizations (10 tests)
+# - Testimonials (14 tests)
+# - Enterprise audit (26 tests)
+# - Observability (20 tests)
+# - Cache (12 tests)
+# - Auth hardening (29 tests)
 ```
 
 ---
@@ -352,10 +443,48 @@ python -m pytest tests/ -v
 ## CI/CD
 
 GitHub Actions pipeline with:
-1. **Backend Tests** — Python 3.11 + 3.12 matrix
-2. **Frontend Build** — Node.js 18 with bundle size check
-3. **Security Scan** — Self-analysis with SAST + dependency scanner
-4. **Docker Build** — Multi-stage builds for backend + frontend
+1. **Backend Lint** — Black, Ruff, MyPy
+2. **Backend Tests** — pytest with coverage report (JUnit XML)
+3. **Frontend Build** — npm test + vite build
+4. **Docker Build** — Multi-stage builds for backend + frontend (BuildKit cache)
+5. **Secret Scanning** — Gitleaks on every PR
+6. **CodeQL Analysis** — JavaScript + Python security analysis
+7. **Deploy Verification** — Smoke test against live services
+8. **Dependabot** — Auto-updates for pip, npm, GitHub Actions, Docker
+
+### Running Locally
+
+```bash
+# Full stack with Docker (recommended)
+cp .env.example .env && docker compose up --build
+
+# Or manually:
+# Terminal 1: Backend
+cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload
+# Terminal 2: Frontend
+cd frontend && npm install && npm run dev
+# Terminal 3: (optional) AI
+ollama serve
+```
+
+### Smoke Test
+
+```bash
+./scripts/smoke-test.sh                    # Test localhost:8000
+./scripts/smoke-test.sh https://api.example.com  # Test remote
+```
+
+Checks: liveness, readiness, health, auth flow, metrics endpoint.
+
+### Deployment Checklist
+
+- [ ] Copy `.env.example` to `.env` and set `SECRET_KEY`
+- [ ] Set `POSTGRES_PASSWORD` to a strong value
+- [ ] Set `REFRESH_TOKEN_COOKIE_SECURE=true` (HTTPS required)
+- [ ] Set `CORS_ORIGINS` to your frontend domain
+- [ ] Configure `SENTRY_DSN` for error tracking
+- [ ] Run `alembic upgrade head` to apply migrations
+- [ ] Run `./scripts/smoke-test.sh` to verify
 
 ---
 
@@ -376,7 +505,8 @@ GitHub Actions pipeline with:
 sentinelai/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/     ── auth, scans, security, websocket
+│   │   ├── api/routes/     ── auth, scans, security, audit, organizations
+│   │   ├── api/v1/         ── Versioned API (health, scans, findings)
 │   │   ├── core/
 │   │   │   ├── security_engine/  ── OpenAPI parser + OWASP scanner
 │   │   │   ├── risk_engine/      ── Weighted risk scoring
@@ -384,29 +514,40 @@ sentinelai/
 │   │   │   ├── sast_engine/      ── Static analysis (Python/JS/Java)
 │   │   │   ├── dep_scanner/      ── Dependency CVE detection
 │   │   │   └── copilot/          ── AI Security Copilot
-│   │   ├── models/         ── SQLAlchemy ORM
+│   │   ├── models/         ── SQLAlchemy ORM (13 tables)
+│   │   ├── repositories/   ── Repository pattern (Base + domain repos)
 │   │   ├── schemas/        ── Pydantic v2 models
-│   │   ├── services/       ── Scan orchestration
+│   │   ├── services/       ── Audit, scan orchestration
 │   │   ├── reports/        ── PDF + JSON generation
-│   │   ├── utils/          ── Security, logging
-│   │   ├── cli.py          ── Click CLI
-│   │   ├── tasks.py        ── Background task management
-│   │   └── main.py         ── FastAPI app
-│   ├── tests/              ── 131 pytest tests
+│   │   ├── utils/          ── Security, logging, cache, CSRF, metrics
+│   │   └── main.py         ── FastAPI app with middleware stack
+│   ├── alembic/            ── Database migrations
+│   ├── tests/              ── 150+ pytest tests
+│   ├── Dockerfile          ── Multi-stage production build
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── pages/          ── Dashboard, SAST, Deps, Copilot, Results, Live
-│   │   ├── components/     ── Navbar
-│   │   ├── services/       ── API client
-│   │   └── context/        ── Auth state
+│   │   ├── pages/          ── Dashboard, SAST, Deps, Copilot, Audit, Health
+│   │   ├── components/     ── Navbar, CommandPalette, ErrorBoundary, Charts
+│   │   ├── services/       ── API client (auth, scans, audit, orgs)
+│   │   └── context/        ── Auth state, Theme
+│   ├── nginx.conf          ── Production nginx config
+│   ├── Dockerfile          ── Multi-stage build (node + nginx)
 │   └── package.json
+├── deploy/
+│   ├── prometheus/         ── Prometheus scrape config
+│   └── grafana/            ── Grafana datasource provisioning
+├── scripts/
+│   └── smoke-test.sh       ── Deployment verification script
 ├── samples/                ── Vulnerable/secure/banking/ecommerce API specs
 ├── docs/                   ── Architecture, security engine, API flow
-├── .github/workflows/      ── CI/CD pipeline
-├── docker-compose.yml
+├── .github/
+│   ├── workflows/ci.yml    ── CI/CD pipeline (lint, test, Docker, CodeQL)
+│   └── dependabot.yml      ── Automated dependency updates
+├── docker-compose.yml      ── Full stack (Postgres, Redis, Prometheus, Grafana)
+├── .env.example            ── Environment variable template
 ├── render.yaml             ── Render deployment blueprint
-├── vercel.json             ── Vercel deployment config
+├── railway.json            ── Railway deployment config
 └── README.md
 ```
 

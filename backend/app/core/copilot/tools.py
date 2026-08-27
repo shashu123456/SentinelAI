@@ -4,17 +4,18 @@ Each tool queries the database or analyzes data to provide
 real security context for the agent's responses.
 """
 
-from datetime import datetime, timezone
+from sqlalchemy import case as sa_case
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, case as sa_case
-from app.models.models import Scan, Finding, AIAnalysis
+
+from app.models.models import AIAnalysis, Finding, Scan
 
 
 def get_latest_scan(db: Session, user_id: int) -> dict | None:
     """Get the most recent completed scan for a user."""
     scan = (
         db.query(Scan)
-        .filter(Scan.user_id == user_id, Scan.status == "completed")
+        .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
         .order_by(desc(Scan.created_at))
         .first()
     )
@@ -27,7 +28,7 @@ def get_scan_history(db: Session, user_id: int, limit: int = 10) -> list[dict]:
     """Get recent scan history for a user."""
     scans = (
         db.query(Scan)
-        .filter(Scan.user_id == user_id, Scan.status == "completed")
+        .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
         .order_by(desc(Scan.created_at))
         .limit(limit)
         .all()
@@ -35,13 +36,9 @@ def get_scan_history(db: Session, user_id: int, limit: int = 10) -> list[dict]:
     return [_scan_summary(s) for s in scans]
 
 
-def get_critical_findings(db: Session, user_id: int, scan_id: int = None) -> list[dict]:
+def get_critical_findings(db: Session, user_id: int, scan_id: int | None = None) -> list[dict]:
     """Get Critical and High severity findings, optionally filtered by scan."""
-    query = (
-        db.query(Finding)
-        .join(Scan)
-        .filter(Scan.user_id == user_id)
-    )
+    query = db.query(Finding).join(Scan).filter(Scan.user_id == user_id, Scan.deleted_at.is_(None))
     if scan_id:
         query = query.filter(Finding.scan_id == scan_id)
     query = query.filter(Finding.severity.in_(["Critical", "High"]))
@@ -56,13 +53,9 @@ def get_critical_findings(db: Session, user_id: int, scan_id: int = None) -> lis
     return [_finding_to_dict(f) for f in findings]
 
 
-def get_all_findings(db: Session, user_id: int, scan_id: int = None) -> list[dict]:
+def get_all_findings(db: Session, user_id: int, scan_id: int | None = None) -> list[dict]:
     """Get all findings for a user, optionally filtered by scan."""
-    query = (
-        db.query(Finding)
-        .join(Scan)
-        .filter(Scan.user_id == user_id)
-    )
+    query = db.query(Finding).join(Scan).filter(Scan.user_id == user_id, Scan.deleted_at.is_(None))
     if scan_id:
         query = query.filter(Finding.scan_id == scan_id)
     query = query.order_by(
@@ -82,7 +75,7 @@ def get_vulnerability_details(db: Session, user_id: int, finding_id: int) -> dic
     finding = (
         db.query(Finding)
         .join(Scan)
-        .filter(Finding.id == finding_id, Scan.user_id == user_id)
+        .filter(Finding.id == finding_id, Scan.user_id == user_id, Scan.deleted_at.is_(None))
         .first()
     )
     if not finding:
@@ -98,7 +91,7 @@ def get_vulnerability_details(db: Session, user_id: int, finding_id: int) -> dic
 def get_findings_by_category(db: Session, user_id: int) -> dict:
     """Group findings by OWASP category."""
     findings = get_all_findings(db, user_id)
-    categories = {}
+    categories: dict[str, list[dict]] = {}
     for f in findings:
         cat = f.get("owasp_category", "Other")
         if cat not in categories:
@@ -110,7 +103,7 @@ def get_findings_by_category(db: Session, user_id: int) -> dict:
 def get_findings_by_cwe(db: Session, user_id: int) -> dict:
     """Group findings by CWE ID."""
     findings = get_all_findings(db, user_id)
-    cwes = {}
+    cwes: dict[str, list[dict]] = {}
     for f in findings:
         cwe = f.get("cwe_id", "Unknown")
         if cwe not in cwes:
@@ -137,7 +130,7 @@ def get_risk_summary(db: Session, user_id: int) -> dict:
     """Get overall risk summary across all scans."""
     scans = (
         db.query(Scan)
-        .filter(Scan.user_id == user_id, Scan.status == "completed")
+        .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
         .order_by(desc(Scan.created_at))
         .all()
     )
@@ -167,7 +160,7 @@ def compare_scans(db: Session, user_id: int) -> dict | None:
     """Compare the two most recent scans."""
     scans = (
         db.query(Scan)
-        .filter(Scan.user_id == user_id, Scan.status == "completed")
+        .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
         .order_by(desc(Scan.created_at))
         .limit(2)
         .all()
@@ -207,29 +200,31 @@ def generate_executive_summary(db: Session, user_id: int) -> str:
     critical_high = sev.get("Critical", 0) + sev.get("High", 0)
 
     lines = [
-        f"**Executive Security Assessment**",
-        f"",
+        "**Executive Security Assessment**",
+        "",
         f"**Risk Level:** {risk['risk_level']} (Score: {risk['risk_score']}/100)",
         f"**Total Findings:** {risk['total_findings']} across {risk['total_scans']} scan(s)",
-        f"",
-        f"**Severity Breakdown:**",
+        "",
+        "**Severity Breakdown:**",
         f"- Critical: {sev.get('Critical', 0)}",
         f"- High: {sev.get('High', 0)}",
         f"- Medium: {sev.get('Medium', 0)}",
         f"- Low: {sev.get('Low', 0)}",
         f"- Informational: {sev.get('Info', 0)}",
-        f"",
+        "",
     ]
 
     if critical_high > 0:
-        lines.append(f"**Immediate Action Required:** {critical_high} Critical/High findings must be remediated before production deployment.")
+        lines.append(
+            f"**Immediate Action Required:** {critical_high} Critical/High findings must be remediated before production deployment."
+        )
     else:
-        lines.append(f"**Status:** No Critical or High findings. Security posture is acceptable.")
+        lines.append("**Status:** No Critical or High findings. Security posture is acceptable.")
 
     return "\n".join(lines)
 
 
-def generate_remediation_plan(db: Session, user_id: int, scan_id: int = None) -> str:
+def generate_remediation_plan(db: Session, user_id: int, scan_id: int | None = None) -> str:
     """Generate a prioritized remediation plan."""
     findings = get_critical_findings(db, user_id, scan_id)
     all_findings = get_all_findings(db, user_id, scan_id)
@@ -254,7 +249,9 @@ def generate_remediation_plan(db: Session, user_id: int, scan_id: int = None) ->
         lines.append("### Next Sprint (Medium)")
         lines.append("")
         for f in medium[:5]:
-            lines.append(f"- {f['vulnerability_name']} ({f.get('cwe_id', '')}): {f.get('remediation', '')[:80]}")
+            lines.append(
+                f"- {f['vulnerability_name']} ({f.get('cwe_id', '')}): {f.get('remediation', '')[:80]}"
+            )
         lines.append("")
 
     low = [f for f in all_findings if f.get("severity") in ("Low", "Info")]
@@ -274,9 +271,30 @@ def explain_attack_path(db: Session, user_id: int) -> str:
 
     lines = ["**Attack Path Analysis**", ""]
 
-    auth_findings = [f for f in findings if any(w in f.get("vulnerability_name", "").lower() for w in ["auth", "session", "token", "password", "credential"])]
-    injection_findings = [f for f in findings if any(w in f.get("vulnerability_name", "").lower() for w in ["injection", "sql", "xss", "command"])]
-    access_findings = [f for f in findings if any(w in f.get("vulnerability_name", "").lower() for w in ["idor", "access", "authorization", "bypass"])]
+    auth_findings = [
+        f
+        for f in findings
+        if any(
+            w in f.get("vulnerability_name", "").lower()
+            for w in ["auth", "session", "token", "password", "credential"]
+        )
+    ]
+    injection_findings = [
+        f
+        for f in findings
+        if any(
+            w in f.get("vulnerability_name", "").lower()
+            for w in ["injection", "sql", "xss", "command"]
+        )
+    ]
+    access_findings = [
+        f
+        for f in findings
+        if any(
+            w in f.get("vulnerability_name", "").lower()
+            for w in ["idor", "access", "authorization", "bypass"]
+        )
+    ]
 
     if auth_findings:
         lines.append("### Phase 1: Authentication Bypass")
@@ -299,7 +317,9 @@ def explain_attack_path(db: Session, user_id: int) -> str:
             lines.append(f"- {f['vulnerability_name']} at {f.get('affected_endpoint', 'N/A')}")
         lines.append("")
 
-    lines.append("**Data at Risk:** User credentials, personal data, business logic, and system configuration.")
+    lines.append(
+        "**Data at Risk:** User credentials, personal data, business logic, and system configuration."
+    )
 
     return "\n".join(lines)
 

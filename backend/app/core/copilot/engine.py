@@ -15,31 +15,29 @@ Unlike a chatbot, this agent:
 - Falls back to intelligent rule-based analysis when LLM is unavailable
 """
 
-from dataclasses import dataclass, field
-from typing import Optional
 from sqlalchemy.orm import Session
+
 from app.core.copilot.agent import CopilotAgent, classify_intent
 from app.core.copilot.context_retrieval import SecurityContext
-from app.core.copilot import tools as security_tools
 
 
 class SecurityCopilot:
     """Agent-based security copilot that maintains context and provides
     grounded, contextual security guidance."""
 
-    def __init__(self, settings=None, db: Session = None, user_id: int = None):
+    def __init__(self, settings=None, db: Session | None = None, user_id: int | None = None):
         self.db = db
         self.user_id = user_id
         self.agent = CopilotAgent(settings=settings, db=db, user_id=user_id)
         self._context = None
 
-    def _get_context(self, scan_id: int = None) -> SecurityContext:
+    def _get_context(self, scan_id: int | None = None) -> SecurityContext | None:
         """Get or build security context."""
         if self.db and self.user_id:
             return SecurityContext(self.db, self.user_id, scan_id)
         return None
 
-    def chat(self, message: str, scan_id: int = None) -> dict:
+    def chat(self, message: str, scan_id: int | None = None) -> dict:
         """Process a user message and return a grounded response.
 
         Returns:
@@ -57,13 +55,21 @@ class SecurityCopilot:
         result = self.agent.process_message(message, ctx)
         return result
 
-    def get_sidebar(self, scan_id: int = None) -> dict:
+    def get_sidebar(self, scan_id: int | None = None) -> dict:
         """Get data for the frontend sidebar panel."""
         ctx = self._get_context(scan_id)
         if ctx is None:
-            return {"risk_score": 0, "risk_level": "Unknown", "total_scans": 0,
-                    "total_findings": 0, "severity_counts": {}, "latest_scan": None,
-                    "critical_count": 0, "recent_findings": [], "scan_history": []}
+            return {
+                "risk_score": 0,
+                "risk_level": "Unknown",
+                "total_scans": 0,
+                "total_findings": 0,
+                "severity_counts": {},
+                "latest_scan": None,
+                "critical_count": 0,
+                "recent_findings": [],
+                "scan_history": [],
+            }
         return ctx.get_sidebar_data()
 
     def get_context_summary(self) -> dict:
@@ -100,8 +106,12 @@ class SecurityCopilot:
             "Please ensure the application is properly configured."
         )
 
-    def load_scan_context(self, scan_data: dict, findings: list[dict] = None,
-                          ai_analysis: dict = None):
+    def load_scan_context(
+        self,
+        scan_data: dict,
+        findings: list[dict] | None = None,
+        ai_analysis: dict | None = None,
+    ):
         """Legacy method: Load scan results into context (for backward compatibility)."""
         pass
 

@@ -1,17 +1,22 @@
 """Tests for the dependency security scanner."""
 
-import os
 import json
-import tempfile
+import os
 import shutil
-import pytest
+import tempfile
+
 from app.core.dep_scanner.scanner import (
-    run_dep_scan, _parse_requirements_txt, _parse_package_json,
-    _parse_pom_xml, _is_version_affected, _check_vulnerabilities,
     DependencyInfo,
+    _check_vulnerabilities,
+    _is_version_affected,
+    _parse_package_json,
+    _parse_requirements_txt,
+    run_dep_scan,
 )
 from app.core.dep_scanner.vulnerability_db import (
-    PYTHON_VULNERABILITIES, JAVASCRIPT_VULNERABILITIES, JAVA_VULNERABILITIES,
+    JAVA_VULNERABILITIES,
+    JAVASCRIPT_VULNERABILITIES,
+    PYTHON_VULNERABILITIES,
     Vulnerability,
 )
 
@@ -85,7 +90,9 @@ class TestRequirementsTxtParsing:
             shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
     def test_skip_comments(self):
-        path = _write_temp("# This is a comment\nflask==2.3.2\n# Another comment\n", "requirements.txt")
+        path = _write_temp(
+            "# This is a comment\nflask==2.3.2\n# Another comment\n", "requirements.txt"
+        )
         try:
             deps = _parse_requirements_txt(path)
             assert len(deps) == 1
@@ -93,7 +100,10 @@ class TestRequirementsTxtParsing:
             shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
     def test_skip_options(self):
-        path = _write_temp("-r requirements-base.txt\n--index-url https://pypi.org/simple\nflask==2.3.2\n", "requirements.txt")
+        path = _write_temp(
+            "-r requirements-base.txt\n--index-url https://pypi.org/simple\nflask==2.3.2\n",
+            "requirements.txt",
+        )
         try:
             deps = _parse_requirements_txt(path)
             assert len(deps) == 1
@@ -110,7 +120,7 @@ class TestPackageJsonParsing:
             "dependencies": {
                 "lodash": "^4.17.21",
                 "axios": "^0.21.0",
-            }
+            },
         }
         path = _write_temp(json.dumps(pkg), "package.json")
         try:
@@ -154,35 +164,50 @@ class TestVulnerabilityDetection:
     """Test vulnerability detection against the database."""
 
     def test_detects_vulnerable_flask(self):
-        dep = DependencyInfo(name="flask", version="2.3.1", ecosystem="python", file_path="requirements.txt")
+        dep = DependencyInfo(
+            name="flask", version="2.3.1", ecosystem="python", file_path="requirements.txt"
+        )
         findings = _check_vulnerabilities(dep, PYTHON_VULNERABILITIES)
         assert len(findings) >= 1
         assert findings[0].cve_id == "CVE-2023-30861"
 
     def test_no_vulnerability_for_fixed_version(self):
-        dep = DependencyInfo(name="flask", version="2.3.2", ecosystem="python", file_path="requirements.txt")
+        dep = DependencyInfo(
+            name="flask", version="2.3.2", ecosystem="python", file_path="requirements.txt"
+        )
         findings = _check_vulnerabilities(dep, PYTHON_VULNERABILITIES)
         assert len(findings) == 0
 
     def test_detects_vulnerable_cryptography(self):
-        dep = DependencyInfo(name="cryptography", version="41.0.0", ecosystem="python", file_path="requirements.txt")
+        dep = DependencyInfo(
+            name="cryptography", version="41.0.0", ecosystem="python", file_path="requirements.txt"
+        )
         findings = _check_vulnerabilities(dep, PYTHON_VULNERABILITIES)
         assert len(findings) >= 1
         assert findings[0].severity == "Critical"
 
     def test_detects_vulnerable_lodash(self):
-        dep = DependencyInfo(name="lodash", version="4.17.20", ecosystem="javascript", file_path="package.json")
+        dep = DependencyInfo(
+            name="lodash", version="4.17.20", ecosystem="javascript", file_path="package.json"
+        )
         findings = _check_vulnerabilities(dep, JAVASCRIPT_VULNERABILITIES)
         assert len(findings) >= 1
         assert findings[0].cve_id == "CVE-2021-23337"
 
     def test_no_vulnerability_for_unknown_package(self):
-        dep = DependencyInfo(name="nonexistent-pkg", version="1.0.0", ecosystem="python", file_path="requirements.txt")
+        dep = DependencyInfo(
+            name="nonexistent-pkg",
+            version="1.0.0",
+            ecosystem="python",
+            file_path="requirements.txt",
+        )
         findings = _check_vulnerabilities(dep, PYTHON_VULNERABILITIES)
         assert len(findings) == 0
 
     def test_detects_vulnerable_pyyaml(self):
-        dep = DependencyInfo(name="pyyaml", version="5.3", ecosystem="python", file_path="requirements.txt")
+        dep = DependencyInfo(
+            name="pyyaml", version="5.3", ecosystem="python", file_path="requirements.txt"
+        )
         findings = _check_vulnerabilities(dep, PYTHON_VULNERABILITIES)
         assert len(findings) >= 1
         assert findings[0].severity == "Critical"
@@ -197,7 +222,9 @@ class TestDependencyScanResult:
         assert len(result.errors) > 0
 
     def test_scan_requirements_txt(self):
-        path = _write_temp("flask==2.3.1\ncryptography==41.0.0\nrequests==2.28.0\n", "requirements.txt")
+        path = _write_temp(
+            "flask==2.3.1\ncryptography==41.0.0\nrequests==2.28.0\n", "requirements.txt"
+        )
         try:
             result = run_dep_scan(path)
             assert result.total_dependencies == 3
@@ -213,7 +240,7 @@ class TestDependencyScanResult:
             "dependencies": {
                 "lodash": "4.17.20",
                 "jsonwebtoken": "8.5.1",
-            }
+            },
         }
         path = _write_temp(json.dumps(pkg), "package.json")
         try:
@@ -227,7 +254,9 @@ class TestDependencyScanResult:
         tmpdir = tempfile.mkdtemp()
         try:
             _write_temp_dir(tmpdir, "flask==2.3.1\n", "requirements.txt")
-            _write_temp_dir(tmpdir, json.dumps({"dependencies": {"lodash": "4.17.20"}}), "package.json")
+            _write_temp_dir(
+                tmpdir, json.dumps({"dependencies": {"lodash": "4.17.20"}}), "package.json"
+            )
 
             result = run_dep_scan(tmpdir)
             assert result.total_files_scanned == 2
@@ -256,7 +285,12 @@ class TestVulnerabilityDatabase:
         for pkg, vulns in PYTHON_VULNERABILITIES.items():
             for v in vulns:
                 assert v.cve_id.startswith("CVE-"), f"{pkg} has invalid CVE"
-                assert v.severity in ("Critical", "High", "Medium", "Low"), f"{pkg} has invalid severity"
+                assert v.severity in (
+                    "Critical",
+                    "High",
+                    "Medium",
+                    "Low",
+                ), f"{pkg} has invalid severity"
                 assert v.fixed_in, f"{pkg} missing fixed_in"
                 assert v.cwe_id.startswith("CWE-"), f"{pkg} has invalid CWE"
 
@@ -264,14 +298,24 @@ class TestVulnerabilityDatabase:
         for pkg, vulns in JAVASCRIPT_VULNERABILITIES.items():
             for v in vulns:
                 assert v.cve_id.startswith("CVE-"), f"{pkg} has invalid CVE"
-                assert v.severity in ("Critical", "High", "Medium", "Low"), f"{pkg} has invalid severity"
+                assert v.severity in (
+                    "Critical",
+                    "High",
+                    "Medium",
+                    "Low",
+                ), f"{pkg} has invalid severity"
                 assert v.fixed_in, f"{pkg} missing fixed_in"
 
     def test_java_vulns_have_required_fields(self):
         for pkg, vulns in JAVA_VULNERABILITIES.items():
             for v in vulns:
                 assert v.cve_id.startswith("CVE-"), f"{pkg} has invalid CVE"
-                assert v.severity in ("Critical", "High", "Medium", "Low"), f"{pkg} has invalid severity"
+                assert v.severity in (
+                    "Critical",
+                    "High",
+                    "Medium",
+                    "Low",
+                ), f"{pkg} has invalid severity"
                 assert v.fixed_in, f"{pkg} missing fixed_in"
 
     def test_database_covers_critical_packages(self):

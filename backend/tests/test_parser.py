@@ -33,13 +33,17 @@ class TestOpenAPIParser:
 
     def test_extracts_request_body(self, sample_petstore_spec):
         result = parse_openapi_spec(sample_petstore_spec)
-        post_pets = [e for e in result["endpoints"] if e["path"] == "/pets" and e["method"] == "POST"]
+        post_pets = [
+            e for e in result["endpoints"] if e["path"] == "/pets" and e["method"] == "POST"
+        ]
         assert len(post_pets) == 1
         assert post_pets[0]["request_body"] is not None
 
     def test_extracts_path_parameters(self, sample_petstore_spec):
         result = parse_openapi_spec(sample_petstore_spec)
-        get_pet = [e for e in result["endpoints"] if e["path"] == "/pets/{petId}" and e["method"] == "GET"]
+        get_pet = [
+            e for e in result["endpoints"] if e["path"] == "/pets/{petId}" and e["method"] == "GET"
+        ]
         assert len(get_pet) == 1
         assert len(get_pet[0]["parameters"]) == 1
         assert get_pet[0]["parameters"][0]["name"] == "petId"

@@ -1,11 +1,13 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database.database import get_db
-from app.models.models import RefreshToken, User
+from app.models.models import User
+from app.repositories.refresh_tokens import RefreshTokenRepository
+from app.repositories.users import UserRepository
 from app.schemas.schemas import (
     MessageResponse,
     Role,
@@ -27,7 +29,7 @@ def list_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    return db.query(User).order_by(User.id).all()
+    return UserRepository(db).list(order_by=User.id)
 
 
 @router.patch("/{user_id}/role", response_model=UserResponse)
@@ -37,16 +39,16 @@ def update_user_role(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    user = db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user = UserRepository(db).get_or_404(user_id, detail="User not found")
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Admins cannot change their own role")
 
     user.role = data.role.value
     db.commit()
     db.refresh(user)
-    logger.info(f"Admin {current_user.username} changed role of {user.username} to {data.role.value}")
+    logger.info(
+        f"Admin {current_user.username} changed role of {user.username} to {data.role.value}"
+    )
     return user
 
 
@@ -56,13 +58,12 @@ def lock_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    user = db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user_repo = UserRepository(db)
+    user = user_repo.get_or_404(user_id, detail="User not found")
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Admins cannot lock their own account")
 
-    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=settings.LOGIN_LOCKOUT_MINUTES)
+    user_repo.lock(user, datetime.now(UTC) + timedelta(minutes=settings.LOGIN_LOCKOUT_MINUTES))
     db.commit()
     logger.info(f"Admin {current_user.username} locked account of {user.username}")
     return MessageResponse(detail="User locked")
@@ -74,12 +75,10 @@ def unlock_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    user = db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user_repo = UserRepository(db)
+    user = user_repo.get_or_404(user_id, detail="User not found")
 
-    user.locked_until = None
-    user.failed_login_attempts = 0
+    user_repo.unlock(user)
     db.commit()
     logger.info(f"Admin {current_user.username} unlocked account of {user.username}")
     return MessageResponse(detail="User unlocked")
@@ -91,12 +90,6 @@ def list_user_sessions(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    if db.get(User, user_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    UserRepository(db).get_or_404(user_id, detail="User not found")
 
-    return (
-        db.query(RefreshToken)
-        .filter(RefreshToken.user_id == user_id)
-        .order_by(RefreshToken.created_at.desc())
-        .all()
-    )
+    return RefreshTokenRepository(db).list_for_user(user_id)

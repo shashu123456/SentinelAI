@@ -9,9 +9,9 @@ Usage:
     sentinelai health [--server URL]
 """
 
-import sys
 import json
 import os
+import sys
 
 try:
     import click
@@ -69,7 +69,13 @@ def cli():
 
 @cli.command()
 @click.argument("spec_file", type=click.Path(exists=True))
-@click.option("--output", "-o", type=click.Choice(["json", "pdf"]), default="json", help="Report output format")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["json", "pdf"]),
+    default="json",
+    help="Report output format",
+)
 @click.option("--server", "-s", default=None, help="Backend server URL")
 @click.option("--token", "-t", default=None, help="JWT auth token (or set SENTINELAI_TOKEN env)")
 @click.option("--save", is_flag=True, help="Save report to file")
@@ -93,7 +99,9 @@ def scan(spec_file, output, server, token, save, no_ai):
     click.echo(f"  Server:   {server}")
 
     if not token:
-        click.echo(f"\n  {click.style('No auth token. Use --token or set SENTINELAI_TOKEN.', fg='yellow')}")
+        click.echo(
+            f"\n  {click.style('No auth token. Use --token or set SENTINELAI_TOKEN.', fg='yellow')}"
+        )
         click.echo(f"  Register: POST {server}/api/auth/register")
         click.echo(f"  Login:    POST {server}/api/auth/login")
         return
@@ -109,11 +117,15 @@ def scan(spec_file, output, server, token, save, no_ai):
                 result = api_post(f"{server}/api/scans/upload", data=data, files=files, token=token)
             bar.update(70)
         except requests.exceptions.ConnectionError:
-            click.echo(f"\n  {click.style('ERROR: Cannot connect to server at ' + server, fg='red', bold=True)}")
-            click.echo(f"  Make sure the backend is running: uvicorn app.main:app --port 8000")
+            click.echo(
+                f"\n  {click.style('ERROR: Cannot connect to server at ' + server, fg='red', bold=True)}"
+            )
+            click.echo("  Make sure the backend is running: uvicorn app.main:app --port 8000")
             sys.exit(1)
         except requests.exceptions.HTTPError as e:
-            click.echo(f"\n  {click.style('ERROR: ' + str(e.response.status_code) + ' ' + e.response.text, fg='red', bold=True)}")
+            click.echo(
+                f"\n  {click.style('ERROR: ' + str(e.response.status_code) + ' ' + e.response.text, fg='red', bold=True)}"
+            )
             sys.exit(1)
 
         bar.update(90)
@@ -128,8 +140,12 @@ def scan(spec_file, output, server, token, save, no_ai):
     click.echo(f"\n  {click.style('Scan Complete!', fg='green', bold=True)}")
     click.echo(f"  Scan ID:      #{scan_id}")
     click.echo(f"  Endpoints:    {result.get('total_endpoints', 0)}")
-    click.echo(f"  Vulnerabilities: {click.style(str(vuln_count), fg=_severity_color(vuln_count), bold=True)}")
-    click.echo(f"  Risk Score:   {click.style(f'{risk_score}/100', fg=_risk_color(risk_score), bold=True)} ({risk_level})")
+    click.echo(
+        f"  Vulnerabilities: {click.style(str(vuln_count), fg=_severity_color(vuln_count), bold=True)}"
+    )
+    click.echo(
+        f"  Risk Score:   {click.style(f'{risk_score}/100', fg=_risk_color(risk_score), bold=True)} ({risk_level})"
+    )
 
     if save:
         detail = api_get(f"{server}/api/scans/{scan_id}", token=token)
@@ -172,7 +188,7 @@ def history(server, token, limit):
 
     if not scans:
         click.echo(f"\n  {click.style('No scans found.', fg='yellow')}")
-        click.echo(f"  Run: sentinelai scan <spec_file>\n")
+        click.echo("  Run: sentinelai scan <spec_file>\n")
         return
 
     click.echo(f"\n  {'ID':<6} {'API Name':<30} {'Vulns':<8} {'Risk':<12} {'Date':<12}")
@@ -217,17 +233,25 @@ def stats(server, token):
 
     dist = data.get("severity_distribution", {})
     if any(dist.values()):
-        click.echo(f"\n  Severity Distribution:")
+        click.echo("\n  Severity Distribution:")
         for sev in ["Critical", "High", "Medium", "Low", "Info"]:
             count = dist.get(sev, 0)
             if count > 0:
-                color = {"Critical": "red", "High": "red", "Medium": "yellow", "Low": "green", "Info": "white"}.get(sev, "white")
+                color = {
+                    "Critical": "red",
+                    "High": "red",
+                    "Medium": "yellow",
+                    "Low": "green",
+                    "Info": "white",
+                }.get(sev, "white")
                 bar = "#" * min(count, 30)
-                click.echo(f"    {sev:<10} {click.style(str(count), fg=color, bold=True):<6} {click.style(bar, fg=color)}")
+                click.echo(
+                    f"    {sev:<10} {click.style(str(count), fg=color, bold=True):<6} {click.style(bar, fg=color)}"
+                )
 
     recent = data.get("recent_scans", [])
     if recent:
-        click.echo(f"\n  Recent Scans:")
+        click.echo("\n  Recent Scans:")
         for s in recent[:5]:
             name = s["api_name"][:25]
             score = s["risk_score"]
@@ -257,7 +281,7 @@ def health(server):
         click.echo(f"  Version: {data.get('version', 'N/A')}")
     except requests.exceptions.ConnectionError:
         click.echo(f"  Status: {click.style('UNREACHABLE', fg='red', bold=True)}")
-        click.echo(f"  Start:  uvicorn app.main:app --port 8000")
+        click.echo("  Start:  uvicorn app.main:app --port 8000")
 
     click.echo("")
 
@@ -265,9 +289,7 @@ def health(server):
 def _risk_color(score):
     if score >= 80:
         return "red"
-    elif score >= 60:
-        return "yellow"
-    elif score >= 30:
+    elif score >= 60 or score >= 30:
         return "yellow"
     return "green"
 

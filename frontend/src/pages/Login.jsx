@@ -37,31 +37,27 @@ export default function Login() {
     <div className="login-page">
       <div className="login-left">
         <div className="login-brand">
-          <div className="login-brand-icon"><Shield size={28} /></div>
+          <div className="login-brand-icon"><Shield size={24} /></div>
           <div>
             <div className="login-brand-name">SentinelAI</div>
-            <div className="login-brand-tag">Security Intelligence Platform</div>
+            <div className="login-brand-tag">SOC Command Center</div>
           </div>
         </div>
         <div className="login-hero">
-          <h1>AI-Powered<br />Security Analysis</h1>
-          <p>Identify vulnerabilities, analyze risk, and remediate threats across your API surface with intelligent automation.</p>
+          <h1>AI-Powered<br />Threat Intelligence</h1>
+          <p>Real-time vulnerability detection, automated risk scoring, and intelligent remediation across your entire attack surface.</p>
           <div className="login-features">
             <div className="login-feature">
-              <div className="login-feature-dot" />
-              <span>OWASP API Security Top 10</span>
+              <span>OWASP API Security Top 10 Engine</span>
             </div>
             <div className="login-feature">
-              <div className="login-feature-dot" />
               <span>Static Application Security Testing</span>
             </div>
             <div className="login-feature">
-              <div className="login-feature-dot" />
-              <span>Dependency Vulnerability Scanning</span>
+              <span>Dependency CVE Intelligence</span>
             </div>
             <div className="login-feature">
-              <div className="login-feature-dot" />
-              <span>AI Security Copilot</span>
+              <span>AI Security Analyst Copilot</span>
             </div>
           </div>
         </div>
@@ -74,18 +70,18 @@ export default function Login() {
             <button className={`login-tab ${isRegister ? 'active' : ''}`} onClick={() => { setIsRegister(true); setError(''); }}>Register</button>
           </div>
 
-          {error && <div className="login-error">{error}</div>}
+          {error && <div className="login-error">[ERR] {error}</div>}
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
               <label>Username</label>
-              <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter username" required minLength={3} />
+              <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="analyst@sentinel" required minLength={3} />
             </div>
 
             {isRegister && (
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter email" required />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="analyst@company.io" required />
               </div>
             )}
 
@@ -100,7 +96,7 @@ export default function Login() {
             </div>
 
             <button type="submit" className="login-btn" disabled={loading}>
-              {loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}
+              {loading ? '[ AUTHENTICATING... ]' : isRegister ? '[ CREATE ACCOUNT ]' : '[ AUTHENTICATE ]'}
             </button>
           </form>
         </div>

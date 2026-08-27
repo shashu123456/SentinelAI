@@ -5,28 +5,34 @@ to ground all responses in actual scan data.
 """
 
 from sqlalchemy.orm import Session
+
 from app.core.copilot.tools import (
-    get_latest_scan, get_scan_history, get_critical_findings,
-    get_all_findings, get_findings_by_category, get_findings_by_cwe,
-    get_ai_analysis, get_risk_summary, compare_scans,
+    get_ai_analysis,
+    get_all_findings,
+    get_critical_findings,
+    get_findings_by_category,
+    get_findings_by_cwe,
+    get_latest_scan,
+    get_risk_summary,
+    get_scan_history,
 )
 
 
 class SecurityContext:
     """Represents the full security state for a user at a point in time."""
 
-    def __init__(self, db: Session, user_id: int, scan_id: int = None):
+    def __init__(self, db: Session, user_id: int, scan_id: int | None = None):
         self.db = db
         self.user_id = user_id
         self.scan_id = scan_id
-        self._risk_summary = None
-        self._latest_scan = None
-        self._findings = None
-        self._critical_findings = None
-        self._by_category = None
-        self._by_cwe = None
-        self._ai_analysis = None
-        self._history = None
+        self._risk_summary: dict | None = None
+        self._latest_scan: dict | None = None
+        self._findings: list[dict] | None = None
+        self._critical_findings: list[dict] | None = None
+        self._by_category: dict | None = None
+        self._by_cwe: dict | None = None
+        self._ai_analysis: dict | None = None
+        self._history: list[dict] | None = None
 
     @property
     def risk_summary(self) -> dict:
@@ -92,7 +98,9 @@ class SecurityContext:
             parts.append(f"Total Scans Performed: {risk['total_scans']}")
             parts.append(f"Total Findings: {risk['total_findings']}")
             sev = risk.get("severity_counts", {})
-            parts.append(f"Severity: {sev.get('Critical', 0)} Critical, {sev.get('High', 0)} High, {sev.get('Medium', 0)} Medium, {sev.get('Low', 0)} Low, {sev.get('Info', 0)} Info")
+            parts.append(
+                f"Severity: {sev.get('Critical', 0)} Critical, {sev.get('High', 0)} High, {sev.get('Medium', 0)} Medium, {sev.get('Low', 0)} Low, {sev.get('Info', 0)} Info"
+            )
         else:
             parts.append("No scans have been performed yet.")
 
@@ -107,7 +115,9 @@ class SecurityContext:
             parts.append(f"\n=== CRITICAL/HIGH FINDINGS ({len(self.critical_findings)}) ===")
             for f in self.critical_findings:
                 parts.append(f"  [{f['severity']}] {f['vulnerability_name']}")
-                parts.append(f"    CWE: {f.get('cwe_id', 'N/A')} | OWASP: {f.get('owasp_category', 'N/A')}")
+                parts.append(
+                    f"    CWE: {f.get('cwe_id', 'N/A')} | OWASP: {f.get('owasp_category', 'N/A')}"
+                )
                 parts.append(f"    Endpoint: {f.get('affected_endpoint', 'N/A')}")
                 parts.append(f"    {f.get('description', '')[:150]}")
                 parts.append("")
@@ -116,16 +126,18 @@ class SecurityContext:
         if medium_findings:
             parts.append(f"\n=== MEDIUM FINDINGS ({len(medium_findings)}) ===")
             for f in medium_findings[:5]:
-                parts.append(f"  [{f['severity']}] {f['vulnerability_name']} - {f.get('affected_endpoint', 'N/A')}")
+                parts.append(
+                    f"  [{f['severity']}] {f['vulnerability_name']} - {f.get('affected_endpoint', 'N/A')}"
+                )
 
         if self.by_cwe:
             top_cwes = sorted(self.by_cwe.items(), key=lambda x: len(x[1]), reverse=True)[:5]
-            parts.append(f"\nTop CWE Weaknesses:")
+            parts.append("\nTop CWE Weaknesses:")
             for cwe, findings in top_cwes:
                 parts.append(f"  {cwe}: {len(findings)} finding(s)")
 
         if self.ai_analysis:
-            parts.append(f"\n=== AI ANALYSIS ===")
+            parts.append("\n=== AI ANALYSIS ===")
             if self.ai_analysis.get("executive_summary"):
                 parts.append(f"Executive: {self.ai_analysis['executive_summary'][:200]}")
             if self.ai_analysis.get("recommended_mitigation"):
@@ -134,7 +146,9 @@ class SecurityContext:
         if self.history and len(self.history) > 1:
             parts.append(f"\n=== SCAN HISTORY ({len(self.history)} scans) ===")
             for h in self.history[:5]:
-                parts.append(f"  [{h['risk_level']}] {h['api_name']} - Score: {h['risk_score']}/100 - {h.get('created_at', 'N/A')}")
+                parts.append(
+                    f"  [{h['risk_level']}] {h['api_name']} - Score: {h['risk_score']}/100 - {h.get('created_at', 'N/A')}"
+                )
 
         return "\n".join(parts)
 

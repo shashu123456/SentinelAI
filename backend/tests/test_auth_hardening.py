@@ -80,16 +80,26 @@ class TestRegistrationPolicy:
 
 
 class TestRefreshRotation:
+    def _get_csrf_headers(self, client):
+        """Extract CSRF token from cookies and return as header."""
+        csrf_cookie = client.cookies.get("sentinelai_csrf", "")
+        if csrf_cookie and "." in csrf_cookie:
+            token = csrf_cookie.split(".", 1)[0]
+            return {"x-csrf-token": token}
+        return {}
+
     def test_refresh_issues_new_access_token(self, client):
         resp, _, _, _ = _register(client)
-        r = client.post("/api/auth/refresh")
+        headers = self._get_csrf_headers(client)
+        r = client.post("/api/auth/refresh", headers=headers)
         assert r.status_code == 200
         assert r.json()["access_token"]
 
     def test_refresh_rotates_token(self, client):
         resp, _, _, _ = _register(client)
         old = client.cookies.get(REFRESH_COOKIE)
-        r = client.post("/api/auth/refresh")
+        headers = self._get_csrf_headers(client)
+        r = client.post("/api/auth/refresh", headers=headers)
         new = client.cookies.get(REFRESH_COOKIE)
         assert r.status_code == 200
         assert old and new and old != new
@@ -99,13 +109,22 @@ class TestRefreshRotation:
         client.cookies.clear()
         assert client.post("/api/auth/refresh").status_code == 401
 
+    def test_refresh_without_csrf_header_rejected(self, client):
+        """Refresh must include CSRF header when CSRF cookie is present."""
+        resp, _, _, _ = _register(client)
+        # Send refresh without CSRF header (but cookie is present)
+        r = client.post("/api/auth/refresh")
+        assert r.status_code == 403
+
     def test_reuse_detection_revokes_family(self, client):
         from fastapi.testclient import TestClient
+
         from app.main import app
 
         resp, _, _, _ = _register(client)
         old = client.cookies.get(REFRESH_COOKIE)
-        assert client.post("/api/auth/refresh").status_code == 200
+        headers = self._get_csrf_headers(client)
+        assert client.post("/api/auth/refresh", headers=headers).status_code == 200
         assert client.cookies.get(REFRESH_COOKIE) != old
 
         # A second "device" presents the already-consumed token: treated as theft.
@@ -114,10 +133,12 @@ class TestRefreshRotation:
         assert attacker.post("/api/auth/refresh").status_code == 401
 
         # The whole family is now revoked, including the latest one.
-        assert client.post("/api/auth/refresh").status_code == 401
+        headers2 = self._get_csrf_headers(client)
+        assert client.post("/api/auth/refresh", headers=headers2).status_code == 401
 
     def test_garbage_refresh_token_rejected(self, client):
         from fastapi.testclient import TestClient
+
         from app.main import app
 
         attacker = TestClient(app)
@@ -141,6 +162,17 @@ class TestLogout:
         )
         assert r.status_code == 204
         assert client.post("/api/auth/refresh").status_code == 401
+
+    def test_logout_revokes_access_token_via_jti(self, client):
+        """Logout should revoke the current access token via JTI blacklist."""
+        resp, _, _, _ = _register(client)
+        token = resp.json()["access_token"]
+        # Token should work before logout
+        assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+        # Logout
+        client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
+        # Token should be revoked after logout
+        assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
 
 
 class TestLoginLockout:
@@ -223,21 +255,21 @@ class TestRolesAndAdmin:
         assert role.status_code == 200
         assert role.json()["role"] == "analyst"
 
-        assert client.post(
-            f"/api/auth/users/{target_id}/lock", headers=admin_headers
-        ).status_code == 200
+        assert (
+            client.post(f"/api/auth/users/{target_id}/lock", headers=admin_headers).status_code
+            == 200
+        )
         sessions = client.get(f"/api/auth/users/{target_id}/sessions", headers=admin_headers)
         assert sessions.status_code == 200
         assert isinstance(sessions.json(), list)
-        assert client.post(
-            f"/api/auth/users/{target_id}/unlock", headers=admin_headers
-        ).status_code == 200
+        assert (
+            client.post(f"/api/auth/users/{target_id}/unlock", headers=admin_headers).status_code
+            == 200
+        )
 
     def test_admin_cannot_change_own_role(self, client):
         admin_token, _, _ = _make_admin(client)
-        me = client.get(
-            "/api/auth/me", headers={"Authorization": f"Bearer {admin_token}"}
-        ).json()
+        me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {admin_token}"}).json()
         r = client.patch(
             f"/api/auth/users/{me['id']}/role",
             json={"role": "viewer"},
@@ -271,27 +303,39 @@ class TestPasswordReset:
         )
         assert reset.status_code == 200
 
-        assert client.post(
-            "/api/auth/login", json={"username": username, "password": password}
-        ).status_code == 401
-        assert client.post(
-            "/api/auth/login", json={"username": username, "password": "Newpass123"}
-        ).status_code == 200
+        assert (
+            client.post(
+                "/api/auth/login", json={"username": username, "password": password}
+            ).status_code
+            == 401
+        )
+        assert (
+            client.post(
+                "/api/auth/login", json={"username": username, "password": "Newpass123"}
+            ).status_code
+            == 200
+        )
 
     def test_reset_token_is_single_use(self, client):
         resp, _, email, _ = _register(client)
-        reset_token = client.post(
-            "/api/auth/forgot-password", json={"email": email}
-        ).json()["reset_token"]
+        reset_token = client.post("/api/auth/forgot-password", json={"email": email}).json()[
+            "reset_token"
+        ]
 
-        assert client.post(
-            "/api/auth/reset-password",
-            json={"token": reset_token, "new_password": "Newpass123"},
-        ).status_code == 200
-        assert client.post(
-            "/api/auth/reset-password",
-            json={"token": reset_token, "new_password": "Newpass456"},
-        ).status_code == 400
+        assert (
+            client.post(
+                "/api/auth/reset-password",
+                json={"token": reset_token, "new_password": "Newpass123"},
+            ).status_code
+            == 200
+        )
+        assert (
+            client.post(
+                "/api/auth/reset-password",
+                json={"token": reset_token, "new_password": "Newpass456"},
+            ).status_code
+            == 400
+        )
 
     def test_forgot_password_unknown_email_is_generic(self, client):
         r = client.post("/api/auth/forgot-password", json={"email": "nobody@example.com"})
@@ -300,9 +344,9 @@ class TestPasswordReset:
 
     def test_weak_new_password_rejected(self, client):
         resp, _, email, _ = _register(client)
-        reset_token = client.post(
-            "/api/auth/forgot-password", json={"email": email}
-        ).json()["reset_token"]
+        reset_token = client.post("/api/auth/forgot-password", json={"email": email}).json()[
+            "reset_token"
+        ]
         r = client.post(
             "/api/auth/reset-password",
             json={"token": reset_token, "new_password": "weak"},

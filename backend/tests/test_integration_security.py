@@ -2,7 +2,7 @@
 
 import json
 
-VULNERABLE_PYTHON = '''
+VULNERABLE_PYTHON = """
 import os
 import sqlite3
 
@@ -16,9 +16,9 @@ password = "hunter2secret"
 
 def run(cmd):
     os.system(cmd)
-'''
+"""
 
-SAFE_PYTHON = '''
+SAFE_PYTHON = """
 import sqlite3
 
 def get_user(user_id):
@@ -26,7 +26,7 @@ def get_user(user_id):
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
     return cur.fetchone()
-'''
+"""
 
 
 class TestSASTTextScan:
@@ -183,7 +183,9 @@ class TestCopilot:
         assert resp.json()["status"] == "cleared"
 
     def test_load_context(self, client, auth_headers):
-        resp = client.post("/api/security/copilot/context", json={"scan_id": None}, headers=auth_headers)
+        resp = client.post(
+            "/api/security/copilot/context", json={"scan_id": None}, headers=auth_headers
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "loaded"
 

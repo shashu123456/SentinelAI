@@ -1,17 +1,23 @@
 import io
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, PageBreak, KeepTogether, Frame, PageTemplate,
-    BaseDocTemplate, Flowable
+    Flowable,
+    HRFlowable,
+    KeepTogether,
+    PageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
 )
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-
 
 # ============================================================================
 # DESIGN TOKENS
@@ -99,9 +105,12 @@ class CircleScore(Flowable):
         self.height = height
 
     def _get_color(self):
-        if self.score >= 80: return RED_600
-        if self.score >= 60: return ORANGE_600
-        if self.score >= 30: return AMBER_600
+        if self.score >= 80:
+            return RED_600
+        if self.score >= 60:
+            return ORANGE_600
+        if self.score >= 30:
+            return AMBER_600
         return GREEN_600
 
     def draw(self):
@@ -210,7 +219,11 @@ def _header_footer(canvas, doc):
     # Footer text
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(NAVY_400)
-    canvas.drawString(MARGIN, 0.38 * inch, f"Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+    canvas.drawString(
+        MARGIN,
+        0.38 * inch,
+        f"Generated {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}",
+    )
     canvas.drawCentredString(PAGE_W / 2, 0.38 * inch, "CONFIDENTIAL")
     canvas.drawRightString(PAGE_W - MARGIN, 0.38 * inch, f"Page {page_num}")
 
@@ -221,7 +234,9 @@ def _header_footer(canvas, doc):
 # HELPER
 # ============================================================================
 def _escape(text: str) -> str:
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+    return (
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+    )
 
 
 def _severity_color_hex(severity):
@@ -254,44 +269,71 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     # STYLES
     # ----------------------------------------------------------------
     title_style = ParagraphStyle(
-        "CoverTitle", parent=styles["Title"],
-        fontSize=36, textColor=NAVY_900, fontName="Helvetica-Bold",
-        alignment=TA_CENTER, spaceAfter=4, leading=42,
+        "CoverTitle",
+        parent=styles["Title"],
+        fontSize=36,
+        textColor=NAVY_900,
+        fontName="Helvetica-Bold",
+        alignment=TA_CENTER,
+        spaceAfter=4,
+        leading=42,
     )
     subtitle_style = ParagraphStyle(
-        "CoverSub", parent=styles["Normal"],
-        fontSize=14, textColor=NAVY_500, alignment=TA_CENTER, spaceAfter=6,
+        "CoverSub",
+        parent=styles["Normal"],
+        fontSize=14,
+        textColor=NAVY_500,
+        alignment=TA_CENTER,
+        spaceAfter=6,
     )
     section_style = ParagraphStyle(
-        "Section", parent=styles["Heading2"],
-        fontSize=18, textColor=NAVY_900, fontName="Helvetica-Bold",
-        spaceBefore=24, spaceAfter=6, leading=22,
+        "Section",
+        parent=styles["Heading2"],
+        fontSize=18,
+        textColor=NAVY_900,
+        fontName="Helvetica-Bold",
+        spaceBefore=24,
+        spaceAfter=6,
+        leading=22,
     )
     subsection_style = ParagraphStyle(
-        "SubSection", parent=styles["Normal"],
-        fontSize=12, fontName="Helvetica-Bold", textColor=NAVY_700,
-        spaceBefore=10, spaceAfter=4,
+        "SubSection",
+        parent=styles["Normal"],
+        fontSize=12,
+        fontName="Helvetica-Bold",
+        textColor=NAVY_700,
+        spaceBefore=10,
+        spaceAfter=4,
     )
     body_style = ParagraphStyle(
-        "Body", parent=styles["Normal"],
-        fontSize=10, leading=15, textColor=NAVY_700,
+        "Body",
+        parent=styles["Normal"],
+        fontSize=10,
+        leading=15,
+        textColor=NAVY_700,
     )
     small_style = ParagraphStyle(
-        "Small", parent=styles["Normal"],
-        fontSize=9, leading=13, textColor=NAVY_500,
+        "Small",
+        parent=styles["Normal"],
+        fontSize=9,
+        leading=13,
+        textColor=NAVY_500,
     )
     label_style = ParagraphStyle(
-        "Label", parent=styles["Normal"],
-        fontSize=8, fontName="Helvetica-Bold", textColor=NAVY_500,
-        spaceAfter=2, leading=11,
+        "Label",
+        parent=styles["Normal"],
+        fontSize=8,
+        fontName="Helvetica-Bold",
+        textColor=NAVY_500,
+        spaceAfter=2,
+        leading=11,
     )
     value_style = ParagraphStyle(
-        "Value", parent=styles["Normal"],
-        fontSize=10, leading=14, textColor=NAVY_700,
-    )
-    meta_style = ParagraphStyle(
-        "Meta", parent=styles["Normal"],
-        fontSize=9, leading=12, textColor=NAVY_500, alignment=TA_CENTER,
+        "Value",
+        parent=styles["Normal"],
+        fontSize=10,
+        leading=14,
+        textColor=NAVY_700,
     )
 
     CONTENT_W = PAGE_W - 2 * MARGIN
@@ -303,9 +345,13 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
     # Shield icon drawn with text
     shield_style = ParagraphStyle(
-        "Shield", parent=styles["Normal"],
-        fontSize=14, fontName="Helvetica-Bold", textColor=BLUE_500,
-        alignment=TA_CENTER, spaceAfter=12,
+        "Shield",
+        parent=styles["Normal"],
+        fontSize=14,
+        fontName="Helvetica-Bold",
+        textColor=BLUE_500,
+        alignment=TA_CENTER,
+        spaceAfter=12,
     )
     story.append(Paragraph("[ SHIELD ]", shield_style))
 
@@ -320,17 +366,31 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
     # Target info
     cover_info_style = ParagraphStyle(
-        "CoverInfo", parent=styles["Normal"],
-        fontSize=12, textColor=NAVY_600, alignment=TA_CENTER, leading=18,
+        "CoverInfo",
+        parent=styles["Normal"],
+        fontSize=12,
+        textColor=NAVY_600,
+        alignment=TA_CENTER,
+        leading=18,
     )
-    story.append(Paragraph(
-        f"Target API: <b>{_escape(scan_data.get('api_name', 'N/A'))}</b>",
-        cover_info_style,
-    ))
-    story.append(Paragraph(
-        f"Version {_escape(scan_data.get('api_version', 'N/A'))}  |  {_escape(scan_data.get('scan_date', 'N/A'))}",
-        ParagraphStyle("CoverDate", parent=styles["Normal"], fontSize=11, textColor=NAVY_400, alignment=TA_CENTER),
-    ))
+    story.append(
+        Paragraph(
+            f"Target API: <b>{_escape(scan_data.get('api_name', 'N/A'))}</b>",
+            cover_info_style,
+        )
+    )
+    story.append(
+        Paragraph(
+            f"Version {_escape(scan_data.get('api_version', 'N/A'))}  |  {_escape(scan_data.get('scan_date', 'N/A'))}",
+            ParagraphStyle(
+                "CoverDate",
+                parent=styles["Normal"],
+                fontSize=11,
+                textColor=NAVY_400,
+                alignment=TA_CENTER,
+            ),
+        )
+    )
 
     story.append(Spacer(1, 28))
 
@@ -340,20 +400,28 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     circle = CircleScore(risk_score, risk_level, width=220, height=220)
     # Wrap in a centered table
     circle_table = Table([[circle]], colWidths=[CONTENT_W])
-    circle_table.setStyle(TableStyle([
-        ("ALIGN", (0, 0), (0, 0), "CENTER"),
-        ("VALIGN", (0, 0), (0, 0), "MIDDLE"),
-    ]))
+    circle_table.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (0, 0), "CENTER"),
+                ("VALIGN", (0, 0), (0, 0), "MIDDLE"),
+            ]
+        )
+    )
     story.append(circle_table)
 
     story.append(Spacer(1, 40))
 
     # Confidential badge
     story.append(HRFlowable(width="60%", thickness=0.5, color=GRAY_200, spaceAfter=12))
-    story.append(Paragraph(
-        "CONFIDENTIAL - For authorized recipients only",
-        ParagraphStyle("Conf", parent=styles["Normal"], fontSize=9, textColor=NAVY_400, alignment=TA_CENTER),
-    ))
+    story.append(
+        Paragraph(
+            "CONFIDENTIAL - For authorized recipients only",
+            ParagraphStyle(
+                "Conf", parent=styles["Normal"], fontSize=9, textColor=NAVY_400, alignment=TA_CENTER
+            ),
+        )
+    )
 
     story.append(PageBreak())
 
@@ -365,7 +433,7 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
     findings = scan_data.get("findings", [])
     total = len(findings)
-    severity_counts = {}
+    severity_counts: dict[str, int] = {}
     for f in findings:
         sev = f.get("severity", "Info")
         severity_counts[sev] = severity_counts.get(sev, 0) + 1
@@ -400,20 +468,40 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     card_w = (CONTENT_W - 30) / 4
     metric_row = [
         [
-            MetricCard(str(risk_score), "Risk Score", SEVERITY_COLORS.get(
-                "Critical" if risk_score >= 80 else "High" if risk_score >= 60 else "Medium" if risk_score >= 30 else "Low",
-                NAVY_900
-            ), width=card_w),
-            MetricCard(str(total), "Total Findings", RED_600 if total > 0 else GREEN_600, width=card_w),
-            MetricCard(str(crit_high), "Critical & High", RED_600 if crit_high > 0 else GREEN_600, width=card_w),
+            MetricCard(
+                str(risk_score),
+                "Risk Score",
+                SEVERITY_COLORS.get(
+                    (
+                        "Critical"
+                        if risk_score >= 80
+                        else "High" if risk_score >= 60 else "Medium" if risk_score >= 30 else "Low"
+                    ),
+                    NAVY_900,
+                ),
+                width=card_w,
+            ),
+            MetricCard(
+                str(total), "Total Findings", RED_600 if total > 0 else GREEN_600, width=card_w
+            ),
+            MetricCard(
+                str(crit_high),
+                "Critical & High",
+                RED_600 if crit_high > 0 else GREEN_600,
+                width=card_w,
+            ),
             MetricCard(str(endpoints), "Endpoints Scanned", BLUE_500, width=card_w),
         ]
     ]
     metric_table = Table(metric_row, colWidths=[card_w + 10] * 4)
-    metric_table.setStyle(TableStyle([
-        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
+    metric_table.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
     story.append(metric_table)
     story.append(Spacer(1, 20))
 
@@ -422,61 +510,56 @@ def generate_pdf_report(scan_data: dict) -> bytes:
         story.append(Paragraph("Severity Distribution", subsection_style))
         story.append(Spacer(1, 6))
 
-        # Stacked bar
-        bar_data = [[]]
-        bar_style_cmds = [
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 8),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        # Stacked bar (only severities with findings)
+        present = [
+            sev
+            for sev in ["Critical", "High", "Medium", "Low", "Info"]
+            if severity_counts.get(sev, 0) > 0
         ]
-        col_widths = []
-        for sev in ["Critical", "High", "Medium", "Low", "Info"]:
-            cnt = severity_counts.get(sev, 0)
-            if cnt > 0:
-                w = max((cnt / total) * CONTENT_W, 40)
-                col_widths.append(w)
-                bar_data[0].append(Paragraph(
-                    f'<font color="white" size="11"><b>{cnt}</b></font>',
+        if present:
+            widths = [max((severity_counts[sev] / total) * CONTENT_W, 40) for sev in present]
+            cells = [
+                Paragraph(
+                    f'<font color="white" size="11"><b>{severity_counts[sev]}</b></font>',
                     ParagraphStyle("BC", alignment=TA_CENTER, fontSize=11),
-                ))
-                bar_style_cmds.append(("BACKGROUND", (len(col_widths)-1, 0), (len(col_widths)-1, 0), SEVERITY_COLORS[sev]))
-            else:
-                col_widths.append(0)
+                )
+                for sev in present
+            ]
+            bar_styles = [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]
+            for i, sev in enumerate(present):
+                bar_styles.append(("BACKGROUND", (i, 0), (i, 0), SEVERITY_COLORS[sev]))
 
-        # Remove zero-width columns
-        final_data = [[]]
-        final_widths = []
-        idx = 0
-        for sev in ["Critical", "High", "Medium", "Low", "Info"]:
-            cnt = severity_counts.get(sev, 0)
-            if cnt > 0:
-                final_data[0].append(bar_data[0][idx])
-                final_widths.append(max((cnt / total) * CONTENT_W, 40))
-            idx += 1
-
-        if final_data[0]:
-            bar = Table(final_data, colWidths=final_widths, rowHeights=[36])
-            bar.setStyle(TableStyle(bar_style_cmds[:len(final_data[0]) + 3]))
+            bar = Table([cells], colWidths=widths, rowHeights=[36])
+            bar.setStyle(TableStyle(bar_styles))
             story.append(bar)
             story.append(Spacer(1, 8))
 
             # Legend row
-            legend_items = []
-            for sev in ["Critical", "High", "Medium", "Low", "Info"]:
-                cnt = severity_counts.get(sev, 0)
-                if cnt > 0:
-                    legend_items.append(Paragraph(
-                        f'<font color="{_severity_color_hex(sev)}">&#9632;</font> '
-                        f'<font color="{NAVY_600.hexval()}" size="9">{sev}: {cnt} ({cnt/total*100:.0f}%)</font>',
-                        ParagraphStyle("Leg", fontSize=9, leading=14),
-                    ))
-            legend = Table([legend_items], colWidths=[CONTENT_W / len(legend_items)] * len(legend_items))
-            legend.setStyle(TableStyle([
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("TOPPADDING", (0, 0), (-1, -1), 2),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ]))
+            legend_items = [
+                Paragraph(
+                    f'<font color="{_severity_color_hex(sev)}">&#9632;</font> '
+                    f'<font color="{NAVY_600.hexval()}" size="9">{sev}: {severity_counts[sev]} ({severity_counts[sev] / total * 100:.0f}%)</font>',
+                    ParagraphStyle("Leg", fontSize=9, leading=14),
+                )
+                for sev in present
+            ]
+            legend = Table(
+                [legend_items], colWidths=[CONTENT_W / len(legend_items)] * len(legend_items)
+            )
+            legend.setStyle(
+                TableStyle(
+                    [
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("TOPPADDING", (0, 0), (-1, -1), 2),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ]
+                )
+            )
             story.append(legend)
             story.append(Spacer(1, 16))
 
@@ -492,21 +575,25 @@ def generate_pdf_report(scan_data: dict) -> bytes:
         ["Risk Score", f"{risk_score}/100 ({risk_level})"],
     ]
     dt = Table(detail_data, colWidths=[2.2 * inch, CONTENT_W - 2.2 * inch])
-    dt.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), NAVY_900),
-        ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-        ("FONTSIZE", (0, 1), (-1, -1), 10),
-        ("BACKGROUND", (0, 1), (0, -1), NAVY_50),
-        ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
-        ("TEXTCOLOR", (0, 1), (0, -1), NAVY_600),
-        ("TEXTCOLOR", (1, 1), (1, -1), NAVY_700),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("GRID", (0, 0), (-1, -1), 0.5, GRAY_200),
-    ]))
+    dt.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), NAVY_900),
+                ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("FONTSIZE", (0, 1), (-1, -1), 10),
+                ("BACKGROUND", (0, 1), (0, -1), NAVY_50),
+                ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+                ("TEXTCOLOR", (0, 1), (0, -1), NAVY_600),
+                ("TEXTCOLOR", (1, 1), (1, -1), NAVY_700),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                ("GRID", (0, 0), (-1, -1), 0.5, GRAY_200),
+            ]
+        )
+    )
     story.append(dt)
 
     story.append(PageBreak())
@@ -516,25 +603,31 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     # ================================================================
     story.append(Paragraph("Detailed Findings", section_style))
     story.append(HRFlowable(width="100%", thickness=1, color=GRAY_200, spaceAfter=8))
-    story.append(Paragraph(
-        "Each finding below represents a potential security issue identified through static analysis "
-        "of the API specification. Manual verification is recommended before confirming exploitability.",
-        small_style,
-    ))
+    story.append(
+        Paragraph(
+            "Each finding below represents a potential security issue identified through static analysis "
+            "of the API specification. Manual verification is recommended before confirming exploitability.",
+            small_style,
+        )
+    )
     story.append(Spacer(1, 14))
 
     if not findings:
-        story.append(Paragraph(
-            "No vulnerabilities were identified. The API specification appears to follow security best practices.",
-            body_style,
-        ))
+        story.append(
+            Paragraph(
+                "No vulnerabilities were identified. The API specification appears to follow security best practices.",
+                body_style,
+            )
+        )
     else:
         sorted_findings = sorted(
             findings,
-            key=lambda x: {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}.get(x.get("severity", "Info"), 5)
+            key=lambda x: {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}.get(
+                x.get("severity", "Info"), 5
+            ),
         )
 
-        for i, finding in enumerate(sorted_findings, 1):
+        for _, finding in enumerate(sorted_findings, 1):
             severity = finding.get("severity", "Info")
             sev_clr = _severity_color_hex(severity)
             sev_bg = _severity_bg_hex(severity)
@@ -544,96 +637,147 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
             # ---- Finding Card ----
             # Header bar
-            header_inner = [[
-                Paragraph(
-                    f'<font color="{sev_clr}" size="11"><b>[{severity.upper()}]</b></font>'
-                    f'  <font size="11"><b>{_escape(finding.get("vulnerability_name", "Unknown"))}</b></font>',
-                    ParagraphStyle("FH", fontSize=11, fontName="Helvetica-Bold", textColor=NAVY_900),
-                ),
-                Paragraph(
-                    f'<font size="8" color="{NAVY_500.hexval()}">Confidence: </font>'
-                    f'<font size="9" color="{NAVY_900.hexval()}"><b>{confidence}%</b></font>',
-                    ParagraphStyle("FC", fontSize=9, alignment=TA_RIGHT),
-                ),
-            ]]
+            header_inner = [
+                [
+                    Paragraph(
+                        f'<font color="{sev_clr}" size="11"><b>[{severity.upper()}]</b></font>'
+                        f'  <font size="11"><b>{_escape(finding.get("vulnerability_name", "Unknown"))}</b></font>',
+                        ParagraphStyle(
+                            "FH", fontSize=11, fontName="Helvetica-Bold", textColor=NAVY_900
+                        ),
+                    ),
+                    Paragraph(
+                        f'<font size="8" color="{NAVY_500.hexval()}">Confidence: </font>'
+                        f'<font size="9" color="{NAVY_900.hexval()}"><b>{confidence}%</b></font>',
+                        ParagraphStyle("FC", fontSize=9, alignment=TA_RIGHT),
+                    ),
+                ]
+            ]
             hdr = Table(header_inner, colWidths=[CONTENT_W - 110, 100])
-            hdr.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(sev_bg)),
-                ("BOX", (0, 0), (-1, -1), 1.2, colors.HexColor(sev_clr)),
-                ("TOPPADDING", (0, 0), (-1, -1), 10),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-                ("LEFTPADDING", (0, 0), (-1, -1), 12),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ]))
+            hdr.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(sev_bg)),
+                        ("BOX", (0, 0), (-1, -1), 1.2, colors.HexColor(sev_clr)),
+                        ("TOPPADDING", (0, 0), (-1, -1), 10),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+                        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ]
+                )
+            )
 
             # OWASP + CWE tags
             tags = []
-            tags.append(Paragraph(
-                f'<font color="{NAVY_600.hexval()}" size="8">OWASP: </font>'
-                f'<font color="{BLUE_600.hexval()}" size="8"><b>{owasp}</b></font>'
-                f'<font color="{NAVY_400.hexval()}" size="8"> - {_escape(OWASP_NAMES.get(owasp, ""))}</font>',
-                ParagraphStyle("Tag1", fontSize=8, leading=11),
-            ))
+            tags.append(
+                Paragraph(
+                    f'<font color="{NAVY_600.hexval()}" size="8">OWASP: </font>'
+                    f'<font color="{BLUE_600.hexval()}" size="8"><b>{owasp}</b></font>'
+                    f'<font color="{NAVY_400.hexval()}" size="8"> - {_escape(OWASP_NAMES.get(owasp, ""))}</font>',
+                    ParagraphStyle("Tag1", fontSize=8, leading=11),
+                )
+            )
             if cwe and cwe != "N/A":
-                tags.append(Paragraph(
-                    f'<font color="{NAVY_600.hexval()}" size="8">CWE: </font>'
-                    f'<font color="{GREEN_600.hexval()}" size="8"><b>{cwe}</b></font>',
-                    ParagraphStyle("Tag2", fontSize=8, leading=11),
-                ))
-            tag_row = [[tags[0], tags[1] if len(tags) > 1 else Paragraph("", ParagraphStyle("Empty"))]]
+                tags.append(
+                    Paragraph(
+                        f'<font color="{NAVY_600.hexval()}" size="8">CWE: </font>'
+                        f'<font color="{GREEN_600.hexval()}" size="8"><b>{cwe}</b></font>',
+                        ParagraphStyle("Tag2", fontSize=8, leading=11),
+                    )
+                )
+            tag_row = [
+                [tags[0], tags[1] if len(tags) > 1 else Paragraph("", ParagraphStyle("Empty"))]
+            ]
             tag_table = Table(tag_row, colWidths=[CONTENT_W / 2, CONTENT_W / 2])
-            tag_table.setStyle(TableStyle([
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ]))
+            tag_table.setStyle(
+                TableStyle(
+                    [
+                        ("TOPPADDING", (0, 0), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                    ]
+                )
+            )
 
             # Detail fields
-            detail_rows = []
+            detail_rows: list[list[Paragraph]] = []
 
-            def _add_field(label, text):
+            def _add_field(label, text, _rows=detail_rows):
                 if text and text != "N/A" and str(text).strip():
-                    detail_rows.append([
-                        Paragraph(f"<b>{label}</b>", label_style),
-                        Paragraph(_escape(str(text)), value_style),
-                    ])
+                    _rows.append(
+                        [
+                            Paragraph(f"<b>{label}</b>", label_style),
+                            Paragraph(_escape(str(text)), value_style),
+                        ]
+                    )
 
-            _add_field("ENDPOINT", f'{finding.get("affected_method", "N/A")} {finding.get("affected_endpoint", "N/A")}')
+            _add_field(
+                "ENDPOINT",
+                f"{finding.get('affected_method', 'N/A')} {finding.get('affected_endpoint', 'N/A')}",
+            )
             _add_field("DESCRIPTION", finding.get("description", ""))
             _add_field("DETECTION REASON", finding.get("detection_reason", ""))
             _add_field("EVIDENCE", finding.get("evidence", ""))
             _add_field("IMPACT", finding.get("impact", ""))
+            _add_field("TECHNICAL IMPACT", finding.get("technical_impact", ""))
+            _add_field("BUSINESS IMPACT", finding.get("business_impact", ""))
             _add_field("REMEDIATION", finding.get("remediation", ""))
+            _add_field("FIX RECOMMENDATION", finding.get("fix_recommendation", ""))
+
+            if finding.get("cvss_score") is not None:
+                _add_field(
+                    "CVSS",
+                    f"Score {finding['cvss_score']}  ({finding.get('cvss_vector', 'N/A')})",
+                )
+
+            references = finding.get("references") or []
+            if references:
+                _add_field("REFERENCES", " | ".join(str(r) for r in references))
 
             if finding.get("false_positive_note"):
-                detail_rows.append([
-                    Paragraph("<b>FALSE POSITIVE NOTE</b>", ParagraphStyle(
-                        "FPLabel", parent=label_style, textColor=AMBER_600,
-                    )),
-                    Paragraph(
-                        f'<i>{_escape(finding["false_positive_note"])}</i>',
-                        ParagraphStyle("FPVal", parent=value_style, fontSize=9, textColor=NAVY_500),
-                    ),
-                ])
+                detail_rows.append(
+                    [
+                        Paragraph(
+                            "<b>FALSE POSITIVE NOTE</b>",
+                            ParagraphStyle(
+                                "FPLabel",
+                                parent=label_style,
+                                textColor=AMBER_600,
+                            ),
+                        ),
+                        Paragraph(
+                            f"<i>{_escape(finding['false_positive_note'])}</i>",
+                            ParagraphStyle(
+                                "FPVal", parent=value_style, fontSize=9, textColor=NAVY_500
+                            ),
+                        ),
+                    ]
+                )
 
             detail_table = Table(detail_rows, colWidths=[1.4 * inch, CONTENT_W - 1.4 * inch])
-            detail_table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (0, -1), NAVY_50),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                ("LINEBELOW", (0, 0), (-1, -2), 0.4, GRAY_200),
-            ]))
+            detail_table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (0, -1), NAVY_50),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("TOPPADDING", (0, 0), (-1, -1), 5),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                        ("LINEBELOW", (0, 0), (-1, -2), 0.4, GRAY_200),
+                    ]
+                )
+            )
 
-            finding_block = KeepTogether([
-                hdr,
-                tag_table,
-                detail_table,
-                Spacer(1, 18),
-            ])
+            finding_block = KeepTogether(
+                [
+                    hdr,
+                    tag_table,
+                    detail_table,
+                    Spacer(1, 18),
+                ]
+            )
             story.append(finding_block)
 
     # ================================================================
@@ -644,11 +788,13 @@ def generate_pdf_report(scan_data: dict) -> bytes:
         story.append(PageBreak())
         story.append(Paragraph("AI Security Analysis", section_style))
         story.append(HRFlowable(width="100%", thickness=1, color=GRAY_200, spaceAfter=8))
-        story.append(Paragraph(
-            "The following analysis was generated by SentinelAI's integrated LLM engine. "
-            "Rule-based fallback analysis is applied when an LLM is unavailable.",
-            small_style,
-        ))
+        story.append(
+            Paragraph(
+                "The following analysis was generated by SentinelAI's integrated LLM engine. "
+                "Rule-based fallback analysis is applied when an LLM is unavailable.",
+                small_style,
+            )
+        )
         story.append(Spacer(1, 10))
 
         for field_name, label in [
@@ -661,23 +807,41 @@ def generate_pdf_report(scan_data: dict) -> bytes:
             content = ai_analysis.get(field_name, "")
             if content:
                 # Card-style AI block
-                card_data = [[Paragraph(f"<b>{label}</b>", ParagraphStyle(
-                    f"AIL_{field_name}", fontSize=10, fontName="Helvetica-Bold",
-                    textColor=BLUE_600, spaceAfter=4,
-                ))]]
-                card_data.append([Paragraph(
-                    _escape(content).replace("\n", "<br/>"),
-                    body_style,
-                )])
+                card_data = [
+                    [
+                        Paragraph(
+                            f"<b>{label}</b>",
+                            ParagraphStyle(
+                                f"AIL_{field_name}",
+                                fontSize=10,
+                                fontName="Helvetica-Bold",
+                                textColor=BLUE_600,
+                                spaceAfter=4,
+                            ),
+                        )
+                    ]
+                ]
+                card_data.append(
+                    [
+                        Paragraph(
+                            _escape(content).replace("\n", "<br/>"),
+                            body_style,
+                        )
+                    ]
+                )
                 card = Table(card_data, colWidths=[CONTENT_W])
-                card.setStyle(TableStyle([
-                    ("BACKGROUND", (0, 0), (-1, -1), BLUE_100),
-                    ("BOX", (0, 0), (-1, -1), 0.5, BLUE_500),
-                    ("TOPPADDING", (0, 0), (-1, 0), 10),
-                    ("BOTTOMPADDING", (0, -1), (-1, -1), 10),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 14),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 14),
-                ]))
+                card.setStyle(
+                    TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (-1, -1), BLUE_100),
+                            ("BOX", (0, 0), (-1, -1), 0.5, BLUE_500),
+                            ("TOPPADDING", (0, 0), (-1, 0), 10),
+                            ("BOTTOMPADDING", (0, -1), (-1, -1), 10),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 14),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+                        ]
+                    )
+                )
                 story.append(KeepTogether([card, Spacer(1, 10)]))
 
     # ================================================================
@@ -685,17 +849,29 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     # ================================================================
     story.append(Spacer(1, 30))
     story.append(HRFlowable(width="100%", thickness=0.5, color=GRAY_200, spaceAfter=10))
-    story.append(Paragraph(
-        "<b>Disclaimer:</b> This report is generated by automated static analysis of the API specification. "
-        "Findings represent potential vulnerabilities that may require manual verification. "
-        "This assessment does not replace a comprehensive penetration test or security audit.",
-        ParagraphStyle("Disclaimer", parent=styles["Normal"], fontSize=8, textColor=NAVY_400, leading=11),
-    ))
+    story.append(
+        Paragraph(
+            "<b>Disclaimer:</b> This report is generated by automated static analysis of the API specification. "
+            "Findings represent potential vulnerabilities that may require manual verification. "
+            "This assessment does not replace a comprehensive penetration test or security audit.",
+            ParagraphStyle(
+                "Disclaimer", parent=styles["Normal"], fontSize=8, textColor=NAVY_400, leading=11
+            ),
+        )
+    )
     story.append(Spacer(1, 6))
-    story.append(Paragraph(
-        f"Report generated by SentinelAI v1.0 on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}.",
-        ParagraphStyle("ReportMeta", parent=styles["Normal"], fontSize=7.5, textColor=NAVY_400, alignment=TA_CENTER),
-    ))
+    story.append(
+        Paragraph(
+            f"Report generated by SentinelAI v1.0 on {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}.",
+            ParagraphStyle(
+                "ReportMeta",
+                parent=styles["Normal"],
+                fontSize=7.5,
+                textColor=NAVY_400,
+                alignment=TA_CENTER,
+            ),
+        )
+    )
 
     doc.build(story, onFirstPage=_header_footer, onLaterPages=_header_footer)
     return buffer.getvalue()

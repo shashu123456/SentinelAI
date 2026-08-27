@@ -1,19 +1,20 @@
 """API routes for SAST scanning, dependency scanning, and security copilot."""
 
 import os
-import tempfile
 import shutil
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+import tempfile
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
-from typing import Optional
 from sqlalchemy.orm import Session
-from app.models.models import User
-from app.database.database import get_db
-from app.utils.security import get_current_user
-from app.utils.logger import logger
-from app.core.sast_engine import run_sast_scan
-from app.core.dep_scanner import run_dep_scan
+
 from app.core.copilot import SecurityCopilot
+from app.core.dep_scanner import run_dep_scan
+from app.core.sast_engine import run_sast_scan
+from app.database.database import get_db
+from app.models.models import User
+from app.utils.logger import logger
+from app.utils.security import get_current_user
 
 router = APIRouter(prefix="/api/security", tags=["Security Intelligence"])
 
@@ -22,12 +23,13 @@ router = APIRouter(prefix="/api/security", tags=["Security Intelligence"])
 # SAST Schemas
 # =============================================================================
 
+
 class SASTFindingResponse(BaseModel):
     rule_id: str
     rule_name: str
     severity: str
     cwe_id: str
-    owasp_category: Optional[str] = None
+    owasp_category: str | None = None
     language: str
     file_path: str
     line_number: int
@@ -57,6 +59,7 @@ class SASTScanResponse(BaseModel):
 # =============================================================================
 # Dependency Scan Schemas
 # =============================================================================
+
 
 class DepFindingResponse(BaseModel):
     package: str
@@ -101,9 +104,10 @@ class DepScanResponse(BaseModel):
 # Copilot Schemas
 # =============================================================================
 
+
 class CopilotChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
-    scan_id: Optional[int] = None
+    scan_id: int | None = None
 
 
 class CopilotChatResponse(BaseModel):
@@ -119,7 +123,7 @@ class CopilotSidebarResponse(BaseModel):
     total_scans: int
     total_findings: int
     severity_counts: dict
-    latest_scan: Optional[dict] = None
+    latest_scan: dict | None = None
     critical_count: int
     recent_findings: list[dict]
     scan_history: list[dict]
@@ -128,6 +132,7 @@ class CopilotSidebarResponse(BaseModel):
 # =============================================================================
 # SAST Endpoints
 # =============================================================================
+
 
 @router.post("/sast/scan", response_model=SASTScanResponse)
 async def scan_source_code(
@@ -141,8 +146,7 @@ async def scan_source_code(
     valid_extensions = (".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".zip", ".tar", ".gz")
     if not file.filename.lower().endswith(valid_extensions):
         raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type. Allowed: {', '.join(valid_extensions)}"
+            status_code=400, detail=f"Unsupported file type. Allowed: {', '.join(valid_extensions)}"
         )
 
     content = await file.read()
@@ -173,7 +177,7 @@ async def scan_source_code(
         )
     except Exception as e:
         logger.error(f"SAST scan failed: {e}")
-        raise HTTPException(status_code=500, detail="SAST scan failed")
+        raise HTTPException(status_code=500, detail="SAST scan failed") from None
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -211,7 +215,7 @@ async def scan_source_text(
         )
     except Exception as e:
         logger.error(f"SAST text scan failed: {e}")
-        raise HTTPException(status_code=500, detail="SAST scan failed")
+        raise HTTPException(status_code=500, detail="SAST scan failed") from None
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -219,6 +223,7 @@ async def scan_source_text(
 # =============================================================================
 # Dependency Scan Endpoints
 # =============================================================================
+
 
 @router.post("/deps/scan", response_model=DepScanResponse)
 async def scan_dependencies(
@@ -229,12 +234,10 @@ async def scan_dependencies(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
-    valid_filenames = ("requirements.txt", "package.json", "pom.xml",
-                       "requirements.in", "Pipfile")
+    valid_filenames = ("requirements.txt", "package.json", "pom.xml", "requirements.in", "Pipfile")
     if file.filename not in valid_filenames:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file. Allowed: {', '.join(valid_filenames)}"
+            status_code=400, detail=f"Unsupported file. Allowed: {', '.join(valid_filenames)}"
         )
 
     content = await file.read()
@@ -262,15 +265,19 @@ async def scan_dependencies(
             findings=[DepFindingResponse(**f.to_dict()) for f in result.findings],
             dependencies=[
                 DependencyInfoResponse(
-                    name=d.name, version=d.version,
-                    ecosystem=d.ecosystem, file=d.file_path, is_dev=d.is_dev,
-                ) for d in result.dependencies
+                    name=d.name,
+                    version=d.version,
+                    ecosystem=d.ecosystem,
+                    file=d.file_path,
+                    is_dev=d.is_dev,
+                )
+                for d in result.dependencies
             ],
             errors=result.errors,
         )
     except Exception as e:
         logger.error(f"Dependency scan failed: {e}")
-        raise HTTPException(status_code=500, detail="Dependency scan failed")
+        raise HTTPException(status_code=500, detail="Dependency scan failed") from None
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -287,6 +294,7 @@ def _get_or_create_copilot(user_id: int, db: Session) -> SecurityCopilot:
     if user_id not in _copilot_sessions:
         try:
             from app.config import get_settings
+
             settings = get_settings()
         except Exception:
             settings = None
@@ -350,7 +358,7 @@ async def get_copilot_sidebar(
 
 @router.post("/copilot/context")
 async def load_copilot_context(
-    scan_id: Optional[int] = None,
+    scan_id: int | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -382,12 +390,20 @@ async def get_copilot_commands():
             {
                 "category": "Vulnerability Analysis",
                 "description": "Analyze and explain security findings.",
-                "examples": ["What is my highest risk issue?", "Explain this vulnerability", "Why is this critical?"],
+                "examples": [
+                    "What is my highest risk issue?",
+                    "Explain this vulnerability",
+                    "Why is this critical?",
+                ],
             },
             {
                 "category": "Remediation",
                 "description": "Get specific fix guidance.",
-                "examples": ["How do I fix this?", "Generate remediation plan", "What should I fix first?"],
+                "examples": [
+                    "How do I fix this?",
+                    "Generate remediation plan",
+                    "What should I fix first?",
+                ],
             },
             {
                 "category": "Executive Reporting",

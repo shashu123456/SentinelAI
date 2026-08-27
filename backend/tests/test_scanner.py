@@ -1,5 +1,5 @@
-from app.core.security_engine.scanner import run_owasp_scan, OWASP_CATEGORIES
 from app.core.security_engine.parser import parse_openapi_spec
+from app.core.security_engine.scanner import OWASP_CATEGORIES, run_owasp_scan
 
 
 class TestOWASPCategories:
@@ -46,7 +46,11 @@ class TestAPI2BrokenAuthentication:
     def test_detects_unauthenticated_mutating_methods(self, sample_petstore_spec):
         parsed = parse_openapi_spec(sample_petstore_spec)
         findings = run_owasp_scan(parsed)
-        api2_delete = [f for f in findings if f["owasp_category"] == "API2" and f.get("affected_method") == "DELETE"]
+        api2_delete = [
+            f
+            for f in findings
+            if f["owasp_category"] == "API2" and f.get("affected_method") == "DELETE"
+        ]
         assert len(api2_delete) > 0
 
 
@@ -57,7 +61,9 @@ class TestAPI3BrokenObjectPropertyLevelAuthorization:
         api3 = [f for f in findings if f["owasp_category"] == "API3"]
         assert len(api3) > 0
         sensitive_names = [f["vulnerability_name"] for f in api3]
-        assert any("password" in name.lower() or "admin" in name.lower() for name in sensitive_names)
+        assert any(
+            "password" in name.lower() or "admin" in name.lower() for name in sensitive_names
+        )
 
 
 class TestAPI4UnrestrictedResourceConsumption:
@@ -88,7 +94,9 @@ class TestAPI7SSRF:
         findings = run_owasp_scan(parsed)
         api7 = [f for f in findings if f["owasp_category"] == "API7"]
         assert len(api7) > 0
-        assert any("webhook" in f["evidence"].lower() or "url" in f["evidence"].lower() for f in api7)
+        assert any(
+            "webhook" in f["evidence"].lower() or "url" in f["evidence"].lower() for f in api7
+        )
 
 
 class TestAPI8SecurityMisconfiguration:
@@ -118,10 +126,20 @@ class TestFindingStructure:
     def test_all_findings_have_required_fields(self, sample_petstore_spec):
         parsed = parse_openapi_spec(sample_petstore_spec)
         findings = run_owasp_scan(parsed)
-        required = ["vulnerability_name", "owasp_category", "severity", "description", "evidence", "impact", "remediation"]
+        required = [
+            "vulnerability_name",
+            "owasp_category",
+            "severity",
+            "description",
+            "evidence",
+            "impact",
+            "remediation",
+        ]
         for f in findings:
             for field in required:
-                assert field in f, f"Missing '{field}' in finding: {f.get('vulnerability_name', '?')}"
+                assert (
+                    field in f
+                ), f"Missing '{field}' in finding: {f.get('vulnerability_name', '?')}"
 
     def test_severity_values_valid(self, sample_petstore_spec):
         parsed = parse_openapi_spec(sample_petstore_spec)

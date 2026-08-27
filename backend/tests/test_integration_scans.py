@@ -33,15 +33,6 @@ class TestUploadAndScan:
         assert resp.json()["api_name"] == "My Custom API"
 
     def test_upload_yaml_spec(self, client, auth_headers):
-        spec = {
-            "openapi": "3.0.0",
-            "info": {"title": "YAML API", "version": "1.0.0"},
-            "paths": {
-                "/items": {
-                    "get": {"responses": {"200": {"description": "OK"}}}
-                }
-            },
-        }
         yaml_doc = (
             "openapi: 3.0.0\n"
             "info:\n"

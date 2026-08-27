@@ -1,0 +1,64 @@
+/* ============================
+   BREADCRUMBS
+   ============================ */
+
+.breadcrumbs {
+  padding: 0 0 16px;
+}
+
+.breadcrumbs-list {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.breadcrumbs-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.breadcrumbs-sep {
+  color: var(--text-muted);
+  opacity: 0.3;
+  flex-shrink: 0;
+}
+
+.breadcrumbs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.1s ease;
+  font-family: var(--font-body);
+}
+
+.breadcrumbs-link:hover {
+  color: var(--accent-cyan);
+  background: rgba(0,255,170,0.04);
+  text-decoration: none;
+}
+
+.breadcrumbs-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+/* Light theme */
+[data-theme="light"] .breadcrumbs-link:hover {
+  background: rgba(0,100,80,0.04);
+}

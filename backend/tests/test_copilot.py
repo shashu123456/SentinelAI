@@ -1,16 +1,16 @@
 """Tests for the Security Copilot Agent."""
 
-import pytest
-from unittest.mock import MagicMock, patch
-from app.core.copilot.agent import CopilotAgent, classify_intent, AgentState
+from unittest.mock import MagicMock
+
+from app.core.copilot import tools as security_tools
+from app.core.copilot.agent import AgentState, CopilotAgent, classify_intent
 from app.core.copilot.context_retrieval import SecurityContext
 from app.core.copilot.engine import SecurityCopilot
-from app.core.copilot import tools as security_tools
-
 
 # =============================================================================
 # Intent Classification
 # =============================================================================
+
 
 class TestIntentClassification:
 
@@ -88,6 +88,7 @@ class TestIntentClassification:
 # Agent State
 # =============================================================================
 
+
 class TestAgentState:
 
     def test_add_messages(self):
@@ -117,6 +118,7 @@ class TestAgentState:
 # =============================================================================
 # Tools
 # =============================================================================
+
 
 class TestTools:
 
@@ -161,7 +163,9 @@ class TestTools:
 
     def test_compare_scans_insufficient(self):
         db = MagicMock()
-        db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
+        db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = (
+            []
+        )
         result = security_tools.compare_scans(db, 1)
         assert result is None
 
@@ -176,7 +180,9 @@ class TestTools:
 
     def test_get_scan_history_empty(self):
         db = MagicMock()
-        db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
+        db.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = (
+            []
+        )
         result = security_tools.get_scan_history(db, 1)
         assert result == []
 
@@ -184,6 +190,7 @@ class TestTools:
 # =============================================================================
 # CopilotAgent
 # =============================================================================
+
 
 class TestCopilotAgent:
 
@@ -280,6 +287,7 @@ class TestCopilotAgent:
 # =============================================================================
 # SecurityCopilot (Engine)
 # =============================================================================
+
 
 class TestSecurityCopilot:
 

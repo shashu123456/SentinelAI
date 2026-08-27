@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -15,8 +15,36 @@ export default class ErrorBoundary extends Component {
     console.error('[ErrorBoundary]', error, info?.componentStack);
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
   render() {
     if (this.state.hasError) {
+      // Page-level compact error (inside sidebar layout)
+      if (this.props.pageLevel) {
+        return (
+          <div className="page-content">
+            <div className="eb-page-error">
+              <div className="eb-page-icon">
+                <AlertTriangle size={24} />
+              </div>
+              <h3>This page encountered an error</h3>
+              <p>{this.state.error?.message || 'An unexpected error occurred'}</p>
+              <div className="eb-page-actions">
+                <button className="eb-btn" onClick={this.handleReset}>
+                  <RotateCcw size={14} /> Try Again
+                </button>
+                <button className="eb-btn primary" onClick={() => window.location.reload()}>
+                  <RefreshCw size={14} /> Reload Page
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Full-page error (app-level)
       return (
         <div style={{
           display: 'flex',
@@ -40,7 +68,7 @@ export default class ErrorBoundary extends Component {
               width: '64px',
               height: '64px',
               borderRadius: '16px',
-              background: 'var(--accent-red-light)',
+              background: 'rgba(255,51,85,0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -53,7 +81,7 @@ export default class ErrorBoundary extends Component {
               Something went wrong
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.6 }}>
-              An unexpected error occurred. The development team has been notified.
+              An unexpected error occurred. Try reloading the page.
             </p>
             <div style={{
               background: 'var(--bg-page)',
@@ -71,24 +99,30 @@ export default class ErrorBoundary extends Component {
             }}>
               {this.state.error?.message || 'Unknown error'}
             </div>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 24px',
-                background: 'var(--accent-blue)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <RefreshCw size={14} /> Reload Page
-            </button>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                onClick={this.handleReset}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 20px', background: 'transparent',
+                  color: 'var(--text-muted)', border: '1px solid var(--border)',
+                  borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={14} /> Try Again
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 24px', background: 'var(--accent-blue)',
+                  color: 'white', border: 'none', borderRadius: '8px',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                <RefreshCw size={14} /> Reload Page
+              </button>
+            </div>
           </div>
         </div>
       );

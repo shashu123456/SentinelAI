@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { scans } from '../services/api';
+import { scans, analytics } from '../services/api';
 import {
   Shield, AlertTriangle, Clock, ExternalLink, Trash2,
   Upload, Target, Zap, Activity, Eye, FileCode, Package,
   ChevronRight, Scan, Layers, ShieldAlert, Crosshair
 } from 'lucide-react';
+import { SeverityDonut, ScanActivityChart, RiskTrendChart, OwaspBarChart } from '../components/Charts';
+import { DashboardSkeleton } from '../components/Skeleton';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,8 +22,12 @@ export default function Dashboard() {
 
   const loadDashboard = async () => {
     try {
-      const data = await scans.dashboard();
-      setStats(data);
+      const [dashData, analyticsRes] = await Promise.all([
+        scans.dashboard(),
+        analytics.getDashboard().catch(() => null),
+      ]);
+      setStats(dashData);
+      setAnalyticsData(analyticsRes);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -44,19 +51,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="page-content">
-      <div className="dash-loading">
-        <div className="dash-loading-ring">
-          <svg viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(59,130,246,0.08)" strokeWidth="4" />
-            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent-blue)" strokeWidth="4"
-              strokeDasharray="80 240" strokeLinecap="round" className="dash-loading-arc" />
-          </svg>
-        </div>
-        <div className="dash-loading-text">
-          <span className="dash-loading-label">INITIALIZING THREAT MATRIX</span>
-          <span className="dash-loading-sub">Loading security telemetry...</span>
-        </div>
-      </div>
+      <DashboardSkeleton />
     </div>
   );
 
@@ -77,15 +72,15 @@ export default function Dashboard() {
       <div className="dash-hero">
         <div className="dash-hero-left">
           <div className="dash-hero-badge">
-            <Crosshair size={14} />
-            <span>SENTINEL COMMAND CENTER</span>
+            <Crosshair size={12} />
+            <span>SENTINEL THREAT CENTER</span>
           </div>
           <h1 className="dash-hero-title">Threat Intelligence</h1>
-          <p className="dash-hero-sub">Real-time security posture monitoring across <strong>{stats?.total_scans || 0}</strong> scanned API endpoints</p>
+          <p className="dash-hero-sub">Real-time security posture across <strong>{stats?.total_scans || 0}</strong> scanned API endpoints</p>
         </div>
         <div className="dash-hero-right">
           <Link to="/new-scan" className="dash-scan-btn">
-            <Scan size={16} />
+            <Scan size={14} />
             <span>New Scan</span>
             <div className="dash-scan-btn-glow" />
           </Link>
@@ -95,7 +90,7 @@ export default function Dashboard() {
       {/* === CORE METRICS ROW === */}
       <div className="dash-core-row">
         <div className="dash-core-card">
-          <div className="dash-core-icon blue"><Shield size={18} /></div>
+          <div className="dash-core-icon cyan"><Shield size={18} /></div>
           <div className="dash-core-data">
             <span className="dash-core-num">{stats?.total_scans || 0}</span>
             <span className="dash-core-label">Scans Executed</span>
@@ -126,7 +121,7 @@ export default function Dashboard() {
         </div>
 
         <div className="dash-core-card">
-          <div className="dash-core-icon cyan"><Layers size={18} /></div>
+          <div className="dash-core-icon blue"><Layers size={18} /></div>
           <div className="dash-core-data">
             <span className="dash-core-num">{riskLevel}</span>
             <span className="dash-core-label">Risk Classification</span>
@@ -135,87 +130,49 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* === THREAT POSTURE + SEVERITY MATRIX === */}
-      <div className="dash-dual-section">
-        {/* Threat Gauge */}
-        <div className="dash-panel dash-threat-panel">
+      {/* === CHARTS ROW === */}
+      <div className="dash-charts-row">
+        {/* Severity Distribution Donut */}
+        <div className="dash-panel">
           <div className="dash-panel-header">
             <span className="dash-panel-dot" />
-            <span className="dash-panel-title">THREAT GAUGE</span>
+            <span className="dash-panel-title">SEVERITY DISTRIBUTION</span>
           </div>
-          <div className="dash-threat-body">
-            <div className="dash-gauge-visual">
-              <svg viewBox="0 0 200 120" className="dash-gauge-svg">
-                {/* Background arc */}
-                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(59,130,246,0.08)" strokeWidth="10" strokeLinecap="round" />
-                {/* Filled arc segments */}
-                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="10" strokeLinecap="round"
-                  strokeDasharray={`${(avgScore / 100) * 251.2} 251.2`} className="dash-gauge-arc" />
-                <defs>
-                  <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="var(--accent-blue)" />
-                    <stop offset="50%" stopColor="var(--accent-purple)" />
-                    <stop offset="100%" stopColor="var(--accent-red)" />
-                  </linearGradient>
-                </defs>
-                {/* Tick marks */}
-                {[0, 20, 40, 60, 80, 100].map((tick) => {
-                  const angle = (tick / 100) * 180 - 180;
-                  const rad = (angle * Math.PI) / 180;
-                  const x1 = 100 + 72 * Math.cos(rad);
-                  const y1 = 100 + 72 * Math.sin(rad);
-                  const x2 = 100 + 82 * Math.cos(rad);
-                  const y2 = 100 + 82 * Math.sin(rad);
-                  return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(59,130,246,0.2)" strokeWidth="1.5" />;
-                })}
-              </svg>
-              <div className="dash-gauge-center">
-                <span className="dash-gauge-value" style={{ color: getRiskColor(avgScore) }}>{Math.round(avgScore)}</span>
-                <span className="dash-gauge-sub">/100</span>
-              </div>
-            </div>
-            <div className="dash-gauge-labels">
-              <span>LOW</span><span>MEDIUM</span><span>HIGH</span><span>CRITICAL</span>
-            </div>
-            <div className={`dash-threat-level ${getRiskClass(avgScore)}`}>
-              <span className="dash-threat-dot" />
-              {riskLevel} Threat Level
-            </div>
+          <SeverityDonut distribution={dist} />
+        </div>
+
+        {/* Scan Activity Bar Chart */}
+        <div className="dash-panel">
+          <div className="dash-panel-header">
+            <span className="dash-panel-dot" />
+            <span className="dash-panel-title">SCAN ACTIVITY (30D)</span>
+          </div>
+          <div className="dash-chart-body">
+            <ScanActivityChart data={analyticsData?.scan_activity} />
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-charts-row">
+        {/* Risk Trend Line */}
+        <div className="dash-panel">
+          <div className="dash-panel-header">
+            <span className="dash-panel-dot" />
+            <span className="dash-panel-title">RISK TREND</span>
+          </div>
+          <div className="dash-chart-body">
+            <RiskTrendChart data={analyticsData?.risk_trend} />
           </div>
         </div>
 
-        {/* Severity Matrix */}
-        <div className="dash-panel dash-matrix-panel">
+        {/* OWASP Distribution */}
+        <div className="dash-panel">
           <div className="dash-panel-header">
             <span className="dash-panel-dot" />
-            <span className="dash-panel-title">SEVERITY MATRIX</span>
+            <span className="dash-panel-title">OWASP FINDINGS</span>
           </div>
-          <div className="dash-matrix-body">
-            {['Critical', 'High', 'Medium', 'Low', 'Info'].map(sev => {
-              const count = dist[sev] || 0;
-              const pct = totalFindings > 0 ? (count / totalFindings) * 100 : 0;
-              return (
-                <div key={sev} className="dash-matrix-row">
-                  <div className="dash-matrix-label">
-                    <span className={`dash-matrix-dot ${sev.toLowerCase()}`} />
-                    <span className="dash-matrix-name">{sev}</span>
-                  </div>
-                  <div className="dash-matrix-bar-track">
-                    <div className={`dash-matrix-bar-fill ${sev.toLowerCase()}`} style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }} />
-                  </div>
-                  <span className="dash-matrix-count">{count}</span>
-                </div>
-              );
-            })}
-            {totalFindings > 0 && (
-              <div className="dash-matrix-stack">
-                {['Critical', 'High', 'Medium', 'Low', 'Info'].map(sev => (
-                  dist[sev] > 0 ? (
-                    <div key={sev} className={`dash-stack-seg ${sev.toLowerCase()}`} style={{ flex: dist[sev] }} title={`${sev}: ${dist[sev]}`} />
-                  ) : null
-                ))}
-              </div>
-            )}
+          <div className="dash-chart-body">
+            <OwaspBarChart data={analyticsData?.owasp_distribution} />
           </div>
         </div>
       </div>
@@ -269,15 +226,46 @@ export default function Dashboard() {
           <span className="dash-panel-title">RECENT OPERATIONS</span>
         </div>
         {!stats?.recent_scans?.length ? (
-          <div className="dash-empty-state">
+          <div className="dash-empty-onboard">
             <div className="dash-empty-icon">
-              <Shield size={36} />
+              <Shield size={32} />
             </div>
-            <h4>No Operations Recorded</h4>
-            <p>Execute your first security scan to begin threat analysis.</p>
-            <Link to="/new-scan" className="btn-primary">
-              <Upload size={14} /> Initiate Scan
-            </Link>
+            <h4>Welcome to SentinelAI</h4>
+            <p>Start securing your applications by running your first scan.</p>
+            <div className="dash-onboard-steps">
+              <Link to="/new-scan" className="dash-onboard-step">
+                <div className="dash-onboard-num">1</div>
+                <div className="dash-onboard-text">
+                  <span className="dash-onboard-title">Upload API Spec</span>
+                  <span className="dash-onboard-desc">Scan your OpenAPI/Swagger file for vulnerabilities</span>
+                </div>
+                <Upload size={14} className="dash-onboard-arrow" />
+              </Link>
+              <Link to="/sast" className="dash-onboard-step">
+                <div className="dash-onboard-num">2</div>
+                <div className="dash-onboard-text">
+                  <span className="dash-onboard-title">Run SAST Analysis</span>
+                  <span className="dash-onboard-desc">Static code analysis for Python, JavaScript, Java</span>
+                </div>
+                <FileCode size={14} className="dash-onboard-arrow" />
+              </Link>
+              <Link to="/deps" className="dash-onboard-step">
+                <div className="dash-onboard-num">3</div>
+                <div className="dash-onboard-text">
+                  <span className="dash-onboard-title">Scan Dependencies</span>
+                  <span className="dash-onboard-desc">Detect known CVEs in your packages</span>
+                </div>
+                <Package size={14} className="dash-onboard-arrow" />
+              </Link>
+              <Link to="/copilot" className="dash-onboard-step">
+                <div className="dash-onboard-num">4</div>
+                <div className="dash-onboard-text">
+                  <span className="dash-onboard-title">Ask AI Copilot</span>
+                  <span className="dash-onboard-desc">Get AI-powered security recommendations</span>
+                </div>
+                <Target size={14} className="dash-onboard-arrow" />
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="dash-scan-list">
@@ -319,7 +307,7 @@ export default function Dashboard() {
         </div>
         <div className="dash-status-item">
           <span className="dash-status-dot online" />
-          <span>Threat Intelligence</span>
+          <span>Threat Intel Feed</span>
         </div>
         <div className="dash-status-item">
           <span className="dash-status-dot online" />
@@ -350,9 +338,9 @@ function getRiskLevel(s) {
 }
 
 function getRiskColor(s) {
-  if (s >= 80) return '#ef4444';
-  if (s >= 60) return '#f97316';
-  if (s >= 30) return '#eab308';
-  if (s > 0) return '#10b981';
-  return '#3b82f6';
+  if (s >= 80) return '#ff2244';
+  if (s >= 60) return '#ff6622';
+  if (s >= 30) return '#ffaa00';
+  if (s > 0) return '#00ff88';
+  return '#00d4ff';
 }

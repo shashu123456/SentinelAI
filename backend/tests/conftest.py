@@ -1,13 +1,14 @@
-import pytest
-import sys
 import os
+import sys
 import tempfile
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-os.environ["DATABASE_URL"] = (
-    "sqlite:///" + os.path.join(tempfile.gettempdir(), f"sentinelai_test_{os.getpid()}.db").replace("\\", "/")
-)
+os.environ["DATABASE_URL"] = "sqlite:///" + os.path.join(
+    tempfile.gettempdir(), f"sentinelai_test_{os.getpid()}.db"
+).replace("\\", "/")
 
 
 @pytest.fixture()
@@ -19,10 +20,61 @@ def client():
     Base.metadata.create_all(bind=engine)
 
     from fastapi.testclient import TestClient
+
     from app.main import app
 
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture()
+def db_session():
+    """Direct SQLAlchemy session against the isolated test database.
+
+    Drops and recreates all tables so each test starts from a clean schema.
+    """
+    import app.models.models  # noqa: F401 - register tables on Base.metadata
+    from app.database.database import Base, SessionLocal, engine
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture()
+def user(db_session):
+    """A persisted regular user created through the repository layer."""
+    from app.repositories.users import UserRepository
+    from app.utils.security import hash_password
+
+    repo = UserRepository(db_session)
+    u = repo.create(
+        username="repo_user",
+        email="repo_user@example.com",
+        hashed_password=hash_password("testpass123"),
+    )
+    db_session.commit()
+    return u
+
+
+@pytest.fixture()
+def scan(db_session, user):
+    """A persisted scan owned by `user`."""
+    from app.repositories.scans import ScanRepository
+
+    repo = ScanRepository(db_session)
+    s = repo.create_scan(
+        user_id=user.id,
+        api_name="Petstore",
+        source_spec={"openapi": "3.0.0", "info": {"title": "Petstore"}},
+    )
+    db_session.commit()
+    return s
 
 
 @pytest.fixture(autouse=True)
@@ -115,7 +167,12 @@ def _petstore_spec() -> dict:
                 "get": {
                     "operationId": "getPet",
                     "parameters": [
-                        {"name": "petId", "in": "path", "required": True, "schema": {"type": "string"}}
+                        {
+                            "name": "petId",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
                     ],
                     "responses": {"200": {"description": "OK"}},
                 }
@@ -172,14 +229,24 @@ def sample_petstore_spec():
                 "get": {
                     "operationId": "getPet",
                     "parameters": [
-                        {"name": "petId", "in": "path", "required": True, "schema": {"type": "string"}}
+                        {
+                            "name": "petId",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
                     ],
                     "responses": {"200": {"description": "OK"}},
                 },
                 "delete": {
                     "operationId": "deletePet",
                     "parameters": [
-                        {"name": "petId", "in": "path", "required": True, "schema": {"type": "string"}}
+                        {
+                            "name": "petId",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
                     ],
                     "responses": {"204": {"description": "Deleted"}},
                 },
@@ -261,7 +328,12 @@ def secure_spec():
                 "get": {
                     "security": [{"bearerAuth": []}],
                     "parameters": [
-                        {"name": "userId", "in": "path", "required": True, "schema": {"type": "string"}},
+                        {
+                            "name": "userId",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        },
                         {"name": "limit", "in": "query", "schema": {"type": "integer"}},
                     ],
                     "responses": {"200": {"description": "OK"}},

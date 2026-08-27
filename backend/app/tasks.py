@@ -1,13 +1,18 @@
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from typing import Any
 
-from app.core.security_engine.parser import parse_openapi_spec
-from app.core.security_engine.scanner import run_owasp_scan, CHECK_REGISTRY
-from app.core.risk_engine.scorer import calculate_risk_score
 from app.core.ai_engine.analyzer import analyze_vulnerabilities
+from app.core.risk_engine.scorer import calculate_risk_score
+from app.core.security_engine.parser import parse_openapi_spec
+from app.core.security_engine.scanner import CHECK_REGISTRY, run_owasp_scan
+from app.models.models import AIAnalysis, Scan
+from app.repositories.findings import FindingRepository
+from app.repositories.scans import ScanRepository
+from app.services.audit_service import record_scan_event
 from app.utils.logger import logger
 
 
@@ -17,21 +22,36 @@ class ScanTask:
     status: str = "queued"
     progress: int = 0
     message: str = "Queued"
-    scan_id: Optional[int] = None
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    scan_id: int | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     subscribers: list = field(default_factory=list)
 
 
-_tasks: Dict[str, ScanTask] = {}
+_tasks: dict[str, ScanTask] = {}
 
 
-def get_task(task_id: str) -> Optional[ScanTask]:
+def get_task(task_id: str) -> ScanTask | None:
     return _tasks.get(task_id)
 
 
-def get_task_by_scan_id(scan_id: int) -> Optional[ScanTask]:
+def get_task_stats() -> dict[str, Any]:
+    """Return aggregate task queue statistics."""
+    active = sum(1 for t in _tasks.values() if t.status == "running")
+    queued = sum(1 for t in _tasks.values() if t.status == "queued")
+    completed = sum(1 for t in _tasks.values() if t.status == "completed")
+    failed = sum(1 for t in _tasks.values() if t.status == "failed")
+    return {
+        "active": active,
+        "queued": queued,
+        "completed": completed,
+        "failed": failed,
+        "total": len(_tasks),
+    }
+
+
+def get_task_by_scan_id(scan_id: int) -> ScanTask | None:
     for task in _tasks.values():
         if task.scan_id == scan_id:
             return task
@@ -42,13 +62,15 @@ async def publish_progress(task: ScanTask):
     dead = []
     for ws in task.subscribers:
         try:
-            await ws.send_json({
-                "task_id": task.task_id,
-                "status": task.status,
-                "progress": task.progress,
-                "message": task.message,
-                "scan_id": task.scan_id,
-            })
+            await ws.send_json(
+                {
+                    "task_id": task.task_id,
+                    "status": task.status,
+                    "progress": task.progress,
+                    "message": task.message,
+                    "scan_id": task.scan_id,
+                }
+            )
         except Exception:
             dead.append(ws)
     for ws in dead:
@@ -75,13 +97,19 @@ async def run_scan_task(
     try:
         db = db_session_factory()
 
-        from app.models.models import Scan, Finding, AIAnalysis
+        scan_repo = ScanRepository(db)
+        finding_repo = FindingRepository(db)
 
-        scan = Scan(user_id=user_id, api_name=api_name, status="running")
-        db.add(scan)
-        db.commit()
-        db.refresh(scan)
+        scan = scan_repo.create_scan(user_id=user_id, api_name=api_name, source_spec=spec)
+        scan_repo.add(scan)
+        scan_repo.commit()
+        scan_repo.refresh(scan)
         task.scan_id = scan.id
+
+        record_scan_event(
+            db, "scan.started", user_id=user_id, scan_id=scan.id, detail={"api_name": api_name}
+        )
+        scan_repo.commit()
 
         task.message = "Parsing OpenAPI specification..."
         task.progress = 15
@@ -92,7 +120,7 @@ async def run_scan_task(
         scan.api_title = parsed_api["title"]
         scan.api_version = parsed_api["version"]
         scan.total_endpoints = parsed_api["total_endpoints"]
-        db.commit()
+        scan_repo.commit()
 
         # Show parsed API info
         task.message = f"API: {parsed_api['title']} v{parsed_api['version']}"
@@ -121,7 +149,9 @@ async def run_scan_task(
         await publish_progress(task)
         await asyncio.sleep(0.05)
 
-        task.message = f"Running OWASP Top 10 checks on {parsed_api['total_endpoints']} endpoints..."
+        task.message = (
+            f"Running OWASP Top 10 checks on {parsed_api['total_endpoints']} endpoints..."
+        )
         task.progress = 32
         await publish_progress(task)
 
@@ -129,12 +159,14 @@ async def run_scan_task(
         total_checks = len(CHECK_REGISTRY)
         progress_start, progress_end = 35, 74
         for i, check in enumerate(CHECK_REGISTRY):
-            progress = progress_start + int((i / max(total_checks, 1)) * (progress_end - progress_start))
+            progress = progress_start + int(
+                (i / max(total_checks, 1)) * (progress_end - progress_start)
+            )
             owasp_checks.append((check["category"], check["name"], progress))
 
         findings = run_owasp_scan(parsed_api)
 
-        check_findings_map = {}
+        check_findings_map: dict[str, list[dict]] = {}
         for f in findings:
             cat = f.get("owasp_category", "")
             check_findings_map.setdefault(cat, []).append(f)
@@ -156,34 +188,15 @@ async def run_scan_task(
                 await publish_progress(task)
                 await asyncio.sleep(0.03)
 
-        for f in findings:
-            db_finding = Finding(
-                scan_id=scan.id,
-                vulnerability_name=f["vulnerability_name"],
-                owasp_category=f["owasp_category"],
-                cwe_id=f.get("cwe_id"),
-                severity=f["severity"],
-                confidence=f.get("confidence", 85),
-                description=f["description"],
-                evidence=f.get("evidence", ""),
-                impact=f["impact"],
-                remediation=f["remediation"],
-                affected_endpoint=f.get("affected_endpoint"),
-                affected_method=f.get("affected_method"),
-                detection_reason=f.get("detection_reason", ""),
-                false_positive_note=f.get("false_positive_note", ""),
-            )
-            db.add(db_finding)
+        finding_repo.bulk_add_from_scan(scan.id, findings)
 
-        task.message = f"Completed OWASP checks. Calculating risk score..."
+        task.message = "Completed OWASP checks. Calculating risk score..."
         task.progress = 75
         await publish_progress(task)
         await asyncio.sleep(0.1)
 
         risk = calculate_risk_score(findings)
-        scan.total_vulnerabilities = risk["total_vulnerabilities"]
-        scan.risk_score = risk["score"]
-        scan.risk_level = risk["level"]
+        scan_repo.complete(scan, risk)
 
         task.message = f"Risk Score: {risk['score']}/100 ({risk['level']})"
         task.progress = 80
@@ -198,21 +211,35 @@ async def run_scan_task(
             try:
                 ai_result = analyze_vulnerabilities(findings, parsed_api)
                 if ai_result:
-                    db_analysis = AIAnalysis(
-                        scan_id=scan.id,
-                        executive_summary=ai_result.get("executive_summary", ""),
-                        technical_explanation=ai_result.get("technical_explanation", ""),
-                        business_impact=ai_result.get("business_impact", ""),
-                        attack_scenario=ai_result.get("attack_scenario", ""),
-                        recommended_mitigation=ai_result.get("recommended_mitigation", ""),
+                    db.add(
+                        AIAnalysis(
+                            scan_id=scan.id,
+                            executive_summary=ai_result.get("executive_summary", ""),
+                            technical_explanation=ai_result.get("technical_explanation", ""),
+                            business_impact=ai_result.get("business_impact", ""),
+                            attack_scenario=ai_result.get("attack_scenario", ""),
+                            recommended_mitigation=ai_result.get("recommended_mitigation", ""),
+                        )
                     )
-                    db.add(db_analysis)
             except Exception as e:
                 logger.warning(f"AI analysis failed for scan {scan.id}: {e}")
 
         scan.status = "completed"
-        scan.completed_at = datetime.now(timezone.utc)
-        db.commit()
+        scan.completed_at = datetime.now(UTC)
+        scan_repo.commit()
+
+        record_scan_event(
+            db,
+            "scan.completed",
+            user_id=user_id,
+            scan_id=scan.id,
+            detail={
+                "total_vulnerabilities": risk["total_vulnerabilities"],
+                "risk_score": risk["score"],
+                "risk_level": risk["level"],
+            },
+        )
+        scan_repo.commit()
 
         task.status = "completed"
         task.progress = 100
@@ -227,7 +254,9 @@ async def run_scan_task(
         }
         await publish_progress(task)
 
-        logger.info(f"Background scan {scan.id} completed: {risk['total_vulnerabilities']} findings")
+        logger.info(
+            f"Background scan {scan.id} completed: {risk['total_vulnerabilities']} findings"
+        )
 
         db.close()
 
@@ -241,10 +270,17 @@ async def run_scan_task(
         if task.scan_id:
             try:
                 db = db_session_factory()
-                from app.models.models import Scan
                 scan = db.query(Scan).filter(Scan.id == task.scan_id).first()
                 if scan:
                     scan.status = "failed"
+                    db.commit()
+                    record_scan_event(
+                        db,
+                        "scan.failed",
+                        user_id=user_id,
+                        scan_id=scan.id,
+                        detail={"error": str(e)},
+                    )
                     db.commit()
                 db.close()
             except Exception:

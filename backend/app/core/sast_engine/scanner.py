@@ -7,27 +7,42 @@ Supports Python, JavaScript, and Java.
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 from .rules import (
-    ALL_RULES,
     EXTENSION_LANGUAGE_MAP,
-    Language,
     SecurityRule,
-    Severity,
     get_rules_for_file,
 )
 
 # Directories and files to skip during scanning
 SKIP_DIRS = {
-    "node_modules", "__pycache__", ".git", ".venv", "venv", "env",
-    "dist", "build", ".next", "target", "vendor", "eggs", "*.egg-info",
-    ".tox", ".mypy_cache", ".pytest_cache", "coverage",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    ".venv",
+    "venv",
+    "env",
+    "dist",
+    "build",
+    ".next",
+    "target",
+    "vendor",
+    "eggs",
+    "*.egg-info",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    "coverage",
 }
 
 SKIP_FILES = {
-    "package-lock.json", "yarn.lock", "poetry.lock", "Gemfile.lock",
-    ".min.js", ".min.css", ".bundle.js",
+    "package-lock.json",
+    "yarn.lock",
+    "poetry.lock",
+    "Gemfile.lock",
+    ".min.js",
+    ".min.css",
+    ".bundle.js",
 }
 
 # Maximum file size to scan (500KB)
@@ -37,11 +52,12 @@ MAX_FILE_SIZE = 500 * 1024
 @dataclass
 class SASTFinding:
     """A single SAST finding."""
+
     rule_id: str
     rule_name: str
     severity: str
     cwe_id: str
-    owasp_category: Optional[str]
+    owasp_category: str | None
     language: str
     file_path: str
     line_number: int
@@ -72,6 +88,7 @@ class SASTFinding:
 @dataclass
 class SASTScanResult:
     """Aggregated result of a SAST scan."""
+
     target_path: str
     total_files_scanned: int
     total_lines_scanned: int
@@ -82,7 +99,7 @@ class SASTScanResult:
 
     @property
     def summary(self) -> dict:
-        severity_counts = {}
+        severity_counts: dict[str, int] = {}
         for f in self.findings:
             severity_counts[f.severity] = severity_counts.get(f.severity, 0) + 1
         return {
@@ -110,17 +127,14 @@ def _is_skip_path(path: str) -> bool:
         if part in SKIP_DIRS or part.startswith("*"):
             return True
     basename = os.path.basename(path)
-    for skip in SKIP_FILES:
-        if skip in basename:
-            return True
-    return False
+    return any(skip in basename for skip in SKIP_FILES)
 
 
 def _scan_file(filepath: str, rules: list[SecurityRule]) -> list[SASTFinding]:
     """Scan a single file against security rules."""
-    findings = []
+    findings: list[SASTFinding] = []
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        with open(filepath, encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
     except (OSError, UnicodeDecodeError):
         return findings
@@ -133,21 +147,23 @@ def _scan_file(filepath: str, rules: list[SecurityRule]) -> list[SASTFinding]:
         for rule in rules:
             try:
                 if re.search(rule.pattern, stripped):
-                    findings.append(SASTFinding(
-                        rule_id=rule.id,
-                        rule_name=rule.name,
-                        severity=rule.severity.value,
-                        cwe_id=rule.cwe_id,
-                        owasp_category=rule.owasp_category,
-                        language=rule.language.value,
-                        file_path=filepath,
-                        line_number=line_idx,
-                        line_content=stripped,
-                        description=rule.description,
-                        remediation=rule.remediation,
-                        confidence=rule.confidence,
-                        tags=rule.tags,
-                    ))
+                    findings.append(
+                        SASTFinding(
+                            rule_id=rule.id,
+                            rule_name=rule.name,
+                            severity=rule.severity.value,
+                            cwe_id=rule.cwe_id,
+                            owasp_category=rule.owasp_category,
+                            language=rule.language.value,
+                            file_path=filepath,
+                            line_number=line_idx,
+                            line_content=stripped,
+                            description=rule.description,
+                            remediation=rule.remediation,
+                            confidence=rule.confidence,
+                            tags=rule.tags,
+                        )
+                    )
             except re.error:
                 continue
 
@@ -229,7 +245,7 @@ def run_sast_scan(target_path: str) -> SASTScanResult:
             languages_seen.add(lang.value)
 
         try:
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 line_count = sum(1 for _ in f)
             total_lines += line_count
         except OSError:
@@ -242,11 +258,13 @@ def run_sast_scan(target_path: str) -> SASTScanResult:
 
     # Sort by severity (Critical first), then file path, then line number
     severity_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}
-    all_findings.sort(key=lambda f: (
-        severity_order.get(f.severity, 5),
-        f.file_path,
-        f.line_number,
-    ))
+    all_findings.sort(
+        key=lambda f: (
+            severity_order.get(f.severity, 5),
+            f.file_path,
+            f.line_number,
+        )
+    )
 
     result.findings = all_findings
     result.total_lines_scanned = total_lines

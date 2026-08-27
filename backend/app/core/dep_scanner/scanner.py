@@ -4,18 +4,16 @@ Parses requirements.txt (Python), package.json (JavaScript), and pom.xml (Java)
 to detect known vulnerabilities, outdated packages, and security risks.
 """
 
+import json
 import os
 import re
-import json
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import Optional
 
 from .vulnerability_db import (
-    PYTHON_VULNERABILITIES,
-    JAVASCRIPT_VULNERABILITIES,
     JAVA_VULNERABILITIES,
-    Vulnerability,
+    JAVASCRIPT_VULNERABILITIES,
+    PYTHON_VULNERABILITIES,
 )
 
 
@@ -50,6 +48,7 @@ def _is_version_affected(installed: str, vulnerable_range: str) -> bool:
 @dataclass
 class DependencyInfo:
     """Information about a single dependency."""
+
     name: str
     version: str
     ecosystem: str
@@ -60,6 +59,7 @@ class DependencyInfo:
 @dataclass
 class DepFinding:
     """A dependency security finding."""
+
     package: str
     installed_version: str
     severity: str
@@ -93,6 +93,7 @@ class DepFinding:
 @dataclass
 class DepScanResult:
     """Aggregated result of a dependency scan."""
+
     target_path: str
     total_dependencies: int = 0
     total_files_scanned: int = 0
@@ -103,7 +104,7 @@ class DepScanResult:
 
     @property
     def summary(self) -> dict:
-        severity_counts = {}
+        severity_counts: dict[str, int] = {}
         for f in self.findings:
             severity_counts[f.severity] = severity_counts.get(f.severity, 0) + 1
         return {
@@ -120,8 +121,13 @@ class DepScanResult:
             "summary": self.summary,
             "findings": [f.to_dict() for f in self.findings],
             "dependencies": [
-                {"name": d.name, "version": d.version, "ecosystem": d.ecosystem,
-                 "file": d.file_path, "is_dev": d.is_dev}
+                {
+                    "name": d.name,
+                    "version": d.version,
+                    "ecosystem": d.ecosystem,
+                    "file": d.file_path,
+                    "is_dev": d.is_dev,
+                }
                 for d in self.dependencies
             ],
             "errors": self.errors,
@@ -132,31 +138,41 @@ def _parse_requirements_txt(filepath: str) -> list[DependencyInfo]:
     """Parse a Python requirements.txt file."""
     deps = []
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        with open(filepath, encoding="utf-8", errors="ignore") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith("#") or line.startswith("-"):
                     continue
 
                 # Handle ==, >=, ~=, etc.
-                match = re.match(r"^([a-zA-Z0-9_][a-zA-Z0-9._-]*)\s*([=~><!]+)\s*([0-9][a-zA-Z0-9.*-]*)", line)
+                match = re.match(
+                    r"^([a-zA-Z0-9_][a-zA-Z0-9._-]*)\s*([=~><!]+)\s*([0-9][a-zA-Z0-9.*-]*)", line
+                )
                 if match:
                     name = match.group(1).strip().lower()
                     version = match.group(3).strip()
-                    deps.append(DependencyInfo(
-                        name=name, version=version,
-                        ecosystem="python", file_path=filepath,
-                    ))
+                    deps.append(
+                        DependencyInfo(
+                            name=name,
+                            version=version,
+                            ecosystem="python",
+                            file_path=filepath,
+                        )
+                    )
                     continue
 
                 # Simple name without version
                 match = re.match(r"^([a-zA-Z0-9_][a-zA-Z0-9._-]*)", line)
                 if match:
                     name = match.group(1).strip().lower()
-                    deps.append(DependencyInfo(
-                        name=name, version="unknown",
-                        ecosystem="python", file_path=filepath,
-                    ))
+                    deps.append(
+                        DependencyInfo(
+                            name=name,
+                            version="unknown",
+                            ecosystem="python",
+                            file_path=filepath,
+                        )
+                    )
     except (OSError, UnicodeDecodeError):
         pass
     return deps
@@ -166,7 +182,7 @@ def _parse_package_json(filepath: str) -> list[DependencyInfo]:
     """Parse a JavaScript package.json file."""
     deps = []
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        with open(filepath, encoding="utf-8", errors="ignore") as f:
             data = json.load(f)
 
         dep_sections = [
@@ -183,11 +199,15 @@ def _parse_package_json(filepath: str) -> list[DependencyInfo]:
                 version = re.sub(r"[^0-9.]", "", str(version_spec))
                 if not version:
                     version = version_spec
-                deps.append(DependencyInfo(
-                    name=name.lower(), version=version,
-                    ecosystem="javascript", file_path=filepath,
-                    is_dev=is_dev,
-                ))
+                deps.append(
+                    DependencyInfo(
+                        name=name.lower(),
+                        version=version,
+                        ecosystem="javascript",
+                        file_path=filepath,
+                        is_dev=is_dev,
+                    )
+                )
     except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         pass
     return deps
@@ -239,10 +259,14 @@ def _parse_pom_xml(filepath: str) -> list[DependencyInfo]:
                     ver = version.text.strip()
 
                 if name:
-                    deps.append(DependencyInfo(
-                        name=name.lower(), version=ver,
-                        ecosystem="java", file_path=filepath,
-                    ))
+                    deps.append(
+                        DependencyInfo(
+                            name=name.lower(),
+                            version=ver,
+                            ecosystem="java",
+                            file_path=filepath,
+                        )
+                    )
 
         # Also check parent POM for managed versions
         parent_deps = find(root, "parent/dependencies")
@@ -253,10 +277,14 @@ def _parse_pom_xml(filepath: str) -> list[DependencyInfo]:
                 if artifact_id is not None and artifact_id.text:
                     name = artifact_id.text.strip().lower()
                     ver = version.text.strip() if version is not None and version.text else ""
-                    deps.append(DependencyInfo(
-                        name=name, version=ver,
-                        ecosystem="java", file_path=filepath,
-                    ))
+                    deps.append(
+                        DependencyInfo(
+                            name=name,
+                            version=ver,
+                            ecosystem="java",
+                            file_path=filepath,
+                        )
+                    )
 
     except (OSError, ET.ParseError):
         pass
@@ -287,29 +315,30 @@ def _check_vulnerabilities(dep: DependencyInfo, vuln_db: dict) -> list[DepFindin
         original_name = dep.name.lower()
         matched_vulns = vuln_db.get(original_name, [])
 
-    if not matched_vulns:
+    if not matched_vulns and "/" in dep.name:
         # Try removing scope prefix (@org/name -> name)
-        if "/" in dep.name:
-            short_name = dep.name.split("/")[-1]
-            matched_vulns = vuln_db.get(short_name.lower(), [])
+        short_name = dep.name.split("/")[-1]
+        matched_vulns = vuln_db.get(short_name.lower(), [])
 
     for vuln in matched_vulns:
         is_affected = _is_version_affected(dep.version, vuln.fixed_in)
         if is_affected:
-            findings.append(DepFinding(
-                package=dep.name,
-                installed_version=dep.version,
-                severity=vuln.severity,
-                cvss_score=vuln.cvss_score,
-                cve_id=vuln.cve_id,
-                cwe_id=vuln.cwe_id,
-                description=vuln.description,
-                fixed_in=vuln.fixed_in,
-                ecosystem=dep.ecosystem,
-                file_path=dep.file_path,
-                url=vuln.url,
-                confidence=0.95,
-            ))
+            findings.append(
+                DepFinding(
+                    package=dep.name,
+                    installed_version=dep.version,
+                    severity=vuln.severity,
+                    cvss_score=vuln.cvss_score,
+                    cve_id=vuln.cve_id,
+                    cwe_id=vuln.cwe_id,
+                    description=vuln.description,
+                    fixed_in=vuln.fixed_in,
+                    ecosystem=dep.ecosystem,
+                    file_path=dep.file_path,
+                    url=vuln.url,
+                    confidence=0.95,
+                )
+            )
 
     return findings
 
@@ -318,8 +347,11 @@ def _collect_dep_files(target_path: str) -> list[str]:
     """Collect dependency manifest files from the target path."""
     files = []
     dep_filenames = {
-        "requirements.txt", "requirements.in", "Pipfile",
-        "package.json", "pom.xml",
+        "requirements.txt",
+        "requirements.in",
+        "Pipfile",
+        "package.json",
+        "pom.xml",
     }
 
     if os.path.isfile(target_path):
@@ -328,8 +360,18 @@ def _collect_dep_files(target_path: str) -> list[str]:
             files.append(target_path)
         return files
 
-    skip_dirs = {"node_modules", "__pycache__", ".git", ".venv", "venv",
-                 "dist", "build", "target", ".next", "vendor"}
+    skip_dirs = {
+        "node_modules",
+        "__pycache__",
+        ".git",
+        ".venv",
+        "venv",
+        "dist",
+        "build",
+        "target",
+        ".next",
+        "vendor",
+    }
 
     for root, dirs, filenames in os.walk(target_path):
         dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith(".")]

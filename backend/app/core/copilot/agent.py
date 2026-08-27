@@ -8,13 +8,9 @@ This is the brain of the copilot. It:
 5. Falls back to intelligent rule-based analysis when LLM is unavailable
 """
 
-import json
-import urllib.request
-import urllib.error
 from dataclasses import dataclass, field
-from typing import Callable
+
 from app.config import get_settings
-from app.utils.logger import logger
 
 
 @dataclass
@@ -28,6 +24,7 @@ class AgentMessage:
 @dataclass
 class AgentState:
     """Tracks the agent's conversation state."""
+
     messages: list[AgentMessage] = field(default_factory=list)
     last_tool: str = ""
     last_context_hash: str = ""
@@ -51,43 +48,145 @@ def classify_intent(message: str) -> str:
     """
     lower = message.lower().strip()
 
-    greetings = ["hello", "hey", "good morning", "good afternoon", "good evening", "what's up", "sup"]
+    greetings = [
+        "hello",
+        "hey",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "what's up",
+        "sup",
+    ]
     if any(g in lower for g in greetings) and len(lower.split()) <= 5:
         return "greeting"
     if lower.strip() in ("hi", "yo", "hiya"):
         return "greeting"
 
-    if any(w in lower for w in ["what is my security", "security state", "security status", "current status", "what's my risk", "how are we doing", "security posture"]):
+    if any(
+        w in lower
+        for w in [
+            "what is my security",
+            "security state",
+            "security status",
+            "current status",
+            "what's my risk",
+            "how are we doing",
+            "security posture",
+        ]
+    ):
         return "scan_status"
 
-    if any(w in lower for w in ["highest risk", "most critical", "biggest risk", "most dangerous", "worst", "top risk", "what is my highest"]):
+    if any(
+        w in lower
+        for w in [
+            "highest risk",
+            "most critical",
+            "biggest risk",
+            "most dangerous",
+            "worst",
+            "top risk",
+            "what is my highest",
+        ]
+    ):
         return "highest_risk"
 
-    if any(w in lower for w in ["explain this", "explain the", "what is this", "tell me about", "describe this", "details on"]):
+    if any(
+        w in lower
+        for w in [
+            "explain this",
+            "explain the",
+            "what is this",
+            "tell me about",
+            "describe this",
+            "details on",
+        ]
+    ):
         return "explain_vuln"
 
-    if any(w in lower for w in ["why is this critical", "why critical", "why is this high", "why important", "why does this matter"]):
+    if any(
+        w in lower
+        for w in [
+            "why is this critical",
+            "why critical",
+            "why is this high",
+            "why important",
+            "why does this matter",
+        ]
+    ):
         return "why_critical"
 
-    if any(w in lower for w in ["how do i fix", "how to fix", "fix this", "remediate", "mitigate", "solution for", "patch", "resolve"]):
+    if any(
+        w in lower
+        for w in [
+            "how do i fix",
+            "how to fix",
+            "fix this",
+            "remediate",
+            "mitigate",
+            "solution for",
+            "patch",
+            "resolve",
+        ]
+    ):
         return "how_to_fix"
 
-    if any(w in lower for w in ["remediation plan", "fix plan", "action plan", "what should i fix first", "priority", "remediation steps"]):
+    if any(
+        w in lower
+        for w in [
+            "remediation plan",
+            "fix plan",
+            "action plan",
+            "what should i fix first",
+            "priority",
+            "remediation steps",
+        ]
+    ):
         return "remediation_plan"
 
-    if any(w in lower for w in ["executive summary", "management summary", "leadership", "board", "brief", "tldr", "bottom line"]):
+    if any(
+        w in lower
+        for w in [
+            "executive summary",
+            "management summary",
+            "leadership",
+            "board",
+            "brief",
+            "tldr",
+            "bottom line",
+        ]
+    ):
         return "executive_summary"
 
-    if any(w in lower for w in ["attack", "exploit", "how would", "attack path", "threat", "attacker", "breach"]):
+    if any(
+        w in lower
+        for w in ["attack", "exploit", "how would", "attack path", "threat", "attacker", "breach"]
+    ):
         return "attack_path"
 
-    if any(w in lower for w in ["owasp", "compliance", "standard", "regulation", "pci", "gdpr", "soc 2", "cwe"]):
+    if any(
+        w in lower
+        for w in ["owasp", "compliance", "standard", "regulation", "pci", "gdpr", "soc 2", "cwe"]
+    ):
         return "compliance"
 
-    if any(w in lower for w in ["compare", "comparison", "difference", "improvement", "better", "worse", "trend", "progress"]):
+    if any(
+        w in lower
+        for w in [
+            "compare",
+            "comparison",
+            "difference",
+            "improvement",
+            "better",
+            "worse",
+            "trend",
+            "progress",
+        ]
+    ):
         return "compare"
 
-    if any(w in lower for w in ["history", "previous scans", "past scans", "all scans", "scan history"]):
+    if any(
+        w in lower for w in ["history", "previous scans", "past scans", "all scans", "scan history"]
+    ):
         return "scan_history"
 
     return "general"
@@ -193,22 +292,28 @@ class CopilotAgent:
         high = sev.get("High", 0)
 
         lines = [
-            f"Hello! I'm SentinelAI, your AI security analyst.",
-            f"",
-            f"**Current Security State:**",
+            "Hello! I'm SentinelAI, your AI security analyst.",
+            "",
+            "**Current Security State:**",
             f"- Risk Score: **{score}/100** ({level})",
             f"- Total Findings: **{total}**",
             f"- Critical: **{critical}** | High: **{high}**",
             f"- Latest Scan: **{latest.get('api_name', 'N/A')}**",
-            f"",
+            "",
         ]
 
         if critical > 0:
-            lines.append(f"You have **{critical} Critical** findings that need immediate attention. Ask me about them or request a remediation plan.")
+            lines.append(
+                f"You have **{critical} Critical** findings that need immediate attention. Ask me about them or request a remediation plan."
+            )
         elif high > 0:
-            lines.append(f"You have **{high} High** severity findings. I recommend addressing these before your next deployment.")
+            lines.append(
+                f"You have **{high} High** severity findings. I recommend addressing these before your next deployment."
+            )
         else:
-            lines.append(f"No critical issues found. Your security posture looks good. Ask me anything about your findings.")
+            lines.append(
+                "No critical issues found. Your security posture looks good. Ask me anything about your findings."
+            )
 
         return "\n".join(lines)
 
@@ -219,7 +324,6 @@ class CopilotAgent:
             return "No scans have been performed yet. Upload an API specification to start a security assessment."
 
         latest = ctx.get("latest_scan")
-        findings = ctx.get("findings", [])
         critical = ctx.get("critical_findings", [])
 
         sev = risk.get("severity_counts", {})
@@ -227,29 +331,33 @@ class CopilotAgent:
         level = risk.get("risk_level", "Unknown")
 
         lines = [
-            f"**Security Assessment Status**",
-            f"",
+            "**Security Assessment Status**",
+            "",
             f"**Risk Score:** {score}/100 ({level})",
             f"**Total Scans:** {risk.get('total_scans', 0)}",
             f"**Total Findings:** {risk.get('total_findings', 0)}",
-            f"",
-            f"**Severity Distribution:**",
+            "",
+            "**Severity Distribution:**",
             f"- Critical: {sev.get('Critical', 0)}",
             f"- High: {sev.get('High', 0)}",
             f"- Medium: {sev.get('Medium', 0)}",
             f"- Low: {sev.get('Low', 0)}",
             f"- Info: {sev.get('Info', 0)}",
-            f"",
+            "",
         ]
 
         if latest:
-            lines.append(f"**Latest Scan:** {latest.get('api_name', 'N/A')} (Score: {latest.get('risk_score', 0)}/100)")
+            lines.append(
+                f"**Latest Scan:** {latest.get('api_name', 'N/A')} (Score: {latest.get('risk_score', 0)}/100)"
+            )
 
         if critical:
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**{len(critical)} Critical/High findings require attention:**")
             for f in critical[:5]:
-                lines.append(f"- [{f['severity']}] {f['vulnerability_name']} at {f.get('affected_endpoint', 'N/A')}")
+                lines.append(
+                    f"- [{f['severity']}] {f['vulnerability_name']} at {f.get('affected_endpoint', 'N/A')}"
+                )
 
         return "\n".join(lines)
 
@@ -266,18 +374,18 @@ class CopilotAgent:
 
         for i, f in enumerate(critical[:3], 1):
             lines.append(f"### {i}. {f['vulnerability_name']} ({f['severity']})")
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**CWE:** {f.get('cwe_id', 'N/A')}")
             lines.append(f"**OWASP:** {f.get('owasp_category', 'N/A')}")
             lines.append(f"**Endpoint:** {f.get('affected_endpoint', 'N/A')}")
             lines.append(f"**Confidence:** {f.get('confidence', 85)}%")
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**What it is:** {f.get('description', 'N/A')}")
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**Impact:** {f.get('impact', 'N/A')}")
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**How to fix:** {f.get('remediation', 'See OWASP guidelines')}")
-            lines.append(f"")
+            lines.append("")
 
         return "\n".join(lines)
 
@@ -326,14 +434,16 @@ class CopilotAgent:
 
         for f in critical[:3]:
             lines.append(f"### {f['vulnerability_name']}")
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**Severity:** {f['severity']} | **CWE:** {f.get('cwe_id', 'N/A')}")
-            lines.append(f"")
+            lines.append("")
             lines.append(f"**Why it matters:** {f.get('impact', 'N/A')}")
-            lines.append(f"")
-            lines.append(f"**Attack scenario:** An attacker could exploit this vulnerability to "
-                         f"{'compromise user data' if 'injection' in f.get('vulnerability_name', '').lower() else 'gain unauthorized access'}.")
-            lines.append(f"")
+            lines.append("")
+            lines.append(
+                f"**Attack scenario:** An attacker could exploit this vulnerability to "
+                f"{'compromise user data' if 'injection' in f.get('vulnerability_name', '').lower() else 'gain unauthorized access'}."
+            )
+            lines.append("")
 
         return "\n".join(lines)
 
@@ -349,23 +459,26 @@ class CopilotAgent:
             lines.append(f"### {f['vulnerability_name']} ({f['severity']})")
             lines.append(f"**Endpoint:** {f.get('affected_endpoint', 'N/A')}")
             lines.append(f"**Fix:** {f.get('remediation', 'See OWASP guidelines')}")
-            lines.append(f"")
+            lines.append("")
 
         return "\n".join(lines)
 
     def _handle_remediation_plan(self, ctx: dict) -> str:
         """Generate a prioritized remediation plan."""
         from app.core.copilot.tools import generate_remediation_plan
+
         return generate_remediation_plan(self.db, self.user_id)
 
     def _handle_executive_summary(self, ctx: dict) -> str:
         """Generate executive summary."""
         from app.core.copilot.tools import generate_executive_summary
+
         return generate_executive_summary(self.db, self.user_id)
 
     def _handle_attack_path(self, ctx: dict) -> str:
         """Analyze attack paths."""
         from app.core.copilot.tools import explain_attack_path
+
         return explain_attack_path(self.db, self.user_id)
 
     def _handle_compliance(self, ctx: dict) -> str:
@@ -429,14 +542,15 @@ class CopilotAgent:
 
         lines = ["**Scan History**", ""]
         for h in history:
-            lines.append(f"- **{h['api_name']}** | Score: {h['risk_score']}/100 ({h['risk_level']}) | {h.get('created_at', 'N/A')}")
+            lines.append(
+                f"- **{h['api_name']}** | Score: {h['risk_score']}/100 ({h['risk_level']}) | {h.get('created_at', 'N/A')}"
+            )
 
         return "\n".join(lines)
 
     def _handle_general(self, ctx: dict, message: str) -> str:
         """Handle general questions with context awareness."""
         has_data = ctx.get("has_data", False)
-        latest = ctx.get("latest_scan")
 
         if not has_data:
             return (
@@ -451,16 +565,16 @@ class CopilotAgent:
             )
 
         return (
-            f"I can help you analyze your security findings. Here are some things you can ask:\n\n"
-            f"- \"What is my highest risk issue?\"\n"
-            f"- \"Explain this vulnerability\"\n"
-            f"- \"Why is this critical?\"\n"
-            f"- \"How do I fix this?\"\n"
-            f"- \"Generate remediation plan\"\n"
-            f"- \"Write executive summary\"\n"
-            f"- \"How would an attacker exploit this?\"\n"
-            f"- \"Map to OWASP Top 10\"\n"
-            f"- \"Compare my scans\""
+            "I can help you analyze your security findings. Here are some things you can ask:\n\n"
+            '- "What is my highest risk issue?"\n'
+            '- "Explain this vulnerability"\n'
+            '- "Why is this critical?"\n'
+            '- "How do I fix this?"\n'
+            '- "Generate remediation plan"\n'
+            '- "Write executive summary"\n'
+            '- "How would an attacker exploit this?"\n'
+            '- "Map to OWASP Top 10"\n'
+            '- "Compare my scans"'
         )
 
     def get_conversation_history(self) -> list[dict]:

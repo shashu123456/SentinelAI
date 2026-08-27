@@ -1,0 +1,24 @@
+# SentinelAI — Prometheus Configuration
+# Scrapes metrics from the backend API
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: sentinelai-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: sentinelai
+          environment: production
+
+  - job_name: sentinelai-redis
+    static_configs:
+      - targets: ["redis:6379"]
+        labels:
+          service: redis
+
+alerting:
+  alertmanagers: []
