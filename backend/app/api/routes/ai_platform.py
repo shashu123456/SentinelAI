@@ -4,17 +4,48 @@ Comprehensive AI endpoints: executive reports, risk explanation,
 threat prediction, root cause, code fixes, architecture review,
 security advisor, scan summarizer, NL search, knowledge graph,
 conversation memory, prompt registry.
+
+Security: All user-provided text inputs are screened for prompt injection
+patterns before being passed to the AI engine.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+import re
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database.database import get_db
 from app.models.models import Finding, Scan, User
+from app.utils.ratelimit import limiter
 from app.utils.security import get_current_user
 
 router = APIRouter()
+
+# ── Prompt Injection Protection ───────────────────────────────────────
+PROMPT_INJECTION_PATTERNS = [
+    re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE),
+    re.compile(r"you\s+are\s+now\s+", re.IGNORECASE),
+    re.compile(r"act\s+as\s+(?:a\s+)?(?:different|new|admin|root)", re.IGNORECASE),
+    re.compile(r"system\s*prompt", re.IGNORECASE),
+    re.compile(r"repeat\s+(?:your\s+)?(?:system|initial)\s+prompt", re.IGNORECASE),
+    re.compile(r"what\s+(?:is\s+)?your\s+(?:system|initial)\s+prompt", re.IGNORECASE),
+    re.compile(r" reveal\s+(?:your\s+)?(?:system|initial)\s+prompt", re.IGNORECASE),
+    re.compile(r"\[INST\]", re.IGNORECASE),
+    re.compile(r"<<SYS>>", re.IGNORECASE),
+    re.compile(r"<\|im_start\|>", re.IGNORECASE),
+    re.compile(r"<\|im_end\|>", re.IGNORECASE),
+    re.compile(r"<\|endoftext\|>", re.IGNORECASE),
+]
+
+
+def _detect_prompt_injection(text: str) -> bool:
+    """Check if user input contains prompt injection patterns."""
+    if not text:
+        return False
+    return any(pattern.search(text) for pattern in PROMPT_INJECTION_PATTERNS)
+
 
 
 class ExecutiveReportRequest(BaseModel):
@@ -257,11 +288,20 @@ def review_architecture(
 # ── Security Advisor ──────────────────────────────────────────────────────
 
 @router.post("/ai/advise")
+@limiter.limit(f"{get_settings().COPILOT_RATE_LIMIT_PER_MINUTE}/minute")
 def security_advisor(
+    request: Request,
     data: SecurityAdvisorRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Prompt injection protection
+    if _detect_prompt_injection(data.question):
+        raise HTTPException(
+            status_code=400,
+            detail="Input contains patterns that are not allowed. Please ask security-related questions only."
+        )
+
     from app.core.ai_platform.engine import get_ai_engine
     engine = get_ai_engine()
 
@@ -314,11 +354,20 @@ def summarize_scan(
 # ── Natural Language Search ───────────────────────────────────────────────
 
 @router.post("/ai/search")
+@limiter.limit(f"{get_settings().COPILOT_RATE_LIMIT_PER_MINUTE}/minute")
 def nl_search(
+    request: Request,
     data: NLSearchRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Prompt injection protection
+    if _detect_prompt_injection(data.query):
+        raise HTTPException(
+            status_code=400,
+            detail="Input contains patterns that are not allowed."
+        )
+
     from app.core.ai_platform.engine import get_ai_engine
     engine = get_ai_engine()
 

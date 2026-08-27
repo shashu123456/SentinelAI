@@ -59,12 +59,16 @@ def decode_access_token(token: str) -> dict:
 
     Checks:
     1. Signature validity
-    2. Expiry
-    3. Blacklist (JTI-based revocation)
-    4. User-level revocation (logout-all)
+    2. Algorithm whitelist (prevents algorithm confusion attacks)
+    3. Expiry
+    4. Blacklist (JTI-based revocation)
+    5. User-level revocation (logout-all)
     """
+    # SECURITY: Always pass algorithms as a list to prevent algorithm confusion.
+    # An attacker could craft a token with alg:none or alg:HS256 when RS256 is expected.
+    allowed_algorithms = [settings.ALGORITHM]
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=allowed_algorithms)
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"

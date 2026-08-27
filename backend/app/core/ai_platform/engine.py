@@ -8,8 +8,10 @@ Every response is:
 """
 
 import json
+import socket
 import urllib.error
 import urllib.request
+from ipaddress import ip_address
 
 from app.config import get_settings
 from app.core.ai_platform.conversation_memory import get_conversation_memory
@@ -26,25 +28,50 @@ settings = get_settings()
 # LLM CALLER
 # ═══════════════════════════════════════════════════════════════════════════
 
+def _is_safe_url(url: str) -> bool:
+    """SSRF protection: validate that a URL is safe to request.
+
+    Blocks:
+    - Private/internal IP ranges (127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+    - IPv6 loopback
+    - Link-local addresses
+    - Non-HTTP(S) schemes
+    """
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        # Resolve hostname to check actual IP
+        try:
+            resolved = socket.getaddrinfo(hostname, None)
+            for _, _, _, _, sockaddr in resolved:
+                ip = ip_address(sockaddr[0])
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                    return False
+        except (socket.gaierror, ValueError):
+            return False
+        return True
+    except Exception:
+        return False
+
+
 def _call_llm(prompt: str, system: str = "", temperature: float = 0.3, max_tokens: int = 2048) -> str | None:
     """Call the LLM with a prompt and return the response text."""
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
+    # SSRF protection: validate the LLM endpoint URL
+    if not _is_safe_url(settings.OLLAMA_URL):
+        logger.warning(f"LLM endpoint URL failed SSRF check: {settings.OLLAMA_URL}")
+        return None
+
+    # Build prompt with system context
+    full_prompt = (system + "\n\n" + prompt) if system else prompt
 
     payload = {
         "model": settings.OLLAMA_MODEL,
-        "messages": messages if hasattr(_call_llm, '_supports_chat') else None,
-        "prompt": prompt if not hasattr(_call_llm, '_supports_chat') else None,
-        "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_tokens},
-    }
-
-    # Simplified: use prompt-based API
-    payload = {
-        "model": settings.OLLAMA_MODEL,
-        "prompt": (system + "\n\n" + prompt) if system else prompt,
+        "prompt": full_prompt,
         "stream": False,
         "options": {"temperature": temperature, "num_predict": max_tokens},
     }
