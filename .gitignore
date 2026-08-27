@@ -26,3 +26,13 @@ INTERVIEW_GUIDE.md
 SENTINELAI_COMPLETE_LEARNING_GUIDE.md
 docker-compose.override.yml
 
+
+# Tool artifacts
+.freebuff/
+Downloads/
+
+# Test artifacts
+.coverage
+
+# Local env
+.env.local
