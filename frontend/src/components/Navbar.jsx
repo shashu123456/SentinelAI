@@ -145,7 +145,7 @@ export default function Navbar() {
     {/* Mobile overlay */}
     <div className={`sidebar-overlay ${mobileOpen ? 'visible' : ''}`} onClick={toggleMobile} />
 
-    <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
+    <aside className={`sidebar ${mobileOpen ? 'open' : ''}`} role="navigation" aria-label="Main navigation">
       <div className="sidebar-brand">
         <div className="sidebar-brand-icon">
           <Shield size={18} />
@@ -215,14 +215,14 @@ export default function Navbar() {
         <kbd className="cmd-trigger-kbd">⌘K</kbd>
       </button>
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" aria-label="Sidebar navigation">
         {NAV_SECTIONS.map(section => (
           <div key={section.id} className="sidebar-section">
             <div className="sidebar-section-label">// {section.label}</div>
             {section.items.map(item => {
               const Icon = item.icon;
               return (
-                <Link key={item.path} to={item.path} className={`sidebar-link ${isActive(item.path) ? 'active' : ''}`}>
+                <Link key={item.path} to={item.path} className={`sidebar-link ${isActive(item.path) ? 'active' : ''}`} aria-current={isActive(item.path) ? 'page' : undefined}>
                   <Icon size={16} /> {item.label}
                 </Link>
               );
@@ -254,10 +254,10 @@ export default function Navbar() {
           <div className="sidebar-username">{user?.username}</div>
           <div className="sidebar-userrole">SOC Analyst</div>
         </div>
-        <button className="sidebar-theme-toggle" onClick={toggleTheme} title="Toggle theme">
+        <button className="sidebar-theme-toggle" onClick={toggleTheme} title="Toggle theme" aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
-        <button className="sidebar-logout" onClick={handleLogout} title="Logout">
+        <button className="sidebar-logout" onClick={handleLogout} title="Logout" aria-label="Log out of account">
           <LogOut size={16} />
         </button>
       </div>

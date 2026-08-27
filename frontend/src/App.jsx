@@ -72,9 +72,10 @@ function LandingRoute() {
 function AppLayout() {
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
       <OfflineIndicator />
       <Navbar />
-      <main className="main-content">
+      <main className="main-content" id="main-content" role="main">
         <Breadcrumbs />
         <Suspense fallback={<PageLoader />}>
           <Outlet />

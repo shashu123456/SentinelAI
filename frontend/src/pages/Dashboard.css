@@ -275,7 +275,7 @@
 }
 
 .dash-core-trend.up { background: rgba(0,255,136,0.1); color: var(--accent-green); }
-.dash-core-trend.down { background: rgba(255,51,85,0.1); color: var(--accent-red); animation: threatBlink 2s ease infinite; }
+.dash-core-trend.down { background: rgba(255,51,85,0.1); color: var(--accent-red); }
 
 .dash-core-badge {
   position: absolute;
@@ -289,7 +289,6 @@
   font-weight: 700;
   letter-spacing: 0.8px;
   font-family: var(--font-mono);
-  animation: threatBlink 2s ease infinite;
   border: 1px solid rgba(255,51,85,0.2);
 }
 
@@ -332,8 +331,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent-cyan);
-  box-shadow: 0 0 8px rgba(0,255,170,0.5);
-  animation: cyberPulse 2s ease-in-out infinite;
 }
 
 .dash-panel-title {
@@ -440,13 +437,13 @@
 }
 
 .dash-threat-level.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: rgba(255,34,68,0.2); }
-.dash-threat-level.critical .dash-threat-dot { background: var(--severity-critical); box-shadow: 0 0 10px var(--severity-critical); animation: threatBlink 1.5s ease infinite; }
+.dash-threat-level.critical .dash-threat-dot { background: var(--severity-critical); }
 .dash-threat-level.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: rgba(255,102,34,0.2); }
-.dash-threat-level.high .dash-threat-dot { background: var(--severity-high); box-shadow: 0 0 6px var(--severity-high); }
+.dash-threat-level.high .dash-threat-dot { background: var(--severity-high); }
 .dash-threat-level.medium { background: var(--severity-medium-bg); color: var(--severity-medium); border-color: rgba(255,170,0,0.2); }
-.dash-threat-level.medium .dash-threat-dot { background: var(--severity-medium); box-shadow: 0 0 6px var(--severity-medium); }
+.dash-threat-level.medium .dash-threat-dot { background: var(--severity-medium); }
 .dash-threat-level.low { background: var(--severity-low-bg); color: var(--severity-low); border-color: rgba(0,255,136,0.2); }
-.dash-threat-level.low .dash-threat-dot { background: var(--severity-low); box-shadow: 0 0 6px var(--severity-low); }
+.dash-threat-level.low .dash-threat-dot { background: var(--severity-low); }
 
 /* Severity Matrix */
 .dash-matrix-body {
@@ -507,10 +504,10 @@
   box-shadow: 0 0 8px currentColor;
 }
 
-.dash-matrix-bar-fill.critical { background: linear-gradient(90deg, var(--severity-critical), #ff4466); box-shadow: 0 0 8px rgba(255,34,68,0.4); }
-.dash-matrix-bar-fill.high { background: linear-gradient(90deg, var(--severity-high), #ff7744); box-shadow: 0 0 8px rgba(255,102,34,0.4); }
-.dash-matrix-bar-fill.medium { background: linear-gradient(90deg, var(--severity-medium), #ffcc00); box-shadow: 0 0 8px rgba(255,170,0,0.4); }
-.dash-matrix-bar-fill.low { background: linear-gradient(90deg, var(--severity-low), #00ffaa); box-shadow: 0 0 8px rgba(0,255,136,0.4); }
+.dash-matrix-bar-fill.critical { background: linear-gradient(90deg, var(--severity-critical), #ff4466); }
+.dash-matrix-bar-fill.high { background: linear-gradient(90deg, var(--severity-high), #ff7744); }
+.dash-matrix-bar-fill.medium { background: linear-gradient(90deg, var(--severity-medium), #ffcc00); }
+.dash-matrix-bar-fill.low { background: linear-gradient(90deg, var(--severity-low), #00ffaa); }
 .dash-matrix-bar-fill.info { background: linear-gradient(90deg, var(--severity-info), #5a7a70); }
 
 .dash-matrix-count {
@@ -914,8 +911,6 @@
 
 .dash-status-dot.online {
   background: var(--accent-green);
-  box-shadow: 0 0 8px rgba(0,255,136,0.5);
-  animation: cyberPulse 2s ease-in-out infinite;
 }
 
 /* === RESPONSIVE === */

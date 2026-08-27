@@ -100,19 +100,19 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="dash-core-card">
-          <div className="dash-core-icon orange"><AlertTriangle size={18} /></div>
+        <div className="dash-core-card" aria-label={`${totalFindings} total findings`}>
+          <div className="dash-core-icon orange"><AlertTriangle size={18} aria-hidden="true" /></div>
           <div className="dash-core-data">
             <span className="dash-core-num">{totalFindings}</span>
             <span className="dash-core-label">Total Findings</span>
           </div>
-          <div className={`dash-core-trend ${critHigh > 0 ? 'down' : 'up'}`}>
+          <div className={`dash-core-trend ${critHigh > 0 ? 'down' : 'up'}`} aria-hidden="true">
             <Zap size={12} />
           </div>
         </div>
 
-        <div className="dash-core-card danger">
-          <div className="dash-core-icon red"><ShieldAlert size={18} /></div>
+        <div className="dash-core-card danger" role="alert" aria-label={`${critHigh} critical alerts`}>
+          <div className="dash-core-icon red"><ShieldAlert size={18} aria-hidden="true" /></div>
           <div className="dash-core-data">
             <span className="dash-core-num">{critHigh}</span>
             <span className="dash-core-label">Critical Alerts</span>
@@ -133,7 +133,7 @@ export default function Dashboard() {
       {/* === CHARTS ROW === */}
       <div className="dash-charts-row">
         {/* Severity Distribution Donut */}
-        <div className="dash-panel">
+        <div className="dash-panel" role="img" aria-label="Severity distribution chart">
           <div className="dash-panel-header">
             <span className="dash-panel-dot" />
             <span className="dash-panel-title">SEVERITY DISTRIBUTION</span>
@@ -142,7 +142,7 @@ export default function Dashboard() {
         </div>
 
         {/* Scan Activity Bar Chart */}
-        <div className="dash-panel">
+        <div className="dash-panel" role="img" aria-label="Scan activity over 30 days chart">
           <div className="dash-panel-header">
             <span className="dash-panel-dot" />
             <span className="dash-panel-title">SCAN ACTIVITY (30D)</span>
@@ -155,7 +155,7 @@ export default function Dashboard() {
 
       <div className="dash-charts-row">
         {/* Risk Trend Line */}
-        <div className="dash-panel">
+        <div className="dash-panel" role="img" aria-label="Risk trend chart">
           <div className="dash-panel-header">
             <span className="dash-panel-dot" />
             <span className="dash-panel-title">RISK TREND</span>
@@ -166,7 +166,7 @@ export default function Dashboard() {
         </div>
 
         {/* OWASP Distribution */}
-        <div className="dash-panel">
+        <div className="dash-panel" role="img" aria-label="OWASP findings distribution chart">
           <div className="dash-panel-header">
             <span className="dash-panel-dot" />
             <span className="dash-panel-title">OWASP FINDINGS</span>
@@ -268,9 +268,9 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <div className="dash-scan-list">
+          <div className="dash-scan-list" role="list" aria-label="Recent scans">
             {stats.recent_scans.map((scan, idx) => (
-              <div key={scan.id} className="dash-scan-item">
+              <div key={scan.id} className="dash-scan-item" role="listitem">
                 <div className="dash-scan-left">
                   <div className="dash-scan-idx">{String(idx + 1).padStart(2, '0')}</div>
                   <div className="dash-scan-info">
@@ -300,7 +300,7 @@ export default function Dashboard() {
       </div>
 
       {/* === SYSTEM STATUS BAR === */}
-      <div className="dash-status-bar">
+      <div className="dash-status-bar" role="status" aria-label="System status">
         <div className="dash-status-item">
           <span className="dash-status-dot online" />
           <span>Scanner Engine</span>

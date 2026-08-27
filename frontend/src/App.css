@@ -29,7 +29,6 @@
   width: 1px;
   height: 100%;
   background: linear-gradient(180deg, rgba(0,255,170,0.3), rgba(0,255,170,0.05), rgba(0,255,170,0.3));
-  animation: cyberPulse 4s ease-in-out infinite;
 }
 
 .sidebar-brand {
@@ -63,7 +62,6 @@
   color: var(--accent-cyan);
   flex-shrink: 0;
   position: relative;
-  box-shadow: 0 0 12px rgba(0,255,170,0.15);
 }
 
 .sidebar-brand-icon::after {
@@ -72,7 +70,6 @@
   inset: -2px;
   border-radius: 10px;
   border: 1px solid rgba(0,255,170,0.1);
-  animation: borderGlow 3s ease-in-out infinite;
 }
 
 .sidebar-brand-text {
@@ -86,7 +83,6 @@
   font-weight: 700;
   color: var(--accent-cyan);
   letter-spacing: -0.3px;
-  text-shadow: 0 0 20px rgba(0,255,170,0.3);
 }
 
 .sidebar-brand-tag {
@@ -159,7 +155,6 @@
   height: 60%;
   background: var(--accent-cyan);
   border-radius: 0 3px 3px 0;
-  box-shadow: 0 0 8px rgba(0,255,170,0.5);
 }
 
 .sidebar-link svg {
@@ -169,7 +164,6 @@
 
 .sidebar-link.active svg {
   opacity: 1;
-  filter: drop-shadow(0 0 4px rgba(0,255,170,0.3));
 }
 
 .sidebar-link-disabled {
@@ -343,7 +337,6 @@
   cursor: pointer;
   transition: all var(--transition-slow);
   text-decoration: none;
-  text-shadow: 0 0 10px rgba(0,255,170,0.3);
   position: relative;
   overflow: hidden;
 }
@@ -453,7 +446,6 @@
   border-top-color: var(--accent-cyan);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
-  box-shadow: 0 0 12px rgba(0,255,170,0.15);
 }
 
 .spin { animation: spin 1s linear infinite; }
@@ -601,7 +593,6 @@
 [data-theme="light"] .sidebar-brand-icon {
   background: linear-gradient(135deg, #ecfdf5, #d1fae5);
   border-color: rgba(0,153,102,0.3);
-  box-shadow: 0 0 10px rgba(0,153,102,0.1);
 }
 
 [data-theme="light"] .sidebar-brand-name {
@@ -617,7 +608,6 @@
 
 [data-theme="light"] .sidebar-link.active::before {
   background: #009966;
-  box-shadow: 0 0 6px rgba(0,153,102,0.4);
 }
 
 [data-theme="light"] .btn-primary {
@@ -642,7 +632,6 @@
 [data-theme="light"] .spinner {
   border-color: var(--border);
   border-top-color: #009966;
-  box-shadow: 0 0 10px rgba(0,153,102,0.15);
 }
 
 [data-theme="light"] .form-group label {
