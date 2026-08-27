@@ -31,6 +31,14 @@ const ApiKeys = lazy(() => import('./pages/ApiKeys'));
 const OrgSettings = lazy(() => import('./pages/OrgSettings'));
 const Invitations = lazy(() => import('./pages/Invitations'));
 const SecurityEvents = lazy(() => import('./pages/SecurityEvents'));
+const ScheduledScans = lazy(() => import('./pages/ScheduledScans'));
+const ScanTemplates = lazy(() => import('./pages/ScanTemplates'));
+const PolicyEngine = lazy(() => import('./pages/PolicyEngine'));
+const Compliance = lazy(() => import('./pages/Compliance'));
+const WebhooksPage = lazy(() => import('./pages/Webhooks'));
+const ExportCenter = lazy(() => import('./pages/ExportCenter'));
+const ExecutiveReport = lazy(() => import('./pages/ExecutiveReport'));
+const VersionCompare = lazy(() => import('./pages/VersionCompare'));
 
 function PageLoader() {
   return (
@@ -108,6 +116,14 @@ function App() {
                   <Route path="/org/settings" element={<ErrorBoundary pageLevel><OrgSettings /></ErrorBoundary>} />
                   <Route path="/org/invitations" element={<ErrorBoundary pageLevel><Invitations /></ErrorBoundary>} />
                   <Route path="/security-events" element={<ErrorBoundary pageLevel><SecurityEvents /></ErrorBoundary>} />
+                  <Route path="/scheduled-scans" element={<ErrorBoundary pageLevel><ScheduledScans /></ErrorBoundary>} />
+                  <Route path="/templates" element={<ErrorBoundary pageLevel><ScanTemplates /></ErrorBoundary>} />
+                  <Route path="/policies" element={<ErrorBoundary pageLevel><PolicyEngine /></ErrorBoundary>} />
+                  <Route path="/compliance" element={<ErrorBoundary pageLevel><Compliance /></ErrorBoundary>} />
+                  <Route path="/webhooks" element={<ErrorBoundary pageLevel><WebhooksPage /></ErrorBoundary>} />
+                  <Route path="/exports" element={<ErrorBoundary pageLevel><ExportCenter /></ErrorBoundary>} />
+                  <Route path="/executive-report" element={<ErrorBoundary pageLevel><ExecutiveReport /></ErrorBoundary>} />
+                  <Route path="/compare" element={<ErrorBoundary pageLevel><VersionCompare /></ErrorBoundary>} />
                 </Route>
               </Route>
               <Route path="*" element={<Navigate to="/" />} />

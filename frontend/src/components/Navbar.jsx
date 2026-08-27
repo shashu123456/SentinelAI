@@ -9,7 +9,7 @@ import {
   LogOut, Sun, Moon, Search, Key, Activity, Heart, BookOpen,
   Bell, Users, Globe, Lock, Cpu, HardDrive, Menu, X,
   Building2, FolderOpen, ChevronDown, UserPlus, Fingerprint,
-  ShieldAlert,
+  ShieldAlert, Clock, Copy, GitCompare, Download,
 } from 'lucide-react';
 import '../components/CommandPalette.css';
 
@@ -47,6 +47,26 @@ const NAV_SECTIONS = [
       { path: '/audit', label: 'Audit Center', icon: ClipboardList },
       { path: '/health', label: 'System Health', icon: Activity },
       { path: '/security-events', label: 'Security Events', icon: ShieldAlert },
+    ],
+  },
+  {
+    id: 'automation',
+    label: 'Automation',
+    items: [
+      { path: '/scheduled-scans', label: 'Scheduled Scans', icon: Clock },
+      { path: '/templates', label: 'Scan Templates', icon: Copy },
+      { path: '/policies', label: 'Policy Engine', icon: ShieldAlert },
+      { path: '/webhooks', label: 'Webhooks', icon: Bell },
+    ],
+  },
+  {
+    id: 'compliance',
+    label: 'Compliance',
+    items: [
+      { path: '/compliance', label: 'Compliance Center', icon: Shield },
+      { path: '/executive-report', label: 'Executive Report', icon: FileText },
+      { path: '/compare', label: 'Version Compare', icon: GitCompare },
+      { path: '/exports', label: 'Export Center', icon: Download },
     ],
   },
   {

@@ -12,6 +12,7 @@ from app.api.routes import (
     api_keys,
     audit,
     auth,
+    enterprise,
     invitations,
     metrics,
     organizations,
@@ -188,6 +189,7 @@ app.include_router(invitations.router)
 app.include_router(api_keys.router)
 app.include_router(audit.router)
 app.include_router(testimonials.router)
+app.include_router(enterprise.router)
 app.include_router(v1_router)
 
 
