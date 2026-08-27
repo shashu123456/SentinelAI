@@ -21,6 +21,7 @@ from app.api.routes import (
     scans,
     security,
     security_events,
+    sre,
     teams,
     testimonials,
     websocket,
@@ -194,6 +195,7 @@ app.include_router(testimonials.router)
 app.include_router(enterprise.router)
 app.include_router(ai_platform.router)
 app.include_router(saas.router)
+app.include_router(sre.router)
 app.include_router(v1_router)
 
 
