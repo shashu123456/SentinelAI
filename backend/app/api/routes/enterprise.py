@@ -4,7 +4,6 @@ Scheduled scans, templates, policies, webhooks, compliance center,
 export center, version comparison, historical analytics, executive reports.
 """
 
-from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field

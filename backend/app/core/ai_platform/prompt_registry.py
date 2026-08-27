@@ -7,11 +7,7 @@ Every prompt is registered with:
 - Hallucination prevention guards
 """
 
-import json
-import re
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from typing import Any
 
 
 @dataclass

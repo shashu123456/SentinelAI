@@ -6,7 +6,7 @@ security advisor, scan summarizer, NL search, knowledge graph,
 conversation memory, prompt registry.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 

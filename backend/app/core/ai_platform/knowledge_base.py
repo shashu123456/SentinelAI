@@ -4,7 +4,7 @@ Every fact in this module is sourced from OWASP, CWE, NIST, and PCI DSS.
 AI responses must reference this knowledge, never invent facts.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
