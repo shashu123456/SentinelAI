@@ -6,6 +6,8 @@ import { OrgProvider } from './context/OrgContext';
 import { ToastProvider } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
+import MobileNav from './components/MobileNav';
+import OfflineIndicator from './components/OfflineIndicator';
 import CommandPalette from './components/CommandPalette';
 import { KeyboardShortcutsProvider } from './components/KeyboardShortcuts';
 import Breadcrumbs from './components/Breadcrumbs';
@@ -39,6 +41,7 @@ const WebhooksPage = lazy(() => import('./pages/Webhooks'));
 const ExportCenter = lazy(() => import('./pages/ExportCenter'));
 const ExecutiveReport = lazy(() => import('./pages/ExecutiveReport'));
 const VersionCompare = lazy(() => import('./pages/VersionCompare'));
+const ExecutiveMobile = lazy(() => import('./pages/ExecutiveMobile'));
 
 function PageLoader() {
   return (
@@ -69,6 +72,7 @@ function LandingRoute() {
 function AppLayout() {
   return (
     <div className="app-layout">
+      <OfflineIndicator />
       <Navbar />
       <main className="main-content">
         <Breadcrumbs />
@@ -76,6 +80,7 @@ function AppLayout() {
           <Outlet />
         </Suspense>
       </main>
+      <MobileNav />
     </div>
   );
 }
@@ -124,6 +129,7 @@ function App() {
                   <Route path="/exports" element={<ErrorBoundary pageLevel><ExportCenter /></ErrorBoundary>} />
                   <Route path="/executive-report" element={<ErrorBoundary pageLevel><ExecutiveReport /></ErrorBoundary>} />
                   <Route path="/compare" element={<ErrorBoundary pageLevel><VersionCompare /></ErrorBoundary>} />
+                  <Route path="/mobile" element={<ErrorBoundary pageLevel><ExecutiveMobile /></ErrorBoundary>} />
                 </Route>
               </Route>
               <Route path="*" element={<Navigate to="/" />} />

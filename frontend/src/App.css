@@ -695,7 +695,33 @@
   backdrop-filter: blur(4px);
 }
 
-/* ========== RESPONSIVE ========== */
+/* ========== RESPONSIVE — MOBILE FIRST ========== */
+
+/* Touch-friendly minimum targets (WCAG 2.5.5) */
+button, a, [role="button"], input, select, textarea {
+  min-height: 44px;
+}
+
+/* Safe area insets for notched devices */
+.main-content {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Tablet breakpoint */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+    min-width: 200px;
+  }
+  .main-content {
+    margin-left: 200px;
+  }
+  .page-content {
+    padding: 20px 24px;
+  }
+}
+
+/* Mobile breakpoint */
 @media (max-width: 768px) {
   .mobile-menu-btn {
     display: flex;
@@ -704,6 +730,7 @@
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 280px;
   }
 
   .sidebar.open {
@@ -717,6 +744,60 @@
   .main-content {
     margin-left: 0 !important;
     padding-top: 56px;
+    padding-bottom: 72px;
+  }
+
+  .page-content {
+    padding: 16px;
+    padding-bottom: 80px;
+  }
+
+  /* Stack tables horizontally on mobile */
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Stack form groups */
+  .form-group {
+    width: 100%;
+  }
+
+  /* Button full width on mobile */
+  .btn-primary, .btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Reduce padding on cards */
+  .exec-mobile-kpi-card {
+    padding: 16px;
+  }
+}
+
+/* Small phone */
+@media (max-width: 380px) {
+  .page-content {
+    padding: 12px;
+  }
+
+  .exec-mobile-title {
+    font-size: 18px;
+  }
+
+  .exec-kpi-value {
+    font-size: 24px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar, .mobile-menu-btn, .mobile-bottom-nav, .sidebar-overlay {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
   }
 }
 

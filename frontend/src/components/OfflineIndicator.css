@@ -1,0 +1,62 @@
+/* ── Offline / Reconnected Banners ─────────────────────────────────── */
+
+.offline-banner,
+.reconnected-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  animation: bannerSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.offline-banner {
+  background: linear-gradient(135deg, rgba(255, 102, 34, 0.95), rgba(204, 68, 17, 0.95));
+  color: white;
+  backdrop-filter: blur(8px);
+}
+
+.reconnected-banner {
+  background: linear-gradient(135deg, rgba(0, 255, 170, 0.95), rgba(0, 180, 120, 0.95));
+  color: #0a0f1a;
+  backdrop-filter: blur(8px);
+  animation: bannerSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+             bannerFadeOut 0.3s ease 2.7s forwards;
+}
+
+@keyframes bannerSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bannerFadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+/* ── Light theme ──────────────────────────────────────────────────── */
+
+[data-theme="light"] .offline-banner {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(220, 38, 38, 0.95));
+  color: white;
+}
+
+[data-theme="light"] .reconnected-banner {
+  background: linear-gradient(135deg, rgba(0, 153, 102, 0.95), rgba(5, 150, 105, 0.95));
+  color: white;
+}
