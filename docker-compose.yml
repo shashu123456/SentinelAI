@@ -1,11 +1,13 @@
-# SentinelAI — Docker Compose
-# Full production stack: Backend, Frontend, Postgres, Redis, Prometheus, Grafana, AI
+# SentinelAI — Docker Compose (Production)
+# Full stack: Backend, Frontend, Postgres, Redis, Prometheus, Grafana, Loki, Alertmanager, AI
 #
 # Usage:
-#   Development:  docker compose up
-#   Production:   docker compose -f docker-compose.yml up -d
-#   With AI:      docker compose --profile ai up -d
-#   With metrics: docker compose --profile observability up -d
+#   docker compose up -d                          # Core services
+#   docker compose --profile ai up -d             # + Ollama AI
+#   docker compose --profile observability up -d  # + Prometheus, Grafana, Loki
+#   docker compose --profile full up -d           # Everything
+#
+# One-click: curl -sSL https://raw.githubusercontent.com/.../deploy.sh | bash
 
 services:
   # ── Backend API ─────────────────────────────────────────────
@@ -24,12 +26,14 @@ services:
       - OLLAMA_URL=http://ollama:11434/api/generate
       - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
       - SENTINEL_ENV=${SENTINEL_ENV:-production}
-      - SENTINEL_VERSION=${SENTINEL_VERSION:-1.0.0}
+      - SENTINEL_VERSION=${SENTINEL_VERSION:-1.2.0}
       - SENTRY_DSN=${SENTRY_DSN:-}
       - SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE:-0.1}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
       - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-60}
+      - REFRESH_TOKEN_COOKIE_SECURE=${REFRESH_TOKEN_COOKIE_SECURE:-true}
+      - ENABLE_SECURITY_HEADERS=${ENABLE_SECURITY_HEADERS:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,43 +46,16 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/live"]
       interval: 30s
       timeout: 5s
-      start_period: 15s
+      start_period: 20s
       retries: 3
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: "1.0"
-
-  # ── Background Worker ───────────────────────────────────────
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
-    command: ["python", "-m", "app.worker"]
-    environment:
-      - DATABASE_URL=postgresql+psycopg2://sentinelai:${POSTGRES_PASSWORD:-sentinelai_dev}@postgres:5432/sentinelai
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - OLLAMA_URL=http://ollama:11434/api/generate
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
-      - SENTINEL_ENV=${SENTINEL_ENV:-production}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - sentinelai
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.5"
-    profiles:
-      - worker
+    labels:
+      - "sentinelai.service=backend"
+      - "sentinelai.health=liveness"
 
   # ── Frontend (nginx) ───────────────────────────────────────
   frontend:
@@ -100,6 +77,11 @@ services:
       timeout: 5s
       start_period: 5s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
 
   # ── PostgreSQL ──────────────────────────────────────────────
   postgres:
@@ -129,7 +111,12 @@ services:
   # ── Redis ──────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    command: >
+      redis-server
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -148,11 +135,37 @@ services:
         limits:
           memory: 128M
 
+  # ── Backup Service ─────────────────────────────────────────
+  backup:
+    image: postgres:16-alpine
+    entrypoint: /bin/sh
+    command: >
+      -c "echo 'Backup service started. Run: docker compose exec backup /backup.sh'"
+    volumes:
+      - backup_data:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=sentinelai
+      - POSTGRES_USER=sentinelai
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sentinelai_dev}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sentinelai
+    profiles:
+      - full
+      - backup
+
   # ── Prometheus (observability profile) ──────────────────────
   prometheus:
     image: prom/prometheus:v2.51.0
     volumes:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
@@ -161,6 +174,7 @@ services:
       - sentinelai
     profiles:
       - observability
+      - full
     deploy:
       resources:
         limits:
@@ -173,6 +187,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-sentinelai}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -183,10 +198,48 @@ services:
       - sentinelai
     profiles:
       - observability
+      - full
     deploy:
       resources:
         limits:
           memory: 256M
+
+  # ── Loki (log aggregation) ─────────────────────────────────
+  loki:
+    image: grafana/loki:2.9.6
+    volumes:
+      - ./deploy/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    restart: unless-stopped
+    networks:
+      - sentinelai
+    profiles:
+      - observability
+      - full
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Alertmanager ───────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    volumes:
+      - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    restart: unless-stopped
+    networks:
+      - sentinelai
+    profiles:
+      - observability
+      - full
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   # ── Ollama AI (ai profile) ─────────────────────────────────
   ollama:
@@ -200,6 +253,7 @@ services:
       - sentinelai
     profiles:
       - ai
+      - full
     deploy:
       resources:
         limits:
@@ -210,8 +264,13 @@ volumes:
   redis_data:
   prometheus_data:
   grafana_data:
+  loki_data:
   ollama_data:
+  backup_data:
 
 networks:
   sentinelai:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
