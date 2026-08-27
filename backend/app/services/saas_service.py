@@ -15,7 +15,6 @@ from typing import Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.database.database import SessionLocal
 from app.models.models import Organization
 from app.models.saas import (
     AnalyticsEvent,

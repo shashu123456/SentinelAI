@@ -13,9 +13,7 @@ All routes require authentication.
 """
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 
-from app.database.database import get_db
 from app.models.models import User
 from app.api.routes.auth import get_current_user
 from app.utils.resilience import get_resilience_status

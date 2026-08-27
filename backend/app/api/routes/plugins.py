@@ -5,13 +5,11 @@ execute, health check, and listing.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 
-from app.database.database import get_db
 from app.models.models import User
 from app.api.routes.auth import get_current_user
-from app.core.plugins.registry import plugin_registry, PluginInstallError
-from app.core.plugins.sdk import PluginContext, PluginType, PluginStatus
+from app.core.plugins.registry import plugin_registry
+from app.core.plugins.sdk import PluginContext, PluginType
 
 router = APIRouter(prefix="/api/plugins", tags=["Plugin System"])
 

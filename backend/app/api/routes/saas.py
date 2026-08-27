@@ -13,7 +13,6 @@ from app.database.database import get_db
 from app.models.models import User
 from app.api.routes.auth import get_current_user
 from app.services import saas_service
-from app.utils.logger import logger
 
 router = APIRouter(prefix="/api/saas", tags=["SaaS Platform"])
 

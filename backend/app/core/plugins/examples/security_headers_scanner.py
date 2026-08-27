@@ -11,7 +11,6 @@ from app.core.plugins.sdk import (
     PluginContext,
     PluginManifest,
     PluginPermission,
-    PluginResult,
     ScannerPlugin,
 )
 
