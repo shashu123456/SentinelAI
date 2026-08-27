@@ -211,7 +211,7 @@ def get_ai_status() -> dict[str, Any]:
 
         start = time.time()
         req = urllib.request.Request(health_url, method="GET")
-        with urllib.request.urlopen(req, timeout=3):
+        with urllib.request.urlopen(req, timeout=1):
             latency_ms = round((time.time() - start) * 1000, 2)
             return {
                 "status": "healthy",
@@ -286,21 +286,59 @@ def get_worker_status() -> dict[str, Any]:
 # ── Full Health Check ───────────────────────────────────────────────
 
 
+_health_cache: dict[str, Any] = {"data": None, "ts": 0.0}
+_HEALTH_CACHE_TTL = 10  # seconds — health endpoint called frequently
+
+
 def collect_all_health() -> dict[str, Any]:
-    """Collect all health checks into a single response."""
-    db = get_db_latency()
-    redis = get_redis_status()
-    ai = get_ai_status()
-    cpu = get_cpu_info()
-    memory = get_memory_info()
-    disk = get_disk_info()
-    worker = get_worker_status()
-    env = get_environment_info()
+    """Collect all health checks into a single response.
+
+    Results are cached for a short TTL to avoid hammering external checks
+    (AI engine, Redis) on every probe.
+    """
+    import time as _time
+
+    now = _time.time()
+    if _health_cache["data"] and (now - _health_cache["ts"]) < _HEALTH_CACHE_TTL:
+        return _health_cache["data"]
+
+    # Run independent checks in parallel (they are all I/O-bound)
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    _checks = {
+        "database": get_db_latency,
+        "redis": get_redis_status,
+        "ai_engine": get_ai_status,
+        "workers": get_worker_status,
+        "cpu": get_cpu_info,
+        "memory": get_memory_info,
+        "disk": get_disk_info,
+        "environment": get_environment_info,
+    }
+
+    results: dict[str, Any] = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(fn): name for name, fn in _checks.items()}
+        for future in as_completed(futures, timeout=5):
+            name = futures[future]
+            try:
+                results[name] = future.result()
+            except Exception:
+                results[name] = {"status": "error"}
+
+    db = results.get("database", {"status": "unknown"})
+    redis_st = results.get("redis", {"status": "unknown"})
+    ai = results.get("ai_engine", {"status": "unknown"})
+    worker = results.get("workers", {"status": "unknown"})
+    cpu = results.get("cpu", {})
+    memory = results.get("memory", {})
+    disk = results.get("disk", {})
+    env = results.get("environment", {})
 
     # Determine overall status
     checks = {
         "database": db.get("status", "unknown"),
-        "redis": redis.get("status", "unknown"),
+        "redis": redis_st.get("status", "unknown"),
         "ai_engine": ai.get("status", "unknown"),
         "workers": worker.get("status", "unknown"),
     }
@@ -314,16 +352,16 @@ def collect_all_health() -> dict[str, Any]:
     else:
         overall = "unhealthy"
 
-    return {
+    result = {
         "status": overall,
         "version": env.get("sentinel_version", "1.0.0"),
-        "timestamp": time.time(),
+        "timestamp": _time.time(),
         "uptime_seconds": round(get_uptime(), 0),
         "uptime_human": get_uptime_human(),
         "checks": checks,
         "details": {
             "database": db,
-            "redis": redis,
+            "redis": redis_st,
             "ai_engine": ai,
             "cpu": cpu,
             "memory": memory,
@@ -332,3 +370,7 @@ def collect_all_health() -> dict[str, Any]:
             "environment": env,
         },
     }
+
+    _health_cache["data"] = result
+    _health_cache["ts"] = _time.time()
+    return result
