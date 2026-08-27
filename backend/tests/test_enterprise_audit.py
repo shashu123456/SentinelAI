@@ -21,7 +21,6 @@ from app.services.audit_service import (
     _extract_module,
 )
 
-
 # ── Fixtures ──────────────────────────────────────────────────────
 
 
@@ -48,6 +47,7 @@ def client(tmp_path):
 
     # Also patch SessionLocal so direct imports use the test DB
     import app.database.database as db_mod
+
     original_session_factory = db_mod.SessionLocal
     db_mod.SessionLocal = TestSession
 
@@ -62,11 +62,14 @@ def client(tmp_path):
 @pytest.fixture()
 def admin_user(client):
     """Register an admin user and return (user_data, auth_headers)."""
-    resp = client.post("/api/auth/register", json={
-        "username": "audit_admin",
-        "email": "admin@sentinelai.example.com",
-        "password": "Admin123!@#",
-    })
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "username": "audit_admin",
+            "email": "admin@sentinelai.example.com",
+            "password": "Admin123!@#",
+        },
+    )
     if resp.status_code != 201:
         print(f"REGISTER FAILED: {resp.status_code} {resp.json()}")
     assert resp.status_code == 201
@@ -74,6 +77,7 @@ def admin_user(client):
 
     # Promote to admin
     from app.database.database import SessionLocal
+
     db = SessionLocal()
     user = db.query(User).filter(User.id == user_data["id"]).first()
     user.role = "admin"
@@ -87,11 +91,14 @@ def admin_user(client):
 @pytest.fixture()
 def regular_user(client):
     """Register a regular user and return (user_data, auth_headers)."""
-    resp = client.post("/api/auth/register", json={
-        "username": "audit_viewer",
-        "email": "viewer@sentinelai.example.com",
-        "password": "Viewer123!@#",
-    })
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "username": "audit_viewer",
+            "email": "viewer@sentinelai.example.com",
+            "password": "Viewer123!@#",
+        },
+    )
     assert resp.status_code == 201
     token = resp.json()["access_token"]
     return resp.json()["user"], {"Authorization": f"Bearer {token}"}
@@ -150,10 +157,12 @@ class TestAuditLogCreation:
     def test_create_with_all_fields(self, client, admin_user):
         user_data, headers = admin_user
         from app.database.database import SessionLocal
+
         db = SessionLocal()
 
         record_action(
-            db, "test.full_event",
+            db,
+            "test.full_event",
             user_id=user_data["id"],
             username=user_data["username"],
             entity_type="test",
@@ -193,6 +202,7 @@ class TestAuditLogCreation:
     def test_auto_risk_classification(self, client, admin_user):
         user_data, headers = admin_user
         from app.database.database import SessionLocal
+
         db = SessionLocal()
 
         record_action(db, "auth.login_failed", user_id=user_data["id"])
@@ -214,6 +224,7 @@ class TestAuditFiltering:
         """Create several audit events for filtering tests."""
         user_data, _ = admin_user
         from app.database.database import SessionLocal
+
         db = SessionLocal()
 
         actions = [

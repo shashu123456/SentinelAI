@@ -103,9 +103,10 @@ class TestOrganizationMembers:
     def test_add_member(self, client, auth_headers):
         org_id = self._create_org(client, auth_headers)
         # Create a second user to add as member
-        resp = client.post("/api/auth/register", json={
-            "username": "memberuser", "email": "member@test.com", "password": "Test123!@#"
-        })
+        resp = client.post(
+            "/api/auth/register",
+            json={"username": "memberuser", "email": "member@test.com", "password": "Test123!@#"},
+        )
         member_email = resp.json()["user"]["email"]
         response = client.post(
             f"/api/organizations/{org_id}/members",
@@ -116,9 +117,10 @@ class TestOrganizationMembers:
 
     def test_add_duplicate_member(self, client, auth_headers):
         org_id = self._create_org(client, auth_headers)
-        resp = client.post("/api/auth/register", json={
-            "username": "dupmember", "email": "dup@test.com", "password": "Test123!@#"
-        })
+        resp = client.post(
+            "/api/auth/register",
+            json={"username": "dupmember", "email": "dup@test.com", "password": "Test123!@#"},
+        )
         member_email = resp.json()["user"]["email"]
         client.post(
             f"/api/organizations/{org_id}/members",

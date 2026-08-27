@@ -358,9 +358,7 @@ class TestListParamsValidation:
         with pytest.raises(ValidationError):
             ScanListParams(page=0)
         with pytest.raises(ValidationError):
-            ScanListParams(
-                date_from=datetime(2026, 1, 10), date_to=datetime(2026, 1, 1)
-            )
+            ScanListParams(date_from=datetime(2026, 1, 10), date_to=datetime(2026, 1, 1))
 
     def test_multi_sort_direction_resolution(self):
         p = ScanListParams(sort_by="created_at,-risk_score,api_name", order="asc")

@@ -168,11 +168,17 @@ class TestLogout:
         resp, _, _, _ = _register(client)
         token = resp.json()["access_token"]
         # Token should work before logout
-        assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+        assert (
+            client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code
+            == 200
+        )
         # Logout
         client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
         # Token should be revoked after logout
-        assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+        assert (
+            client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code
+            == 401
+        )
 
 
 class TestLoginLockout:

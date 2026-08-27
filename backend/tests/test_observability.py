@@ -36,7 +36,6 @@ from app.utils.logger import (
 )
 from app.tasks import get_task_stats
 
-
 # ── Fixtures ──────────────────────────────────────────────────────
 
 
@@ -59,6 +58,7 @@ def client(tmp_path):
 
     app.dependency_overrides[get_db] = override
     import app.database.database as db_mod
+
     orig = db_mod.SessionLocal
     db_mod.SessionLocal = TestSession
 

@@ -48,7 +48,6 @@ from app.utils.threat_detection import (
     register_session,
 )
 
-
 # ── XSS Protection Tests ──────────────────────────────────────────────
 
 
@@ -78,13 +77,13 @@ class TestXSSProtection:
         assert contains_xss('<img onerror="alert(1)">') is True
 
     def test_contains_xss_javascript_protocol(self):
-        assert contains_xss('javascript:alert(1)') is True
+        assert contains_xss("javascript:alert(1)") is True
 
     def test_contains_xss_iframe(self):
         assert contains_xss('<iframe src="evil.com">') is True
 
     def test_contains_xss_data_uri(self):
-        assert contains_xss('data:text/html,<script>alert(1)</script>') is True
+        assert contains_xss("data:text/html,<script>alert(1)</script>") is True
 
     def test_contains_xss_svg(self):
         assert contains_xss('<svg onload="alert(1)">') is True
@@ -96,7 +95,7 @@ class TestXSSProtection:
         assert contains_xss("") is False
 
     def test_escape_for_javascript(self):
-        result = escape_for_javascript("it's a \"test\"")
+        result = escape_for_javascript('it\'s a "test"')
         assert "\\'" in result
         assert '\\"' in result
 
@@ -271,7 +270,9 @@ class TestFileUploadSecurity:
         assert "not allowed" in reason
 
     def test_oversized_file(self):
-        valid, reason = validate_file_upload("big.json", b"x" * 10_000_000, max_size_bytes=5_000_000)
+        valid, reason = validate_file_upload(
+            "big.json", b"x" * 10_000_000, max_size_bytes=5_000_000
+        )
         assert valid is False
         assert "too large" in reason
 
@@ -376,7 +377,11 @@ class TestPasswordResetSecurity:
         # Register a user first
         resp = client.post(
             "/api/auth/register",
-            json={"username": "resetuser", "email": "reset@test.example.com", "password": "TestPass123!"},
+            json={
+                "username": "resetuser",
+                "email": "reset@test.example.com",
+                "password": "TestPass123!",
+            },
         )
         assert resp.status_code == 201
 

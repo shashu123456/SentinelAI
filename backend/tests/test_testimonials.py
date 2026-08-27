@@ -26,24 +26,28 @@ def seed_testimonials():
         # Check if testimonials exist
         existing = db.query(Testimonial).count()
         if existing == 0:
-            db.add(Testimonial(
-                quote="Test quote for unit testing",
-                author_name="Test Author",
-                author_role="Tester",
-                author_company="TestCo",
-                avatar_letter="T",
-                is_active=True,
-                display_order=1,
-            ))
-            db.add(Testimonial(
-                quote="Inactive testimonial",
-                author_name="Inactive Author",
-                author_role="Inactive",
-                author_company="InactiveCo",
-                avatar_letter="I",
-                is_active=False,
-                display_order=2,
-            ))
+            db.add(
+                Testimonial(
+                    quote="Test quote for unit testing",
+                    author_name="Test Author",
+                    author_role="Tester",
+                    author_company="TestCo",
+                    avatar_letter="T",
+                    is_active=True,
+                    display_order=1,
+                )
+            )
+            db.add(
+                Testimonial(
+                    quote="Inactive testimonial",
+                    author_name="Inactive Author",
+                    author_role="Inactive",
+                    author_company="InactiveCo",
+                    avatar_letter="I",
+                    is_active=False,
+                    display_order=2,
+                )
+            )
             db.commit()
     finally:
         db.close()

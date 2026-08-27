@@ -16,7 +16,6 @@ import time
 
 import pytest
 
-
 # ── Helpers ────────────────────────────────────────────────────────────
 
 
@@ -402,7 +401,9 @@ class TestInvitationManagement:
             headers=_auth_header(token1),
         )
 
-        resp = client.get(f"/api/organizations/{org['id']}/invitations", headers=_auth_header(token1))
+        resp = client.get(
+            f"/api/organizations/{org['id']}/invitations", headers=_auth_header(token1)
+        )
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
@@ -636,6 +637,7 @@ class TestScanIsolation:
             "paths": {},
         }
         import io, json
+
         content = json.dumps(spec).encode()
         client.post(
             "/api/scans/upload",

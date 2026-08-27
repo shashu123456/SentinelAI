@@ -34,9 +34,7 @@ def _seed(db, user_id: int, count: int = 3) -> list[int]:
     now = utcnow()
     ids = []
     for i in range(count):
-        scan = scan_repo.create_scan(
-            user_id=user_id, api_name=f"Petstore{i}", source_spec={}
-        )
+        scan = scan_repo.create_scan(user_id=user_id, api_name=f"Petstore{i}", source_spec={})
         scan.status = "completed"
         scan.risk_level = "High"
         scan.risk_score = 60 + i
@@ -88,9 +86,7 @@ class TestListScans:
     def test_pagination(self, client, db_session):
         user = _register(client)
         _seed(db_session, user["user_id"], count=5)
-        resp = client.get(
-            "/api/v1/scans?page=2&page_size=2", headers=user["headers"]
-        )
+        resp = client.get("/api/v1/scans?page=2&page_size=2", headers=user["headers"])
         body = resp.json()
         assert body["meta"] == {"page": 2, "page_size": 2, "total": 5, "total_pages": 3}
         assert len(body["data"]) == 2
@@ -112,9 +108,7 @@ class TestListScans:
     def test_multi_column_sort(self, client, db_session):
         user = _register(client)
         _seed(db_session, user["user_id"], count=2)
-        resp = client.get(
-            "/api/v1/scans?sort_by=status,-risk_score", headers=user["headers"]
-        )
+        resp = client.get("/api/v1/scans?sort_by=status,-risk_score", headers=user["headers"])
         assert resp.status_code == 200
 
     def test_status_and_risk_filters(self, client, db_session):
@@ -253,9 +247,7 @@ class TestFindings:
         user = _register(client)
         other = _register(client, prefix="other")
         ids = _seed(db_session, user["user_id"], count=1)
-        resp = client.get(
-            f"/api/v1/scans/{ids[0]}/findings", headers=other["headers"]
-        )
+        resp = client.get(f"/api/v1/scans/{ids[0]}/findings", headers=other["headers"])
         assert resp.status_code == 404
 
 
