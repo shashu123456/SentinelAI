@@ -15,7 +15,7 @@ All routes require authentication.
 from fastapi import APIRouter, Depends, Query
 
 from app.models.models import User
-from app.api.routes.auth import get_current_user
+from app.utils.security import get_current_user
 from app.utils.resilience import get_resilience_status
 from app.utils.sla import (
     alert_manager,

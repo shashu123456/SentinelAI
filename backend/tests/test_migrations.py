@@ -14,7 +14,7 @@ import pytest
 from sqlalchemy import create_engine, inspect, text
 
 from alembic import command
-from app.database.database import _alembic_config
+from app.database.migrations import _alembic_config
 
 EXPECTED_TABLES = {
     "users",

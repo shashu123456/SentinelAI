@@ -154,7 +154,8 @@ async def security_headers(request: Request, call_next):
         response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
 
         # Remove server identification
-        response.headers.pop("server", None)
+        if "server" in response.headers:
+            del response.headers["server"]
 
         # Content Security Policy — strict, report-only in dev
         if request.url.path not in ("/docs", "/redoc", "/openapi.json"):
