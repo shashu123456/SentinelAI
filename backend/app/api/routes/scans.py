@@ -293,29 +293,34 @@ def get_analytics(
     user_id = current_user.id
     now = datetime.now(UTC)
 
-    # Scan activity over last 30 days
+    # Scan activity over last 30 days — single aggregate query instead of 30 individual queries
+    thirty_days_ago = now - timedelta(days=29)
+    day_start = datetime.combine(thirty_days_ago.date(), datetime.min.time()).replace(tzinfo=UTC)
+
+    activity_rows = (
+        db.execute(
+            select(
+                func.date(Scan.created_at).label("day"),
+                func.count(Scan.id).label("count"),
+            )
+            .where(
+                Scan.user_id == user_id,
+                Scan.created_at >= day_start,
+                Scan.deleted_at.is_(None),
+            )
+            .group_by(func.date(Scan.created_at))
+            .order_by(func.date(Scan.created_at).asc())
+        ).all()
+    )
+    activity_map = {str(row.day): row.count for row in activity_rows}
+
     scan_activity = []
     for i in range(29, -1, -1):
         day = (now - timedelta(days=i)).date()
-        day_start = datetime.combine(day, datetime.min.time()).replace(tzinfo=UTC)
-        day_end = datetime.combine(day, datetime.max.time()).replace(tzinfo=UTC)
-        count = (
-            db.scalar(
-                select(func.count(Scan.id)).where(
-                    Scan.user_id == user_id,
-                    Scan.created_at >= day_start,
-                    Scan.created_at <= day_end,
-                    Scan.deleted_at.is_(None),
-                )
-            )
-            or 0
-        )
-        scan_activity.append(
-            {
-                "date": day.isoformat(),
-                "scans": count,
-            }
-        )
+        scan_activity.append({
+            "date": day.isoformat(),
+            "scans": activity_map.get(day.isoformat(), 0),
+        })
 
     # Risk score trend over time
     risk_trend = []

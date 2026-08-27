@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///./sentinelai.db"
 
+    # SECURITY: Default is intentionally weak — startup warns if unchanged.
+    # In production this MUST be overridden via env var.
     SECRET_KEY: str = "sentinelai-dev-secret-key-change-in-production"
 
     # --- Security hardening ---
@@ -22,11 +24,36 @@ class Settings(BaseSettings):
     BLOCKED_IPS: list[str] = []
     TRUSTED_PROXIES: list[str] = []
     CSRF_ENFORCE: bool = True
-    REFRESH_TOKEN_COOKIE_SECURE: bool = False  # set True in production (HTTPS)
 
     def validate_secret_key(self) -> bool:
         """Check that SECRET_KEY has been changed from the default."""
         return self.SECRET_KEY != "sentinelai-dev-secret-key-change-in-production"
+
+    def validate_production_readiness(self) -> list[str]:
+        """Return a list of warnings for settings that are unsafe in production."""
+        warnings = []
+        if not self.validate_secret_key():
+            warnings.append(
+                "SECURITY: Using default SECRET_KEY! "
+                "All JWT tokens are forgeable. Set SECRET_KEY env var."
+            )
+        if self.CORS_ALLOW_ALL:
+            warnings.append(
+                "SECURITY: CORS_ALLOW_ALL is True! "
+                "Only use in development. Set CORS_ALLOW_ALL=False in production."
+            )
+        if not self.REFRESH_TOKEN_COOKIE_SECURE:
+            warnings.append(
+                "SECURITY: REFRESH_TOKEN_COOKIE_SECURE is False. "
+                "Refresh tokens will be sent over HTTP. "
+                "Set REFRESH_TOKEN_COOKIE_SECURE=True for HTTPS deployments."
+            )
+        if self.SENTINEL_ENV == "production" and self.DATABASE_URL.startswith("sqlite"):
+            warnings.append(
+                "PERFORMANCE: Using SQLite in production. "
+                "PostgreSQL is recommended for concurrent access."
+            )
+        return warnings
 
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

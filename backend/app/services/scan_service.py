@@ -1,3 +1,20 @@
+"""Scan execution service.
+
+Orchestrates the full scan lifecycle:
+  1. Parse OpenAPI spec
+  2. Run OWASP security scan
+  3. Compute risk score and assessment
+  4. Run AI analysis (optional)
+  5. Record audit events
+
+Transaction strategy:
+  - The scan record is committed immediately so the user gets a scan ID and
+    the record survives if the worker crashes mid-scan.
+  - All subsequent mutations (findings, AI analysis, risk score, audit events)
+    are batched into a single commit at the end.  On failure, only the scan
+    status is updated to 'failed' and committed separately.
+"""
+
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -15,33 +32,40 @@ from app.utils.logger import logger
 
 
 def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
+    """Execute a synchronous scan and persist all results.
+
+    The scan record is committed immediately (so the user can poll status),
+    then findings, risk data, AI analysis, and audit events are committed
+    together in one transaction.
+    """
     scan_repo = ScanRepository(db)
     finding_repo = FindingRepository(db)
 
+    # --- Phase 1: create scan record (committed immediately) ---
     scan = scan_repo.create_scan(user_id=user_id, api_name=api_name, source_spec=spec)
     scan_repo.add(scan)
-    scan_repo.commit()
-    scan_repo.refresh(scan)
+    db.commit()
+    db.refresh(scan)
 
     record_scan_event(
         db, "scan.started", user_id=user_id, scan_id=scan.id, detail={"api_name": api_name}
     )
-    scan_repo.commit()
+    db.commit()
 
+    # --- Phase 2: execute scan and persist results ---
     try:
         parsed_api = parse_openapi_spec(spec)
 
         scan.api_title = parsed_api["title"]
         scan.api_version = parsed_api["version"]
         scan.total_endpoints = parsed_api["total_endpoints"]
-        scan_repo.commit()
 
         findings = run_owasp_scan(parsed_api)
         finding_repo.bulk_add_from_scan(scan.id, findings)
 
         risk = calculate_risk_score(findings)
 
-        # Enhanced risk assessment via Risk Intelligence Engine
+        # Enhanced risk assessment
         try:
             assessment = compute_risk_assessment(findings)
             risk["security_grade"] = assessment.security_grade
@@ -52,10 +76,11 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
             risk["top_owasp"] = assessment.top_owasp
             risk["recommendations"] = assessment.recommendations
         except Exception as e:
-            logger.warning(f"Risk assessment failed for scan: {e}")
+            logger.warning(f"Risk assessment failed for scan {scan.id}: {e}")
 
         scan_repo.complete(scan, risk)
 
+        # AI analysis (best-effort, non-blocking)
         try:
             ai_result = analyze_vulnerabilities(findings, parsed_api)
             if ai_result:
@@ -74,7 +99,9 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
 
         scan.status = "completed"
         scan.completed_at = datetime.now(UTC)
-        scan_repo.commit()
+
+        # Single commit for findings + risk + AI + status
+        db.commit()
 
         record_scan_event(
             db,
@@ -87,19 +114,25 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
                 "risk_level": risk["level"],
             },
         )
-        scan_repo.commit()
+        db.commit()
 
         logger.info(
-            f"Scan {scan.id} completed: {risk['total_vulnerabilities']} findings, score {risk['score']}/100"
+            f"Scan {scan.id} completed: {risk['total_vulnerabilities']} findings, "
+            f"score {risk['score']}/100"
         )
 
     except Exception as e:
-        scan.status = "failed"
-        scan_repo.commit()
-        record_scan_event(
-            db, "scan.failed", user_id=user_id, scan_id=scan.id, detail={"error": str(e)}
-        )
-        scan_repo.commit()
+        # Minimal recovery: mark scan as failed and record the event
+        try:
+            scan.status = "failed"
+            db.commit()
+            record_scan_event(
+                db, "scan.failed", user_id=user_id, scan_id=scan.id, detail={"error": str(e)}
+            )
+            db.commit()
+        except Exception:
+            logger.error(f"Failed to record scan failure for scan {scan.id}: {e}")
+            db.rollback()
         logger.error(f"Scan {scan.id} failed: {e}")
         raise
 
@@ -107,33 +140,39 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
 
 
 def build_report_data(scan: Scan) -> dict:
-    findings_data = []
-    for f in scan.findings:
-        findings_data.append(
-            {
-                "vulnerability_name": f.vulnerability_name,
-                "owasp_category": f.owasp_category,
-                "cwe_id": f.cwe_id,
-                "severity": f.severity,
-                "confidence": f.confidence,
-                "description": f.description,
-                "evidence": f.evidence,
-                "impact": f.impact,
-                "remediation": f.remediation,
-                "technical_impact": f.technical_impact,
-                "business_impact": f.business_impact,
-                "request_example": f.request_example,
-                "response_example": f.response_example,
-                "fix_recommendation": f.fix_recommendation,
-                "references": f.references,
-                "cvss_score": f.cvss_score,
-                "cvss_vector": f.cvss_vector,
-                "affected_endpoint": f.affected_endpoint,
-                "affected_method": f.affected_method,
-                "detection_reason": f.detection_reason,
-                "false_positive_note": f.false_positive_note,
-            }
-        )
+    """Build a serialisable dict for report generation.
+
+    Uses ``scan.findings`` which is expected to be eagerly loaded or already
+    populated (e.g. after ``execute_scan``).  If the relationship is not yet
+    loaded, this triggers one query via the lazy loader — acceptable for a
+    report-generation path.
+    """
+    findings_data = [
+        {
+            "vulnerability_name": f.vulnerability_name,
+            "owasp_category": f.owasp_category,
+            "cwe_id": f.cwe_id,
+            "severity": f.severity,
+            "confidence": f.confidence,
+            "description": f.description,
+            "evidence": f.evidence,
+            "impact": f.impact,
+            "remediation": f.remediation,
+            "technical_impact": f.technical_impact,
+            "business_impact": f.business_impact,
+            "request_example": f.request_example,
+            "response_example": f.response_example,
+            "fix_recommendation": f.fix_recommendation,
+            "references": f.references,
+            "cvss_score": f.cvss_score,
+            "cvss_vector": f.cvss_vector,
+            "affected_endpoint": f.affected_endpoint,
+            "affected_method": f.affected_method,
+            "detection_reason": f.detection_reason,
+            "false_positive_note": f.false_positive_note,
+        }
+        for f in scan.findings
+    ]
 
     ai_data = None
     if scan.ai_analysis:

@@ -34,6 +34,9 @@ def db_session():
     Drops and recreates all tables so each test starts from a clean schema.
     """
     import app.models.models  # noqa: F401 - register tables on Base.metadata
+    import app.models.enterprise  # noqa: F401 - register enterprise tables
+    import app.models.plugins  # noqa: F401 - register plugin tables
+    import app.models.saas  # noqa: F401 - register SaaS tables
     from app.database.database import Base, SessionLocal, engine
 
     Base.metadata.drop_all(bind=engine)

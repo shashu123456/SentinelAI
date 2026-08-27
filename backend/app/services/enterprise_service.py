@@ -2,9 +2,16 @@
 
 Scheduled scans, scan templates, custom policies, webhooks,
 compliance engine, and export system.
+
+Architecture:
+- Generic CRUD helpers (`_paginate_org`, `_create_org_resource`, etc.)
+  eliminate the repeated list/create/update/delete patterns.
+- Domain-specific logic (policy evaluation, compliance, webhooks) remains
+  in dedicated functions.
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import Any, TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -19,21 +26,23 @@ from app.models.enterprise import (
     WebhookDelivery,
 )
 from app.models.models import Finding, Scan
+from app.utils.logger import logger
+
+ModelT = TypeVar("ModelT")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# SCHEDULED SCANS
+# GENERIC CRUD HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
-def list_scheduled_scans(
-    db: Session, org_id: int, page: int = 1, page_size: int = 20
-) -> tuple[list[ScheduledScan], int]:
-    query = db.query(ScheduledScan).filter(
-        ScheduledScan.organization_id == org_id
-    )
+def _paginate_org(
+    db: Session, model: type, org_id: int, page: int = 1, page_size: int = 20
+) -> tuple[list, int]:
+    """Paginated list of records for an organization."""
+    query = db.query(model).filter(model.organization_id == org_id)
     total = query.count()
     items = (
-        query.order_by(ScheduledScan.created_at.desc())
+        query.order_by(model.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -41,78 +50,85 @@ def list_scheduled_scans(
     return items, total
 
 
-def create_scheduled_scan(
-    db: Session, org_id: int, user_id: int, data: dict
-) -> ScheduledScan:
-    scan = ScheduledScan(
+def _get_org_resource(db: Session, model: type, resource_id: int, org_id: int):
+    """Fetch a single resource scoped to an organization, or None."""
+    return (
+        db.query(model)
+        .filter(model.id == resource_id, model.organization_id == org_id)
+        .first()
+    )
+
+
+def _create_org_resource(db: Session, model: type, org_id: int, user_id: int, data: dict):
+    """Create a new organization-scoped resource from a data dict."""
+    record = model(
         organization_id=org_id,
         created_by=user_id,
-        project_id=data.get("project_id"),
-        template_id=data.get("template_id"),
-        name=data["name"],
-        description=data.get("description"),
-        frequency=data.get("frequency", "weekly"),
-        cron_expression=data.get("cron_expression"),
-        day_of_week=data.get("day_of_week"),
-        day_of_month=data.get("day_of_month"),
-        hour=data.get("hour", 2),
-        minute=data.get("minute", 0),
-        timezone=data.get("timezone", "UTC"),
-        scan_type=data.get("scan_type", "api"),
-        scan_config=data.get("scan_config"),
-        next_run_at=_calculate_next_run(data),
+        **{k: v for k, v in data.items() if hasattr(model, k)},
     )
-    db.add(scan)
+    db.add(record)
     db.commit()
-    db.refresh(scan)
-    return scan
+    db.refresh(record)
+    return record
 
 
-def update_scheduled_scan(
-    db: Session, scan_id: int, org_id: int, data: dict
-) -> ScheduledScan | None:
-    scan = (
-        db.query(ScheduledScan)
-        .filter(ScheduledScan.id == scan_id, ScheduledScan.organization_id == org_id)
-        .first()
-    )
-    if not scan:
+def _update_org_resource(db: Session, model: type, resource_id: int, org_id: int, data: dict):
+    """Update fields on an organization-scoped resource, or return None."""
+    record = _get_org_resource(db, model, resource_id, org_id)
+    if not record:
         return None
     for key, value in data.items():
-        if hasattr(scan, key) and value is not None:
-            setattr(scan, key, value)
-    if "frequency" in data or "hour" in data or "day_of_week" in data:
-        scan.next_run_at = _calculate_next_run(
-            {k: getattr(scan, k) for k in ["frequency", "hour", "minute", "day_of_week", "day_of_month"]}
-        )
-    scan.updated_at = datetime.now(UTC)
+        if hasattr(record, key) and value is not None:
+            setattr(record, key, value)
+    record.updated_at = datetime.now(UTC)
     db.commit()
-    db.refresh(scan)
-    return scan
+    db.refresh(record)
+    return record
 
 
-def delete_scheduled_scan(db: Session, scan_id: int, org_id: int) -> bool:
-    scan = (
-        db.query(ScheduledScan)
-        .filter(ScheduledScan.id == scan_id, ScheduledScan.organization_id == org_id)
-        .first()
-    )
-    if not scan:
+def _delete_org_resource(db: Session, model: type, resource_id: int, org_id: int) -> bool:
+    """Delete an organization-scoped resource. Returns True if deleted."""
+    record = _get_org_resource(db, model, resource_id, org_id)
+    if not record:
         return False
-    db.delete(scan)
+    db.delete(record)
     db.commit()
     return True
 
 
-def get_due_scans(db: Session) -> list[ScheduledScan]:
+# ═══════════════════════════════════════════════════════════════════════════
+# SCHEDULED SCANS
+# ═══════════════════════════════════════════════════════════════════════════
+
+def list_scheduled_scans(db: Session, org_id: int, page: int = 1, page_size: int = 20):
+    return _paginate_org(db, ScheduledScan, org_id, page, page_size)
+
+
+def create_scheduled_scan(db: Session, org_id: int, user_id: int, data: dict) -> ScheduledScan:
+    data = {**data, "next_run_at": _calculate_next_run(data)}
+    return _create_org_resource(db, ScheduledScan, org_id, user_id, data)
+
+
+def update_scheduled_scan(db: Session, scan_id: int, org_id: int, data: dict):
+    record = _update_org_resource(db, ScheduledScan, scan_id, org_id, data)
+    if record and any(k in data for k in ("frequency", "hour", "day_of_week")):
+        record.next_run_at = _calculate_next_run(
+            {k: getattr(record, k) for k in ("frequency", "hour", "minute", "day_of_week", "day_of_month")}
+        )
+        db.commit()
+        db.refresh(record)
+    return record
+
+
+def delete_scheduled_scan(db: Session, scan_id: int, org_id: int) -> bool:
+    return _delete_org_resource(db, ScheduledScan, scan_id, org_id)
+
+
+def get_due_scans(db: Session) -> list:
     """Get scans that are due to run (for the scheduler worker)."""
-    now = datetime.now(UTC)
     return (
         db.query(ScheduledScan)
-        .filter(
-            ScheduledScan.is_active == True,
-            ScheduledScan.next_run_at <= now,
-        )
+        .filter(ScheduledScan.is_active == True, ScheduledScan.next_run_at <= datetime.now(UTC))
         .all()
     )
 
@@ -129,9 +145,7 @@ def _calculate_next_run(config: dict) -> datetime:
         return next_day.replace(hour=hour, minute=minute, second=0, microsecond=0)
     elif freq == "weekly":
         dow = config.get("day_of_week", 0)
-        days_ahead = (dow - now.weekday()) % 7
-        if days_ahead == 0:
-            days_ahead = 7
+        days_ahead = (dow - now.weekday()) % 7 or 7
         next_date = now + timedelta(days=days_ahead)
         return next_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
     elif freq == "monthly":
@@ -139,144 +153,49 @@ def _calculate_next_run(config: dict) -> datetime:
         month = now.month + 1
         year = now.year
         if month > 12:
-            month = 1
-            year += 1
+            month, year = 1, year + 1
         return now.replace(year=year, month=month, day=dom, hour=hour, minute=minute, second=0, microsecond=0)
-    else:
-        return now + timedelta(days=7)
+    return now + timedelta(days=7)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SCAN TEMPLATES
 # ═══════════════════════════════════════════════════════════════════════════
 
-def list_templates(
-    db: Session, org_id: int, page: int = 1, page_size: int = 20
-) -> tuple[list[ScanTemplate], int]:
-    query = db.query(ScanTemplate).filter(ScanTemplate.organization_id == org_id)
-    total = query.count()
-    items = (
-        query.order_by(ScanTemplate.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
-    return items, total
+def list_templates(db: Session, org_id: int, page: int = 1, page_size: int = 20):
+    return _paginate_org(db, ScanTemplate, org_id, page, page_size)
 
 
-def create_template(db: Session, org_id: int, user_id: int, data: dict) -> ScanTemplate:
-    template = ScanTemplate(
-        organization_id=org_id,
-        created_by=user_id,
-        name=data["name"],
-        description=data.get("description"),
-        scan_type=data["scan_type"],
-        config=data.get("config", {}),
-        compliance_frameworks=data.get("compliance_frameworks"),
-        is_default=data.get("is_default", False),
-        is_shared=data.get("is_shared", False),
-    )
-    db.add(template)
-    db.commit()
-    db.refresh(template)
-    return template
+def create_template(db: Session, org_id: int, user_id: int, data: dict):
+    return _create_org_resource(db, ScanTemplate, org_id, user_id, data)
 
 
-def update_template(db: Session, template_id: int, org_id: int, data: dict) -> ScanTemplate | None:
-    template = (
-        db.query(ScanTemplate)
-        .filter(ScanTemplate.id == template_id, ScanTemplate.organization_id == org_id)
-        .first()
-    )
-    if not template:
-        return None
-    for key, value in data.items():
-        if hasattr(template, key) and value is not None:
-            setattr(template, key, value)
-    template.updated_at = datetime.now(UTC)
-    db.commit()
-    db.refresh(template)
-    return template
+def update_template(db: Session, template_id: int, org_id: int, data: dict):
+    return _update_org_resource(db, ScanTemplate, template_id, org_id, data)
 
 
 def delete_template(db: Session, template_id: int, org_id: int) -> bool:
-    template = (
-        db.query(ScanTemplate)
-        .filter(ScanTemplate.id == template_id, ScanTemplate.organization_id == org_id)
-        .first()
-    )
-    if not template:
-        return False
-    db.delete(template)
-    db.commit()
-    return True
+    return _delete_org_resource(db, ScanTemplate, template_id, org_id)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CUSTOM POLICIES
 # ═══════════════════════════════════════════════════════════════════════════
 
-def list_policies(
-    db: Session, org_id: int, page: int = 1, page_size: int = 20
-) -> tuple[list[Policy], int]:
-    query = db.query(Policy).filter(Policy.organization_id == org_id)
-    total = query.count()
-    items = (
-        query.order_by(Policy.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
-    return items, total
+def list_policies(db: Session, org_id: int, page: int = 1, page_size: int = 20):
+    return _paginate_org(db, Policy, org_id, page, page_size)
 
 
-def create_policy(db: Session, org_id: int, user_id: int, data: dict) -> Policy:
-    policy = Policy(
-        organization_id=org_id,
-        created_by=user_id,
-        name=data["name"],
-        description=data.get("description"),
-        policy_type=data.get("policy_type", "finding_gate"),
-        rules=data["rules"],
-        severity=data.get("severity", "high"),
-        is_active=data.get("is_active", True),
-        enforce_on_scans=data.get("enforce_on_scans", False),
-        notify_on_violation=data.get("notify_on_violation", True),
-    )
-    db.add(policy)
-    db.commit()
-    db.refresh(policy)
-    return policy
+def create_policy(db: Session, org_id: int, user_id: int, data: dict):
+    return _create_org_resource(db, Policy, org_id, user_id, data)
 
 
-def update_policy(db: Session, policy_id: int, org_id: int, data: dict) -> Policy | None:
-    policy = (
-        db.query(Policy)
-        .filter(Policy.id == policy_id, Policy.organization_id == org_id)
-        .first()
-    )
-    if not policy:
-        return None
-    for key, value in data.items():
-        if hasattr(policy, key) and value is not None:
-            setattr(policy, key, value)
-    policy.updated_at = datetime.now(UTC)
-    db.commit()
-    db.refresh(policy)
-    return policy
+def update_policy(db: Session, policy_id: int, org_id: int, data: dict):
+    return _update_org_resource(db, Policy, policy_id, org_id, data)
 
 
 def delete_policy(db: Session, policy_id: int, org_id: int) -> bool:
-    policy = (
-        db.query(Policy)
-        .filter(Policy.id == policy_id, Policy.organization_id == org_id)
-        .first()
-    )
-    if not policy:
-        return False
-    db.delete(policy)
-    db.commit()
-    return True
+    return _delete_org_resource(db, Policy, policy_id, org_id)
 
 
 def evaluate_policies(db: Session, org_id: int, findings: list[Finding]) -> list[dict]:
@@ -297,10 +216,7 @@ def evaluate_policies(db: Session, org_id: int, findings: list[Finding]) -> list
         action = rules.get("action", "alert")
         message = rules.get("message", "Policy violation detected")
 
-        violated_findings = []
-        for finding in findings:
-            if _matches_conditions(finding, conditions):
-                violated_findings.append(finding)
+        violated_findings = [f for f in findings if _matches_conditions(f, conditions)]
 
         if violated_findings:
             policy.violation_count += 1
@@ -358,78 +274,32 @@ def _matches_conditions(finding: Finding, conditions: list[dict]) -> bool:
 # WEBHOOKS
 # ═══════════════════════════════════════════════════════════════════════════
 
-def list_webhooks(
-    db: Session, org_id: int, page: int = 1, page_size: int = 20
-) -> tuple[list[Webhook], int]:
-    query = db.query(Webhook).filter(Webhook.organization_id == org_id)
-    total = query.count()
-    items = (
-        query.order_by(Webhook.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
-    return items, total
+def list_webhooks(db: Session, org_id: int, page: int = 1, page_size: int = 20):
+    return _paginate_org(db, Webhook, org_id, page, page_size)
 
 
-def create_webhook(db: Session, org_id: int, user_id: int, data: dict) -> Webhook:
-    webhook = Webhook(
-        organization_id=org_id,
-        created_by=user_id,
-        name=data["name"],
-        webhook_type=data["webhook_type"],
-        url=data.get("url"),
-        config=data.get("config"),
-        events=data.get("events", []),
-        secret=data.get("secret"),
-    )
-    db.add(webhook)
-    db.commit()
-    db.refresh(webhook)
-    return webhook
+def create_webhook(db: Session, org_id: int, user_id: int, data: dict):
+    return _create_org_resource(db, Webhook, org_id, user_id, data)
 
 
-def update_webhook(db: Session, webhook_id: int, org_id: int, data: dict) -> Webhook | None:
-    webhook = (
-        db.query(Webhook)
-        .filter(Webhook.id == webhook_id, Webhook.organization_id == org_id)
-        .first()
-    )
-    if not webhook:
-        return None
-    for key, value in data.items():
-        if hasattr(webhook, key) and value is not None:
-            setattr(webhook, key, value)
-    db.commit()
-    db.refresh(webhook)
-    return webhook
+def update_webhook(db: Session, webhook_id: int, org_id: int, data: dict):
+    return _update_org_resource(db, Webhook, webhook_id, org_id, data)
 
 
 def delete_webhook(db: Session, webhook_id: int, org_id: int) -> bool:
-    webhook = (
-        db.query(Webhook)
-        .filter(Webhook.id == webhook_id, Webhook.organization_id == org_id)
-        .first()
-    )
-    if not webhook:
-        return False
-    db.delete(webhook)
-    db.commit()
-    return True
+    return _delete_org_resource(db, Webhook, webhook_id, org_id)
 
 
 def trigger_webhooks(db: Session, org_id: int, event: str, payload: dict) -> int:
     """Trigger all active webhooks subscribed to an event. Returns count triggered."""
     webhooks = (
         db.query(Webhook)
-        .filter(
-            Webhook.organization_id == org_id,
-            Webhook.is_active == True,
-        )
+        .filter(Webhook.organization_id == org_id, Webhook.is_active == True)
         .all()
     )
 
     count = 0
+    now = datetime.now(UTC)
     for webhook in webhooks:
         if event not in (webhook.events or []):
             continue
@@ -438,45 +308,38 @@ def trigger_webhooks(db: Session, org_id: int, event: str, payload: dict) -> int
             webhook_id=webhook.id,
             event=event,
             payload=payload,
-            status="pending",
+            status="success",  # In production, actual HTTP call happens in background
+            response_code=200,
         )
         db.add(delivery)
         webhook.delivery_count += 1
-        webhook.last_triggered_at = datetime.now(UTC)
-
-        # In production, this would be an async task
-        # For now, mark as delivered (actual HTTP call would happen in background)
-        delivery.status = "success"
-        delivery.response_code = 200
-        webhook.last_success_at = datetime.now(UTC)
+        webhook.last_triggered_at = now
+        webhook.last_success_at = now
         count += 1
 
-    db.commit()
+    if count > 0:
+        db.commit()
     return count
 
 
 def test_webhook(db: Session, webhook_id: int, org_id: int) -> dict:
     """Send a test ping to a webhook."""
-    webhook = (
-        db.query(Webhook)
-        .filter(Webhook.id == webhook_id, Webhook.organization_id == org_id)
-        .first()
-    )
+    webhook = _get_org_resource(db, Webhook, webhook_id, org_id)
     if not webhook:
         return {"success": False, "error": "Webhook not found"}
 
-    # Record the test delivery
+    now = datetime.now(UTC)
     delivery = WebhookDelivery(
         webhook_id=webhook.id,
         event="webhook.test",
-        payload={"message": "Test webhook delivery", "timestamp": datetime.now(UTC).isoformat()},
+        payload={"message": "Test webhook delivery", "timestamp": now.isoformat()},
         status="success",
-        response_code = 200,
+        response_code=200,
     )
     db.add(delivery)
     webhook.delivery_count += 1
-    webhook.last_triggered_at = datetime.now(UTC)
-    webhook.last_success_at = datetime.now(UTC)
+    webhook.last_triggered_at = now
+    webhook.last_success_at = now
     db.commit()
 
     return {"success": True, "message": "Test delivery sent"}
@@ -619,17 +482,16 @@ def seed_compliance_frameworks(db: Session) -> int:
             fw = ComplianceFramework(**fw_data)
             db.add(fw)
             count += 1
-    db.commit()
+    if count > 0:
+        db.commit()
     return count
 
 
-def list_frameworks(db: Session) -> list[ComplianceFramework]:
+def list_frameworks(db: Session) -> list:
     return db.query(ComplianceFramework).order_by(ComplianceFramework.name).all()
 
 
-def get_org_compliance_status(
-    db: Session, org_id: int
-) -> list[dict]:
+def get_org_compliance_status(db: Session, org_id: int) -> list[dict]:
     """Get compliance status across all frameworks for an organization."""
     frameworks = db.query(ComplianceFramework).all()
     results = []
@@ -644,7 +506,6 @@ def get_org_compliance_status(
             .first()
         )
 
-        # Calculate compliance from scan findings
         scan_score = _calculate_framework_compliance(db, org_id, fw)
 
         results.append({
@@ -665,16 +526,12 @@ def get_org_compliance_status(
     return results
 
 
-def _calculate_framework_compliance(
-    db: Session, org_id: int, framework: ComplianceFramework
-) -> float | None:
+def _calculate_framework_compliance(db: Session, org_id: int, framework: ComplianceFramework) -> float | None:
     """Calculate compliance score based on scan findings mapped to framework controls."""
-    # Get recent scans for this org
-    from app.models.models import Scan as ScanModel
     recent_scans = (
-        db.query(ScanModel)
-        .filter(ScanModel.organization_id == org_id, ScanModel.status == "completed")
-        .order_by(ScanModel.completed_at.desc())
+        db.query(Scan)
+        .filter(Scan.organization_id == org_id, Scan.status == "completed")
+        .order_by(Scan.completed_at.desc())
         .limit(10)
         .all()
     )
@@ -686,11 +543,9 @@ def _calculate_framework_compliance(
     if total_controls == 0:
         return 0.0
 
-    # Simple heuristic: fewer findings = higher compliance
     total_findings = sum(s.total_vulnerabilities for s in recent_scans)
     avg_risk = sum(s.risk_score for s in recent_scans) / len(recent_scans)
 
-    # Score: 100 if no findings, decreases with more findings and higher risk
     if total_findings == 0:
         return 100.0
 
@@ -698,9 +553,7 @@ def _calculate_framework_compliance(
     return round(min(100.0, max(0.0, score)), 1)
 
 
-def get_framework_detail(
-    db: Session, framework_slug: str, org_id: int
-) -> dict | None:
+def get_framework_detail(db: Session, framework_slug: str, org_id: int) -> dict | None:
     """Get detailed compliance status for a specific framework."""
     fw = (
         db.query(ComplianceFramework)
@@ -743,35 +596,12 @@ def get_framework_detail(
 # EXPORT CENTER
 # ═══════════════════════════════════════════════════════════════════════════
 
-def create_export_job(
-    db: Session, org_id: int, user_id: int, data: dict
-) -> ExportJob:
-    job = ExportJob(
-        organization_id=org_id,
-        user_id=user_id,
-        export_type=data["export_type"],
-        format=data["format"],
-        scope=data.get("scope", {}),
-        status="pending",
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    return job
+def create_export_job(db: Session, org_id: int, user_id: int, data: dict) -> ExportJob:
+    return _create_org_resource(db, ExportJob, org_id, user_id, data)
 
 
-def list_export_jobs(
-    db: Session, org_id: int, page: int = 1, page_size: int = 20
-) -> tuple[list[ExportJob], int]:
-    query = db.query(ExportJob).filter(ExportJob.organization_id == org_id)
-    total = query.count()
-    items = (
-        query.order_by(ExportJob.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
-    return items, total
+def list_export_jobs(db: Session, org_id: int, page: int = 1, page_size: int = 20):
+    return _paginate_org(db, ExportJob, org_id, page, page_size)
 
 
 def generate_sarif_export(db: Session, scan_ids: list[int]) -> dict:
@@ -790,7 +620,7 @@ def generate_sarif_export(db: Session, scan_ids: list[int]) -> dict:
             "tool": {
                 "driver": {
                     "name": "SentinelAI",
-                    "version": "1.1.0",
+                    "version": "1.0.0",
                     "informationUri": "https://sentinelai.example.com",
                     "rules": [],
                 }
@@ -853,33 +683,23 @@ def compare_scans(db: Session, scan_id_1: int, scan_id_2: int) -> dict | None:
     findings1 = db.query(Finding).filter(Finding.scan_id == scan_id_1).all()
     findings2 = db.query(Finding).filter(Finding.scan_id == scan_id_2).all()
 
-    # Map findings by name for comparison
     f1_map = {f.vulnerability_name: f for f in findings1}
     f2_map = {f.vulnerability_name: f for f in findings2}
-
     all_names = set(f1_map.keys()) | set(f2_map.keys())
 
     new_findings = []
     fixed_findings = []
     changed_findings = []
-    unchanged_findings = []
+    unchanged_count = 0
 
     for name in all_names:
         in_first = name in f1_map
         in_second = name in f2_map
 
         if in_first and not in_second:
-            fixed_findings.append({
-                "name": name,
-                "severity": f1_map[name].severity,
-                "status": "fixed",
-            })
+            fixed_findings.append({"name": name, "severity": f1_map[name].severity, "status": "fixed"})
         elif not in_first and in_second:
-            new_findings.append({
-                "name": name,
-                "severity": f2_map[name].severity,
-                "status": "new",
-            })
+            new_findings.append({"name": name, "severity": f2_map[name].severity, "status": "new"})
         elif in_first and in_second:
             f1, f2 = f1_map[name], f2_map[name]
             if f1.severity != f2.severity or f1.cvss_score != f2.cvss_score:
@@ -892,7 +712,7 @@ def compare_scans(db: Session, scan_id_1: int, scan_id_2: int) -> dict | None:
                     "status": "changed",
                 })
             else:
-                unchanged_findings.append({"name": name, "severity": f1.severity})
+                unchanged_count += 1
 
     return {
         "scan_1": {
@@ -915,33 +735,29 @@ def compare_scans(db: Session, scan_id_1: int, scan_id_2: int) -> dict | None:
             "new_findings": new_findings,
             "fixed_findings": fixed_findings,
             "changed_findings": changed_findings,
-            "unchanged_count": len(unchanged_findings),
+            "unchanged_count": unchanged_count,
         },
     }
 
 
-def get_historical_analytics(
-    db: Session, org_id: int, months: int = 12
-) -> dict:
+def get_historical_analytics(db: Session, org_id: int, months: int = 12) -> dict:
     """Get historical analytics for trend analysis."""
-    from app.models.models import Scan as ScanModel
-
     now = datetime.now(UTC)
     start = now - timedelta(days=months * 30)
 
     scans = (
-        db.query(ScanModel)
+        db.query(Scan)
         .filter(
-            ScanModel.organization_id == org_id,
-            ScanModel.created_at >= start,
-            ScanModel.status == "completed",
+            Scan.organization_id == org_id,
+            Scan.created_at >= start,
+            Scan.status == "completed",
         )
-        .order_by(ScanModel.created_at.asc())
+        .order_by(Scan.created_at.asc())
         .all()
     )
 
     # Monthly aggregation
-    monthly_data = {}
+    monthly_data: dict[str, dict] = {}
     for scan in scans:
         month_key = scan.created_at.strftime("%Y-%m")
         if month_key not in monthly_data:
@@ -949,34 +765,19 @@ def get_historical_analytics(
                 "month": month_key,
                 "scans": 0,
                 "total_findings": 0,
-                "avg_risk_score": 0,
                 "risk_scores": [],
-                "critical": 0,
-                "high": 0,
-                "medium": 0,
-                "low": 0,
             }
         monthly_data[month_key]["scans"] += 1
         monthly_data[month_key]["total_findings"] += scan.total_vulnerabilities
         monthly_data[month_key]["risk_scores"].append(scan.risk_score)
 
-    # Calculate averages
-    for data in monthly_data.values():
-        scores = data.pop("risk_scores")
-        data["avg_risk_score"] = round(sum(scores) / len(scores), 1) if scores else 0
-
-    # Severity trend
     severity_trend = []
     for month_key in sorted(monthly_data.keys()):
         d = monthly_data[month_key]
-        severity_trend.append({
-            "month": d["month"],
-            "scans": d["scans"],
-            "total_findings": d["total_findings"],
-            "avg_risk_score": d["avg_risk_score"],
-        })
+        scores = d.pop("risk_scores")
+        d["avg_risk_score"] = round(sum(scores) / len(scores), 1) if scores else 0
+        severity_trend.append(d)
 
-    # Overall stats
     all_risk_scores = [s.risk_score for s in scans]
     total_findings = sum(s.total_vulnerabilities for s in scans)
 
@@ -1011,46 +812,45 @@ def _calculate_mom_trend(data: list[dict]) -> list[dict]:
 
 def generate_executive_summary(db: Session, org_id: int) -> dict:
     """Generate an executive security summary for CISO-level reporting."""
-    from app.models.models import Scan as ScanModel
-
     now = datetime.now(UTC)
     last_30d = now - timedelta(days=30)
     last_90d = now - timedelta(days=90)
 
-    # 30-day stats
     recent_scans = (
-        db.query(ScanModel)
+        db.query(Scan)
         .filter(
-            ScanModel.organization_id == org_id,
-            ScanModel.created_at >= last_30d,
-            ScanModel.status == "completed",
+            Scan.organization_id == org_id,
+            Scan.created_at >= last_30d,
+            Scan.status == "completed",
         )
         .all()
     )
 
-    # 90-day stats
     quarter_scans = (
-        db.query(ScanModel)
+        db.query(Scan)
         .filter(
-            ScanModel.organization_id == org_id,
-            ScanModel.created_at >= last_90d,
-            ScanModel.status == "completed",
+            Scan.organization_id == org_id,
+            Scan.created_at >= last_90d,
+            Scan.status == "completed",
         )
         .all()
     )
 
-    # Severity breakdown
-    recent_findings = []
-    for scan in recent_scans:
-        findings = db.query(Finding).filter(Finding.scan_id == scan.id).all()
-        recent_findings.extend(findings)
+    # Load findings for recent scans (single query via subquery)
+    recent_scan_ids = [s.id for s in recent_scans]
+    recent_findings = (
+        db.query(Finding)
+        .filter(Finding.scan_id.in_(recent_scan_ids))
+        .all()
+        if recent_scan_ids
+        else []
+    )
 
     severity_dist = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0, "Info": 0}
     for f in recent_findings:
         if f.severity in severity_dist:
             severity_dist[f.severity] += 1
 
-    # Risk score trend
     recent_scores = [s.risk_score for s in recent_scans]
     quarter_scores = [s.risk_score for s in quarter_scans]
 

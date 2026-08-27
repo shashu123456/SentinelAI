@@ -1,5 +1,6 @@
 import time
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,12 +36,34 @@ from app.utils.ratelimit import limiter
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application startup and shutdown lifecycle."""
+    # --- Startup ---
+    try:
+        init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error(f"Database init failed: {e}")
+
+    # Log production readiness warnings
+    for warning in settings.validate_production_readiness():
+        logger.warning(warning)
+
+    yield  # Application is running
+
+    # --- Shutdown ---
+    logger.info("Application shutting down")
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description=settings.DESCRIPTION,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Envelope middleware is registered first so it is innermost: security headers,
@@ -200,23 +223,6 @@ app.include_router(saas.router)
 app.include_router(sre.router)
 app.include_router(plugins.router)
 app.include_router(v1_router)
-
-
-@app.on_event("startup")
-async def startup():
-    try:
-        init_db()
-        logger.info("Database initialized")
-    except Exception as e:
-        logger.error(f"Database init failed: {e}")
-
-    # Security: warn if using default secret key
-    if not settings.validate_secret_key():
-        logger.critical(
-            "SECURITY WARNING: Using default SECRET_KEY! "
-            "Set SECRET_KEY environment variable in production. "
-            "All JWT tokens are forgeable with the default key."
-        )
 
 
 @app.get("/", tags=["Health"])
