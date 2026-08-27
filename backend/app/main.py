@@ -17,6 +17,7 @@ from app.api.routes import (
     invitations,
     metrics,
     organizations,
+    plugins,
     saas,
     scans,
     security,
@@ -196,6 +197,7 @@ app.include_router(enterprise.router)
 app.include_router(ai_platform.router)
 app.include_router(saas.router)
 app.include_router(sre.router)
+app.include_router(plugins.router)
 app.include_router(v1_router)
 
 
