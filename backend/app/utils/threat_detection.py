@@ -12,8 +12,8 @@ All detection is append-only — events are recorded for the Security Events
 dashboard and alert center.
 """
 
-import time
 import threading
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -24,7 +24,7 @@ from app.utils.logger import logger
 # ── In-Memory Threat Intelligence Stores ──────────────────────────────
 # In production, these would be backed by Redis.
 
-_lock = threading.Lock()
+_lock = threading.RLock()
 
 # IP reputation: ip -> {attempts, first_seen, last_seen, blocked}
 _ip_reputation: dict[str, dict] = defaultdict(
@@ -64,6 +64,21 @@ SUSPICIOUS_LOGIN_THRESHOLD = 3  # different IPs in window
 BLOCK_DURATION_SECONDS = 3600  # 1 hour block
 MAX_SESSIONS_PER_USER = 5
 GEO_ANOMALY_SPEED_KMH = 900  # impossible travel speed (airplane max)
+
+
+def reset_state() -> None:
+    """Clear every in-memory threat-intelligence store.
+
+    Used by tests so failed attempts recorded in one test cannot block the
+    shared client IP in the next.
+    """
+    with _lock:
+        _ip_reputation.clear()
+        _failed_logins.clear()
+        _successful_logins.clear()
+        _active_sessions.clear()
+        _security_events.clear()
+        _brute_force_windows.clear()
 
 
 # ── Data Classes ──────────────────────────────────────────────────────
@@ -177,9 +192,13 @@ def assess_login(
     reasons = []
     risk_level = "low"
 
+    # 1. IP blocked?
+    # Evaluated before acquiring _lock: is_ip_blocked -> check_ip_reputation takes
+    # the same lock, so calling it inside the block re-enters it on this thread.
+    blocked = bool(ip) and is_ip_blocked(ip)
+
     with _lock:
-        # 1. IP blocked?
-        if ip and is_ip_blocked(ip):
+        if blocked:
             reasons.append(f"IP {ip} is blocked due to repeated failures")
             return ThreatAssessment(
                 risk_level="critical",
@@ -296,6 +315,7 @@ def register_session(
     user_agent: str = "",
 ) -> bool:
     """Register a new session. Returns False if too many sessions."""
+    evicted: str | None = None
     with _lock:
         # Count active sessions for this user
         user_sessions = [h for h, s in _active_sessions.items() if s["user_id"] == user_id]
@@ -304,12 +324,7 @@ def register_session(
             # Revoke oldest session
             oldest = min(user_sessions, key=lambda h: _active_sessions[h]["created_at"])
             del _active_sessions[oldest]
-            _record_security_event(
-                severity="medium",
-                category="session",
-                title=f"Session evicted for user {user_id} (max sessions exceeded)",
-                detail={"user_id": user_id, "evicted_token": oldest[:16]},
-            )
+            evicted = oldest
 
         _active_sessions[token_hash] = {
             "user_id": user_id,
@@ -317,7 +332,17 @@ def register_session(
             "user_agent": user_agent[:200],
             "created_at": time.time(),
         }
-        return True
+
+    # Recorded after releasing _lock: _record_security_event takes the same lock.
+    if evicted is not None:
+        _record_security_event(
+            severity="medium",
+            category="session",
+            title=f"Session evicted for user {user_id} (max sessions exceeded)",
+            detail={"user_id": user_id, "evicted_token": evicted[:16]},
+        )
+
+    return True
 
 
 def is_session_replay(token_hash: str, user_id: int) -> bool:
