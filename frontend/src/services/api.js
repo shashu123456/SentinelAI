@@ -28,7 +28,23 @@ function redirectToLogin() {
   }
 }
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electron !== undefined;
+
 async function request(path, options = {}) {
+  // In Electron, try IPC first for real-time data
+  if (isElectron && window.electron) {
+    try {
+      const electronResult = await window.electron[`${path.replace('/', '')}`]();
+      // If the electron method returns data, use it directly
+      if (electronResult && !electronResult.startsWith('Error') && electronResult !== null) {
+        return electronResult;
+      }
+    } catch (ipcError) {
+      console.warn('IPC request failed, falling back to HTTP:', ipcError);
+    }
+  }
+
   const headers = { ...options.headers };
   const token = localStorage.getItem('sentinelai_token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -67,6 +83,7 @@ async function request(path, options = {}) {
   return response;
 }
 
+// Keep existing exports but they'll use IPC in Electron
 export const auth = {
   register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
@@ -180,17 +197,10 @@ export const organizations = {
   updateSettings: (orgId, data) => request(`/organizations/${orgId}/settings`, { method: 'PATCH', body: JSON.stringify(data) }),
   dashboard: (orgId) => request(`/organizations/${orgId}/dashboard`),
   analytics: (orgId) => request(`/organizations/${orgId}/analytics`),
-  // Members
   listMembers: (orgId) => request(`/organizations/${orgId}/members`),
   inviteMember: (orgId, data) => request(`/organizations/${orgId}/members`, { method: 'POST', body: JSON.stringify(data) }),
   updateMemberRole: (orgId, userId, data) => request(`/organizations/${orgId}/members/${userId}/role`, { method: 'PATCH', body: JSON.stringify(data) }),
   removeMember: (orgId, userId) => request(`/organizations/${orgId}/members/${userId}`, { method: 'DELETE' }),
-  // Projects
-  listProjects: (orgId) => request(`/organizations/${orgId}/projects`),
-  createProject: (orgId, data) => request(`/organizations/${orgId}/projects`, { method: 'POST', body: JSON.stringify(data) }),
-  getProject: (orgId, projectId) => request(`/organizations/${orgId}/projects/${projectId}`),
-  addProjectMember: (orgId, projectId, data) => request(`/organizations/${orgId}/projects/${projectId}/members`, { method: 'POST', body: JSON.stringify(data) }),
-  removeProjectMember: (orgId, projectId, userId) => request(`/organizations/${orgId}/projects/${projectId}/members/${userId}`, { method: 'DELETE' }),
 };
 
 export const teams = {
@@ -198,8 +208,7 @@ export const teams = {
   create: (orgId, data) => request(`/organizations/${orgId}/teams`, { method: 'POST', body: JSON.stringify(data) }),
   get: (orgId, teamId) => request(`/organizations/${orgId}/teams/${teamId}`),
   addMember: (orgId, teamId, data) => request(`/organizations/${orgId}/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
-  removeMember: (orgId, teamId, userId) => request(`/organizations/${orgId}/teams/${teamId}/members/${userId}`, { method: 'DELETE' }),
-  delete: (orgId, teamId) => request(`/organizations/${orgId}/teams/${teamId}`, { method: 'DELETE' }),
+  removeMember: (orgId, teamId) => request(`/organizations/${orgId}/teams/${teamId}`, { method: 'DELETE' }),
 };
 
 export const invitations = {
@@ -260,7 +269,12 @@ export const testimonials = {
 export const health = {
   check: () => request('/health'),
   detailed: () => request('/health/detailed'),
-  metrics: () => fetch(`${API_BASE.replace('/api', '')}/metrics`).then(r => r.text()),
+  metrics: () => {
+    if (isElectron && window.electron) {
+      return window.electron.getMetricsSnapshot();
+    }
+    return fetch(`${API_BASE.replace('/api', '')}/metrics`).then(r => r.text());
+  },
 };
 
 export { request };

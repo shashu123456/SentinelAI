@@ -106,7 +106,7 @@ function App() {
                 <Route element={<AppLayout />}>
                   <Route path="/dashboard" element={<ErrorBoundary pageLevel><Dashboard /></ErrorBoundary>} />
                   <Route path="/new-scan" element={<ErrorBoundary pageLevel><NewScan /></ErrorBoundary>} />
-                  <Route path="/scan/:id" element={<ErrorBoundary pageLevel><ScanResult /></ErrorBoundary>} />
+                  <Route path="/scan/:id" element={<ErrorBoundary pageLevel><ExecutionDetails /></ErrorBoundary>} />
                   <Route path="/live/:taskId" element={<ErrorBoundary pageLevel><ScanLive /></ErrorBoundary>} />
                   <Route path="/sast" element={<ErrorBoundary pageLevel><SASTScan /></ErrorBoundary>} />
                   <Route path="/deps" element={<ErrorBoundary pageLevel><DepScan /></ErrorBoundary>} />
