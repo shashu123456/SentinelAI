@@ -378,6 +378,7 @@ def get_scan_detail(
     response.findings = [FindingResponse.model_validate(f) for f in scan.findings]
     if scan.ai_analysis:
         response.ai_analysis = AIAnalysisResponse.model_validate(scan.ai_analysis)
+    response.transition_history = scan.transition_history or []
     return response
 
 

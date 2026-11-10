@@ -45,6 +45,7 @@ class ScanResponse(BaseModel):
 class ScanDetailResponse(ScanResponse):
     findings: list[FindingResponse] = []
     ai_analysis: AIAnalysisResponse | None = None
+    transition_history: list[dict] = []
 
 
 # Resolve forward references after finding.py has been imported

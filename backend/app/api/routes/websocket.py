@@ -73,30 +73,76 @@ async def scan_websocket(
     try:
         task.subscribers.append(websocket)
 
+        # Send initial execution state
         await websocket.send_json(
             {
                 "task_id": task.task_id,
+                "type": "execution_state",
                 "status": task.status,
                 "progress": task.progress,
                 "message": task.message,
                 "scan_id": task.scan_id,
+                "execution_state": {
+                    "status": task.status,
+                    "progress": task.progress,
+                    "message": task.message,
+                    "transition_history": task.transition_history if hasattr(task, 'transition_history') else [],
+                },
             }
         )
 
         while task.status in ("queued", "running"):
+            # Send progress update with execution state
+            await websocket.send_json(
+                {
+                    "type": "progress_update",
+                    "task_id": task.task_id,
+                    "status": task.status,
+                    "progress": task.progress,
+                    "message": task.message,
+                    "scan_id": task.scan_id,
+                }
+            )
             await asyncio.sleep(0.3)
 
-        await websocket.send_json(
-            {
-                "task_id": task.task_id,
-                "status": task.status,
-                "progress": task.progress,
-                "message": task.message,
-                "scan_id": task.scan_id,
-                "result": task.result,
-                "error": task.error,
-            }
-        )
+        # Build final result with AI analysis and execution history
+        result_data = {
+            "task_id": task.task_id,
+            "type": "execution_complete",
+            "status": task.status,
+            "progress": task.progress,
+            "message": task.message,
+            "scan_id": task.scan_id,
+            "result": task.result,
+            "error": task.error,
+        }
+
+        # Include AI analysis data if available
+        if task.result and task.result.get("scan_id"):
+            from app.database.database import SessionLocal
+            from app.models.models import Scan, AIAnalysis
+
+            db = SessionLocal()
+            try:
+                scan = db.query(Scan).filter(Scan.id == task.result["scan_id"]).first()
+                if scan and scan.ai_analysis:
+                    ai_analysis = scan.ai_analysis
+                    result_data["ai_analysis"] = {
+                        "executive_summary": ai_analysis.executive_summary,
+                        "technical_explanation": ai_analysis.technical_explanation,
+                        "business_impact": ai_analysis.business_impact,
+                        "attack_scenario": ai_analysis.attack_scenario,
+                        "recommended_mitigation": ai_analysis.recommended_mitigation,
+                        "confidence": ai_analysis.confidence if hasattr(ai_analysis, 'confidence') else 95,
+                        "references": ai_analysis.references if hasattr(ai_analysis, 'references') else [],
+                        "reasoning": ai_analysis.reasoning if hasattr(ai_analysis, 'reasoning') else '',
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to fetch AI analysis: {e}")
+            finally:
+                db.close()
+
+        await websocket.send_json(result_data)
 
     except WebSocketDisconnect:
         pass

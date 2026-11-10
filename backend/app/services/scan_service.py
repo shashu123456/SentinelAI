@@ -78,7 +78,7 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
         except Exception as e:
             logger.warning(f"Risk assessment failed for scan {scan.id}: {e}")
 
-        scan_repo.complete(scan, risk)
+        scan_repo.complete(scan, risk, scan.transition_history)
 
         # AI analysis (best-effort, non-blocking)
         try:

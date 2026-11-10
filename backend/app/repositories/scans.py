@@ -149,10 +149,12 @@ class ScanRepository(BaseRepository[Scan]):
         self.add(scan)
         return scan
 
-    def complete(self, scan: Scan, risk: dict) -> None:
+    def complete(self, scan: Scan, risk: dict, transition_history: list | None = None) -> None:
         scan.total_vulnerabilities = risk["total_vulnerabilities"]
         scan.risk_score = risk["score"]
         scan.risk_level = risk["level"]
+        if transition_history is not None:
+            scan.transition_history = transition_history
 
     def fail(self, scan: Scan) -> None:
         scan.status = "failed"

@@ -338,6 +338,7 @@ class Scan(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    transition_history: Mapped[list[dict]] = mapped_column(JSON, nullable=True, default=list)
 
     user: Mapped["User"] = relationship("User", back_populates="scans")
     organization_id: Mapped[int | None] = mapped_column(
