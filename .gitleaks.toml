@@ -1,0 +1,25 @@
+# Gitleaks configuration.
+#
+# The default ruleset stays in force everywhere. The allowlists below cover
+# values gitleaks reports that are not credentials:
+#
+#   docs/API.md                     truncated examples ("eyJ...", "snt_a1b2...").
+#   backend/tests/test_sast.py      a fake key that the SAST scanner is asserted
+#                                   to detect; the fixture is the test input.
+#   backend/tests/test_saas_platform.py
+#                                   a feature-flag name matched by the generic
+#                                   API key heuristic.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Truncated credential examples in API documentation"
+paths = ['''docs/API\.md''']
+
+[[allowlists]]
+description = "Deliberate fake secrets used as SAST and SaaS test fixtures"
+paths = [
+  '''backend/tests/test_sast\.py''',
+  '''backend/tests/test_saas_platform\.py''',
+]
