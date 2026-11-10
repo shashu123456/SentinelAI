@@ -1,5 +1,6 @@
 """Authentication and user schemas."""
 
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -71,7 +72,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class ForgotPasswordResponse(BaseModel):
     message: str
-    token: str | None = None
+    reset_token: str | None = None
 
 
 class ResetPasswordRequest(BaseModel):
@@ -85,7 +86,7 @@ class ResetPasswordRequest(BaseModel):
 
 
 class MessageResponse(BaseModel):
-    message: str
+    detail: str
 
 
 class RoleUpdateRequest(BaseModel):
@@ -93,9 +94,11 @@ class RoleUpdateRequest(BaseModel):
 
 
 class SessionInfo(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     user_id: int
     ip_address: str | None
-    created_at: str
-    expires_at: str
+    created_at: datetime
+    expires_at: datetime
     is_current: bool = False
