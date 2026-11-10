@@ -1,6 +1,7 @@
 """Auth hardening tests: session refresh/rotation, roles, lockout, rate limits,
 password reset, and security headers."""
 
+import secrets
 import uuid
 
 from app.config import get_settings
@@ -235,6 +236,25 @@ class TestInactiveUser:
         assert r.status_code == 403
 
 
+RESET_TOKEN = "pinned-reset-token-for-tests"
+
+
+def _request_reset(client, monkeypatch, email, token=RESET_TOKEN):
+    """Request a password reset and return the raw reset token.
+
+    The API deliberately never echoes reset tokens (see
+    ``test_security_hardening.TestPasswordResetSecurity``), so the generated
+    token is pinned for the duration of the request instead.
+    """
+    with monkeypatch.context() as patch:
+        patch.setattr(secrets, "token_urlsafe", lambda _n: token)
+        resp = client.post("/api/auth/forgot-password", json={"email": email})
+
+    assert resp.status_code == 200
+    assert resp.json()["reset_token"] is None
+    return token
+
+
 class TestRolesAndAdmin:
     def test_non_admin_cannot_list_users(self, client):
         resp, _, _, _ = _register(client)
@@ -295,12 +315,10 @@ class TestRolesAndAdmin:
 
 
 class TestPasswordReset:
-    def test_full_reset_flow(self, client):
+    def test_full_reset_flow(self, client, monkeypatch):
         resp, username, email, password = _register(client)
 
-        forgot = client.post("/api/auth/forgot-password", json={"email": email})
-        assert forgot.status_code == 200
-        reset_token = forgot.json()["reset_token"]
+        reset_token = _request_reset(client, monkeypatch, email)
         assert reset_token
 
         reset = client.post(
@@ -322,11 +340,9 @@ class TestPasswordReset:
             == 200
         )
 
-    def test_reset_token_is_single_use(self, client):
+    def test_reset_token_is_single_use(self, client, monkeypatch):
         resp, _, email, _ = _register(client)
-        reset_token = client.post("/api/auth/forgot-password", json={"email": email}).json()[
-            "reset_token"
-        ]
+        reset_token = _request_reset(client, monkeypatch, email)
 
         assert (
             client.post(
@@ -348,11 +364,9 @@ class TestPasswordReset:
         assert r.status_code == 200
         assert r.json()["reset_token"] is None
 
-    def test_weak_new_password_rejected(self, client):
+    def test_weak_new_password_rejected(self, client, monkeypatch):
         resp, _, email, _ = _register(client)
-        reset_token = client.post("/api/auth/forgot-password", json={"email": email}).json()[
-            "reset_token"
-        ]
+        reset_token = _request_reset(client, monkeypatch, email)
         r = client.post(
             "/api/auth/reset-password",
             json={"token": reset_token, "new_password": "weak"},

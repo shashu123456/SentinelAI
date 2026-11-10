@@ -23,7 +23,7 @@ def _register_and_login(client, username="benchuser", password="Test123!@#"):
     """Register a user and return the auth header."""
     client.post(
         "/api/auth/register",
-        json={"username": username, "email": f"{username}@bench.test", "password": password},
+        json={"username": username, "email": f"{username}@bench.example.com", "password": password},
     )
     resp = client.post(
         "/api/auth/login",

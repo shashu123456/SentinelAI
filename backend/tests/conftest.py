@@ -10,6 +10,12 @@ os.environ["DATABASE_URL"] = "sqlite:///" + os.path.join(
     tempfile.gettempdir(), f"sentinelai_test_{os.getpid()}.db"
 ).replace("\\", "/")
 
+# Deterministic test configuration. The per-minute login limit is kept at the
+# per-IP failed-login threshold (10) so the rate limiter is the first gate that
+# trips; with the production default of 30 the IP reputation block would answer
+# 429 first.
+os.environ["LOGIN_RATE_LIMIT_PER_MINUTE"] = "10"
+
 
 @pytest.fixture()
 def client():
@@ -33,8 +39,8 @@ def db_session():
 
     Drops and recreates all tables so each test starts from a clean schema.
     """
-    import app.models.models  # noqa: F401 - register tables on Base.metadata
     import app.models.enterprise  # noqa: F401 - register enterprise tables
+    import app.models.models  # noqa: F401 - register tables on Base.metadata
     import app.models.plugins  # noqa: F401 - register plugin tables
     import app.models.saas  # noqa: F401 - register SaaS tables
     from app.database.database import Base, SessionLocal, engine
@@ -82,12 +88,16 @@ def scan(db_session, user):
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limits():
-    """Reset slowapi's in-memory counters so rate-limit tests never bleed into
-    other tests (all TestClient requests share the same source IP)."""
+    """Reset slowapi's in-memory counters and the threat-detection stores so
+    rate-limit tests never bleed into other tests (all TestClient requests share
+    the same source IP)."""
+    from app.utils import threat_detection
     from app.utils.ratelimit import limiter
 
+    threat_detection.reset_state()
     yield
     limiter.reset()
+    threat_detection.reset_state()
 
 
 @pytest.fixture()
@@ -114,6 +124,17 @@ def auth_headers(user_token):
     """Authorization headers for an authenticated user."""
     _, token = user_token
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def registered_user(client):
+    """Register a fresh user through the API and return its session details.
+
+    See ``tests/helpers`` for the underlying builder and other utilities.
+    """
+    from tests.helpers import register
+
+    return register(client, prefix="fixture")
 
 
 @pytest.fixture()
