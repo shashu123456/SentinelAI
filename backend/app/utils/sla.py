@@ -32,7 +32,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # SLA Definitions
 # ═══════════════════════════════════════════════════════════════════════
@@ -251,19 +250,17 @@ class SLATracker:
         # Burn rate (how fast we're consuming the budget)
         # 1.0 = consuming at expected rate, >1.0 = consuming faster
         window = self.sla.window_seconds
-        elapsed = time.time() - (self._records[0].timestamp if self._records else time.time())
+        time.time() - (self._records[0].timestamp if self._records else time.time())
         expected_failure_rate = budget_percent / 100
         actual_failure_rate = failed_requests / total_requests if total_requests > 0 else 0
-        burn_rate = (
-            actual_failure_rate / expected_failure_rate
-            if expected_failure_rate > 0
-            else 0
-        )
+        burn_rate = actual_failure_rate / expected_failure_rate if expected_failure_rate > 0 else 0
 
         # Time to exhaustion
         if burn_rate > 0 and remaining_failures > 0:
             # How much budget remains vs burn rate
-            time_remaining_hours = (remaining_percent / 100) * (window / 3600) / max(burn_rate, 0.01)
+            time_remaining_hours = (
+                (remaining_percent / 100) * (window / 3600) / max(burn_rate, 0.01)
+            )
         else:
             time_remaining_hours = float("inf")
 
@@ -274,14 +271,14 @@ class SLATracker:
             "remaining_failures": remaining_failures,
             "remaining_percent": round(remaining_percent, 1),
             "burn_rate": round(burn_rate, 2),
-            "time_to_exhaustion_hours": round(time_remaining_hours, 1)
-            if time_remaining_hours != float("inf")
-            else None,
-            "status": "healthy"
-            if remaining_percent > 50
-            else "warning"
-            if remaining_percent > 20
-            else "critical",
+            "time_to_exhaustion_hours": (
+                round(time_remaining_hours, 1) if time_remaining_hours != float("inf") else None
+            ),
+            "status": (
+                "healthy"
+                if remaining_percent > 50
+                else "warning" if remaining_percent > 20 else "critical"
+            ),
         }
 
     def get_sla_summary(self) -> dict[str, Any]:
@@ -293,10 +290,7 @@ class SLATracker:
 
         # Overall SLA status
         all_met = (
-            availability["met"]
-            and latency["p95_met"]
-            and latency["p99_met"]
-            and error_rate["met"]
+            availability["met"] and latency["p95_met"] and latency["p99_met"] and error_rate["met"]
         )
 
         return {
@@ -356,54 +350,66 @@ class AlertManager:
         self._lock = threading.Lock()
 
         # Default thresholds
-        self.add_threshold(AlertThreshold(
-            name="availability_critical",
-            metric="availability",
-            severity=AlertSeverity.CRITICAL,
-            threshold=99.0,
-            comparison="lt",
-            description="Availability dropped below 99%",
-        ))
-        self.add_threshold(AlertThreshold(
-            name="availability_warning",
-            metric="availability",
-            severity=AlertSeverity.WARNING,
-            threshold=99.5,
-            comparison="lt",
-            description="Availability dropped below 99.5%",
-        ))
-        self.add_threshold(AlertThreshold(
-            name="latency_p95_warning",
-            metric="latency_p95",
-            severity=AlertSeverity.WARNING,
-            threshold=500.0,
-            comparison="gt",
-            description="P95 latency exceeded 500ms",
-        ))
-        self.add_threshold(AlertThreshold(
-            name="latency_p99_critical",
-            metric="latency_p99",
-            severity=AlertSeverity.CRITICAL,
-            threshold=1000.0,
-            comparison="gt",
-            description="P99 latency exceeded 1000ms",
-        ))
-        self.add_threshold(AlertThreshold(
-            name="error_rate_critical",
-            metric="error_rate",
-            severity=AlertSeverity.CRITICAL,
-            threshold=5.0,
-            comparison="gt",
-            description="Error rate exceeded 5%",
-        ))
-        self.add_threshold(AlertThreshold(
-            name="error_budget_critical",
-            metric="burn_rate",
-            severity=AlertSeverity.CRITICAL,
-            threshold=10.0,
-            comparison="gt",
-            description="Error budget burning >10x expected rate",
-        ))
+        self.add_threshold(
+            AlertThreshold(
+                name="availability_critical",
+                metric="availability",
+                severity=AlertSeverity.CRITICAL,
+                threshold=99.0,
+                comparison="lt",
+                description="Availability dropped below 99%",
+            )
+        )
+        self.add_threshold(
+            AlertThreshold(
+                name="availability_warning",
+                metric="availability",
+                severity=AlertSeverity.WARNING,
+                threshold=99.5,
+                comparison="lt",
+                description="Availability dropped below 99.5%",
+            )
+        )
+        self.add_threshold(
+            AlertThreshold(
+                name="latency_p95_warning",
+                metric="latency_p95",
+                severity=AlertSeverity.WARNING,
+                threshold=500.0,
+                comparison="gt",
+                description="P95 latency exceeded 500ms",
+            )
+        )
+        self.add_threshold(
+            AlertThreshold(
+                name="latency_p99_critical",
+                metric="latency_p99",
+                severity=AlertSeverity.CRITICAL,
+                threshold=1000.0,
+                comparison="gt",
+                description="P99 latency exceeded 1000ms",
+            )
+        )
+        self.add_threshold(
+            AlertThreshold(
+                name="error_rate_critical",
+                metric="error_rate",
+                severity=AlertSeverity.CRITICAL,
+                threshold=5.0,
+                comparison="gt",
+                description="Error rate exceeded 5%",
+            )
+        )
+        self.add_threshold(
+            AlertThreshold(
+                name="error_budget_critical",
+                metric="burn_rate",
+                severity=AlertSeverity.CRITICAL,
+                threshold=10.0,
+                comparison="gt",
+                description="Error budget burning >10x expected rate",
+            )
+        )
 
     def add_threshold(self, threshold: AlertThreshold) -> None:
         """Add an alert threshold."""
@@ -430,9 +436,12 @@ class AlertManager:
                     continue
 
                 triggered = False
-                if threshold.comparison == "gt" and value > threshold.threshold:
-                    triggered = True
-                elif threshold.comparison == "lt" and value < threshold.threshold:
+                if (
+                    threshold.comparison == "gt"
+                    and value > threshold.threshold
+                    or threshold.comparison == "lt"
+                    and value < threshold.threshold
+                ):
                     triggered = True
 
                 if triggered and threshold.name not in self._active_alerts:
@@ -444,7 +453,11 @@ class AlertManager:
                         message=f"{threshold.description} (current: {value}, threshold: {threshold.threshold})",
                         source="sla_monitor",
                         created_at=time.time(),
-                        details={"metric": threshold.metric, "value": value, "threshold": threshold.threshold},
+                        details={
+                            "metric": threshold.metric,
+                            "value": value,
+                            "threshold": threshold.threshold,
+                        },
                     )
                     self._active_alerts[threshold.name] = alert
                     self._alert_history.append(alert)
@@ -536,9 +549,7 @@ class UptimeMonitor:
     def register_check(self, name: str, description: str = "", url: str | None = None) -> None:
         """Register a new uptime check."""
         with self._lock:
-            self._checks[name] = UptimeCheck(
-                name=name, url=url, last_check=time.time()
-            )
+            self._checks[name] = UptimeCheck(name=name, url=url, last_check=time.time())
 
     def record_check(self, name: str, success: bool, latency_ms: float = 0.0) -> None:
         """Record the result of an uptime check."""
@@ -639,7 +650,9 @@ class IncidentTracker:
                 status="investigating",
                 created_at=now,
                 affected_services=affected_services or [],
-                timeline=[{"time": now, "status": "created", "message": f"Incident created: {title}"}],
+                timeline=[
+                    {"time": now, "status": "created", "message": f"Incident created: {title}"}
+                ],
             )
             self._incidents[incident.id] = incident
             self._incident_history.append(incident)
@@ -702,9 +715,7 @@ class IncidentTracker:
                 "status": i.status,
                 "created_at": i.created_at,
                 "resolved_at": i.resolved_at,
-                "duration_seconds": round(i.resolved_at - i.created_at)
-                if i.resolved_at
-                else None,
+                "duration_seconds": round(i.resolved_at - i.created_at) if i.resolved_at else None,
                 "root_cause": i.root_cause,
             }
             for i in reversed(recent)

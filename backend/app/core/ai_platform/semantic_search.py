@@ -59,11 +59,13 @@ class SemanticSearchEngine:
         results = []
         for doc_id, score in scores[:limit]:
             doc = self._documents[doc_id]
-            results.append({
-                "id": doc_id,
-                "score": round(score, 4),
-                "metadata": doc["metadata"],
-            })
+            results.append(
+                {
+                    "id": doc_id,
+                    "score": round(score, 4),
+                    "metadata": doc["metadata"],
+                }
+            )
 
         return results
 
@@ -87,14 +89,73 @@ class SemanticSearchEngine:
         text = re.sub(r"[^a-z0-9\s\-_]", " ", text)
         tokens = text.split()
         # Remove very short tokens and stopwords
-        stopwords = {"the", "a", "an", "is", "are", "was", "were", "be", "been",
-                     "being", "have", "has", "had", "do", "does", "did", "will",
-                     "would", "could", "should", "may", "might", "can", "shall",
-                     "to", "of", "in", "for", "on", "with", "at", "by", "from",
-                     "as", "into", "through", "during", "before", "after", "and",
-                     "or", "but", "not", "no", "if", "when", "where", "how", "what",
-                     "which", "who", "whom", "this", "that", "these", "those",
-                     "it", "its", "i", "me", "my", "we", "our", "you", "your"}
+        stopwords = {
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "can",
+            "shall",
+            "to",
+            "of",
+            "in",
+            "for",
+            "on",
+            "with",
+            "at",
+            "by",
+            "from",
+            "as",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "and",
+            "or",
+            "but",
+            "not",
+            "no",
+            "if",
+            "when",
+            "where",
+            "how",
+            "what",
+            "which",
+            "who",
+            "whom",
+            "this",
+            "that",
+            "these",
+            "those",
+            "it",
+            "its",
+            "i",
+            "me",
+            "my",
+            "we",
+            "our",
+            "you",
+            "your",
+        }
         return [t for t in tokens if len(t) > 2 and t not in stopwords]
 
     def _rebuild_index(self):

@@ -12,9 +12,6 @@ Tests cover:
 """
 
 import secrets
-import time
-
-import pytest
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
@@ -636,7 +633,8 @@ class TestScanIsolation:
             "info": {"title": "Test", "version": "1.0.0"},
             "paths": {},
         }
-        import io, json
+        import io
+        import json
 
         content = json.dumps(spec).encode()
         client.post(
@@ -657,7 +655,7 @@ class TestScanIsolation:
         user1, token1 = _register_user(client, "org1_user")
         user2, token2 = _register_user(client, "org2_user")
         org1 = _create_org(client, _auth_header(token1), "Org1", "org-1")
-        org2 = _create_org(client, _auth_header(token2), "Org2", "org-2")
+        _create_org(client, _auth_header(token2), "Org2", "org-2")
 
         # user2 tries to access org1's scans
         resp = client.get(
@@ -675,7 +673,7 @@ class TestCrossOrgIsolation:
         user1, token1 = _register_user(client, "org1_admin")
         user2, token2 = _register_user(client, "org2_admin")
         org1 = _create_org(client, _auth_header(token1), "Org1", "org-1")
-        org2 = _create_org(client, _auth_header(token2), "Org2", "org-2")
+        _create_org(client, _auth_header(token2), "Org2", "org-2")
 
         resp = client.get(
             f"/api/organizations/{org1['id']}/settings",
@@ -687,7 +685,7 @@ class TestCrossOrgIsolation:
         user1, token1 = _register_user(client, "org1_admin")
         user2, token2 = _register_user(client, "org2_admin")
         org1 = _create_org(client, _auth_header(token1), "Org1", "org-1")
-        org2 = _create_org(client, _auth_header(token2), "Org2", "org-2")
+        _create_org(client, _auth_header(token2), "Org2", "org-2")
 
         # user2 tries to list org1's teams
         resp = client.get(

@@ -36,7 +36,9 @@ class ConversationMemory:
         self._memories: dict[int, list[MemoryEntry]] = {}  # user_id -> entries
         self._max_history = max_history
         self._context_window = context_window
-        self._entity_index: dict[int, dict[str, list[str]]] = {}  # user_id -> {entity_type: [values]}
+        self._entity_index: dict[int, dict[str, list[str]]] = (
+            {}
+        )  # user_id -> {entity_type: [values]}
 
     def add_entry(
         self,
@@ -66,7 +68,7 @@ class ConversationMemory:
 
         # Trim old history
         if len(self._memories[user_id]) > self._max_history:
-            self._memories[user_id] = self._memories[user_id][-self._max_history:]
+            self._memories[user_id] = self._memories[user_id][-self._max_history :]
 
         # Update entity index
         for etype, values in entry.entities.items():
@@ -79,7 +81,7 @@ class ConversationMemory:
     def get_context_window(self, user_id: int) -> list[dict]:
         """Get the recent conversation context for AI prompts."""
         entries = self._memories.get(user_id, [])
-        return [e.to_dict() for e in entries[-self._context_window:]]
+        return [e.to_dict() for e in entries[-self._context_window :]]
 
     def get_full_history(self, user_id: int) -> list[dict]:
         """Get full conversation history."""
@@ -100,13 +102,14 @@ class ConversationMemory:
         if not entries:
             return "No prior conversation context."
 
-        recent = entries[-self._context_window:]
+        recent = entries[-self._context_window :]
         lines = ["=== CONVERSATION MEMORY ==="]
 
         # Recent topics
         intents = [e.intent for e in recent if e.intent]
         if intents:
             from collections import Counter
+
             top_intents = Counter(intents).most_common(3)
             lines.append(f"Recent topics: {', '.join(i[0] for i in top_intents)}")
 
@@ -136,6 +139,7 @@ class ConversationMemory:
 
         # CWE references
         import re
+
         cwes = re.findall(r"cwe[- ]?(\d+)", lower)
         if cwes:
             entities["cwe"] = [f"CWE-{c}" for c in cwes]

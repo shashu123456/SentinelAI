@@ -7,34 +7,32 @@ Covers:
     - Task queue stats
 """
 
-import time
-
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.database.database import Base, get_db
+from app.main import app
+from app.tasks import get_task_stats
+from app.utils.logger import (
+    _request_id_ctx,
+    _scan_id_ctx,
+    _user_id_ctx,
+    bind_request_context,
+    bind_scan_context,
+    clear_request_context,
+)
 from app.utils.system_metrics import (
-    get_cpu_info,
-    get_memory_info,
-    get_disk_info,
-    get_db_latency,
-    get_redis_status,
+    collect_all_health,
     get_ai_status,
+    get_cpu_info,
+    get_db_latency,
+    get_disk_info,
+    get_environment_info,
+    get_memory_info,
+    get_redis_status,
     get_uptime,
     get_uptime_human,
-    get_environment_info,
-    collect_all_health,
 )
-from app.utils.logger import (
-    bind_request_context,
-    clear_request_context,
-    bind_scan_context,
-    _request_id_ctx,
-    _user_id_ctx,
-    _scan_id_ctx,
-)
-from app.tasks import get_task_stats
 
 # ── Fixtures ──────────────────────────────────────────────────────
 

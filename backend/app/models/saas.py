@@ -76,9 +76,7 @@ class Plan(Base):
     badge: Mapped[str | None] = mapped_column(String(50), nullable=True)
     # "Most Popular", "Best Value", "Enterprise"
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -107,9 +105,7 @@ class Subscription(Base):
     organization_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    plan_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("plans.id"), nullable=False
-    )
+    plan_id: Mapped[int] = mapped_column(Integer, ForeignKey("plans.id"), nullable=False)
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -140,9 +136,7 @@ class Subscription(Base):
     # Metadata
     subscription_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -195,9 +189,7 @@ class License(Base):
     license_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
     # {"customer_name": "...", "customer_email": "...", "issued_by": "..."}
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -238,9 +230,7 @@ class FeatureFlag(Base):
         String(50), default="general", nullable=False
     )  # scanning, ai, compliance, enterprise, experimental
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -250,24 +240,16 @@ class FeatureFlagOverride(Base):
     """Per-organization feature flag overrides."""
 
     __tablename__ = "feature_flag_overrides"
-    __table_args__ = (
-        UniqueConstraint(
-            "organization_id", "flag_id", name="uq_org_flag_override"
-        ),
-    )
+    __table_args__ = (UniqueConstraint("organization_id", "flag_id", name="uq_org_flag_override"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     organization_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    flag_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("feature_flags.id"), nullable=False
-    )
+    flag_id: Mapped[int] = mapped_column(Integer, ForeignKey("feature_flags.id"), nullable=False)
     is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 # ── Usage Tracking ──────────────────────────────────────────────────────
@@ -302,14 +284,10 @@ class UsageRecord(Base):
     # Context
     resource_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     resource_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    user_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=True
-    )
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     detail: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 # ── Onboarding ──────────────────────────────────────────────────────────
@@ -321,14 +299,10 @@ class OnboardingProgress(Base):
     """
 
     __tablename__ = "onboarding_progress"
-    __table_args__ = (
-        UniqueConstraint("user_id", name="uq_onboarding_user"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", name="uq_onboarding_user"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     organization_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=True
     )
@@ -337,9 +311,7 @@ class OnboardingProgress(Base):
     completed_steps: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     # ["welcome", "profile", "first_project", "first_scan", "invite_team", "completed"]
 
-    current_step: Mapped[str] = mapped_column(
-        String(50), default="welcome", nullable=False
-    )
+    current_step: Mapped[str] = mapped_column(String(50), default="welcome", nullable=False)
     is_complete: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Personalization
@@ -348,9 +320,7 @@ class OnboardingProgress(Base):
     use_case: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # "api_security", "sast", "compliance", "general"
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -388,9 +358,7 @@ class EmailTemplate(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -402,15 +370,11 @@ class NotificationPreference(Base):
 
     __tablename__ = "notification_preferences"
     __table_args__ = (
-        UniqueConstraint(
-            "user_id", "notification_type", name="uq_notif_pref_user_type"
-        ),
+        UniqueConstraint("user_id", "notification_type", name="uq_notif_pref_user_type"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     notification_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # scan_completed, security_alert, compliance_change, etc.
@@ -426,9 +390,7 @@ class NotificationPreference(Base):
         String(20), default="immediate", nullable=False
     )  # immediate, hourly_digest, daily_digest, weekly_digest
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 # ── Custom Branding ─────────────────────────────────────────────────────
@@ -466,9 +428,7 @@ class CustomBranding(Base):
     custom_domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # "security.yourcompany.com"
     domain_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    domain_verification_token: Mapped[str | None] = mapped_column(
-        String(200), nullable=True
-    )
+    domain_verification_token: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Footer branding
     footer_text: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -482,9 +442,7 @@ class CustomBranding(Base):
 
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -502,9 +460,7 @@ class Feedback(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     organization_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=True
     )
@@ -533,9 +489,7 @@ class Feedback(Base):
     admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 # ── Product Analytics Events ────────────────────────────────────────────
@@ -564,9 +518,7 @@ class AnalyticsEvent(Base):
     )  # product, security, engagement, lifecycle
 
     # Context
-    user_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=True
-    )
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     organization_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=True
     )
@@ -581,6 +533,4 @@ class AnalyticsEvent(Base):
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))

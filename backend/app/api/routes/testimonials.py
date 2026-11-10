@@ -33,7 +33,7 @@ def list_testimonials(db: Session = Depends(get_db)):
     """Get all active testimonials for the landing page."""
     testimonials = (
         db.query(Testimonial)
-        .filter(Testimonial.is_active == True)
+        .filter(Testimonial.is_active is True)
         .order_by(Testimonial.display_order, Testimonial.id)
         .all()
     )

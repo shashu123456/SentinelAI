@@ -4,7 +4,6 @@ Scheduled scans, templates, policies, webhooks, compliance center,
 export center, version comparison, historical analytics, executive reports.
 """
 
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -19,6 +18,7 @@ router = APIRouter()
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────
+
 
 class ScheduledScanCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
@@ -92,6 +92,7 @@ class CompareRequest(BaseModel):
 
 # ── Scheduled Scans ──────────────────────────────────────────────────────
 
+
 @router.get("/orgs/{org_id}/scheduled-scans")
 def list_scheduled_scans(
     org_id: int,
@@ -132,7 +133,11 @@ def create_scheduled_scan(
     db: Session = Depends(get_db),
 ):
     scan = es.create_scheduled_scan(db, org_id, org_ctx.user_id, data.model_dump())
-    return {"id": scan.id, "name": scan.name, "next_run_at": scan.next_run_at.isoformat() if scan.next_run_at else None}
+    return {
+        "id": scan.id,
+        "name": scan.name,
+        "next_run_at": scan.next_run_at.isoformat() if scan.next_run_at else None,
+    }
 
 
 @router.put("/orgs/{org_id}/scheduled-scans/{scan_id}")
@@ -162,6 +167,7 @@ def delete_scheduled_scan(
 
 
 # ── Scan Templates ───────────────────────────────────────────────────────
+
 
 @router.get("/orgs/{org_id}/templates")
 def list_templates(
@@ -230,6 +236,7 @@ def delete_template(
 
 # ── Policies ─────────────────────────────────────────────────────────────
 
+
 @router.get("/orgs/{org_id}/policies")
 def list_policies(
     org_id: int,
@@ -252,7 +259,9 @@ def list_policies(
                 "enforce_on_scans": p.enforce_on_scans,
                 "evaluation_count": p.evaluation_count,
                 "violation_count": p.violation_count,
-                "last_evaluated_at": p.last_evaluated_at.isoformat() if p.last_evaluated_at else None,
+                "last_evaluated_at": (
+                    p.last_evaluated_at.isoformat() if p.last_evaluated_at else None
+                ),
                 "created_at": p.created_at.isoformat(),
             }
             for p in items
@@ -300,6 +309,7 @@ def delete_policy(
 
 # ── Webhooks ─────────────────────────────────────────────────────────────
 
+
 @router.get("/orgs/{org_id}/webhooks")
 def list_webhooks(
     org_id: int,
@@ -320,7 +330,9 @@ def list_webhooks(
                 "is_active": w.is_active,
                 "delivery_count": w.delivery_count,
                 "failure_count": w.failure_count,
-                "last_triggered_at": w.last_triggered_at.isoformat() if w.last_triggered_at else None,
+                "last_triggered_at": (
+                    w.last_triggered_at.isoformat() if w.last_triggered_at else None
+                ),
                 "created_at": w.created_at.isoformat(),
             }
             for w in items
@@ -381,6 +393,7 @@ def test_webhook(
 
 # ── Compliance Center ────────────────────────────────────────────────────
 
+
 @router.get("/compliance/frameworks")
 def list_compliance_frameworks(
     db: Session = Depends(get_db),
@@ -431,6 +444,7 @@ def get_framework_detail(
 
 # ── Export Center ────────────────────────────────────────────────────────
 
+
 @router.get("/orgs/{org_id}/exports")
 def list_exports(
     org_id: int,
@@ -467,7 +481,12 @@ def create_export(
     db: Session = Depends(get_db),
 ):
     job = es.create_export_job(db, org_id, org_ctx.user_id, data.model_dump())
-    return {"id": job.id, "status": job.status, "export_type": job.export_type, "format": job.format}
+    return {
+        "id": job.id,
+        "status": job.status,
+        "export_type": job.export_type,
+        "format": job.format,
+    }
 
 
 @router.get("/orgs/{org_id}/exports/{export_id}/sarif")
@@ -479,7 +498,12 @@ def download_sarif(
 ):
     """Generate SARIF format export for selected scans."""
     from app.models.enterprise import ExportJob
-    job = db.query(ExportJob).filter(ExportJob.id == export_id, ExportJob.organization_id == org_id).first()
+
+    job = (
+        db.query(ExportJob)
+        .filter(ExportJob.id == export_id, ExportJob.organization_id == org_id)
+        .first()
+    )
     if not job:
         raise HTTPException(404, "Export job not found")
 
@@ -489,6 +513,7 @@ def download_sarif(
 
 
 # ── Version Comparison ───────────────────────────────────────────────────
+
 
 @router.post("/scans/compare")
 def compare_scans(
@@ -504,6 +529,7 @@ def compare_scans(
 
 # ── Historical Analytics ─────────────────────────────────────────────────
 
+
 @router.get("/orgs/{org_id}/analytics/history")
 def get_historical_analytics(
     org_id: int,
@@ -515,6 +541,7 @@ def get_historical_analytics(
 
 
 # ── Executive Reports ────────────────────────────────────────────────────
+
 
 @router.get("/orgs/{org_id}/executive-report")
 def get_executive_report(

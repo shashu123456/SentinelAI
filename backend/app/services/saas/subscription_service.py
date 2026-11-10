@@ -13,9 +13,7 @@ from app.services.saas.plan_service import get_plan_by_slug
 from app.utils.logger import logger
 
 
-def get_organization_subscription(
-    db: Session, org_id: int
-) -> Subscription | None:
+def get_organization_subscription(db: Session, org_id: int) -> Subscription | None:
     """Get the active subscription for an organization."""
     return (
         db.query(Subscription)
@@ -53,9 +51,7 @@ def create_subscription(
     now = datetime.now(UTC)
     trial_end = now + timedelta(days=trial_days) if is_trial else None
     period_end = (
-        trial_end
-        if is_trial
-        else now + timedelta(days=30 if billing_cycle == "monthly" else 365)
+        trial_end if is_trial else now + timedelta(days=30 if billing_cycle == "monthly" else 365)
     )
 
     # Cancel existing active subscription
@@ -90,7 +86,9 @@ def create_subscription(
     db.refresh(sub)
     logger.info(
         "Subscription created: org=%s plan=%s trial=%s",
-        organization_id, plan_slug, is_trial,
+        organization_id,
+        plan_slug,
+        is_trial,
     )
     return sub
 

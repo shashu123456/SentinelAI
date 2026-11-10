@@ -47,7 +47,6 @@ def _detect_prompt_injection(text: str) -> bool:
     return any(pattern.search(text) for pattern in PROMPT_INJECTION_PATTERNS)
 
 
-
 class ExecutiveReportRequest(BaseModel):
     scan_id: int | None = None
 
@@ -147,6 +146,7 @@ def _get_all_findings_for_user(db: Session, user_id: int) -> list[dict]:
 
 # ── Executive Report ──────────────────────────────────────────────────────
 
+
 @router.post("/ai/executive-report")
 def generate_executive_report(
     data: ExecutiveReportRequest,
@@ -154,6 +154,7 @@ def generate_executive_report(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     all_findings = _get_all_findings_for_user(db, current_user.id)
@@ -164,13 +165,21 @@ def generate_executive_report(
 
     scan_data = {
         "total_findings": len(all_findings),
-        "risk_score": round(sum(f.get("cvss_score", 0) or 0 for f in all_findings) / max(1, len(all_findings)) * 10, 1),
+        "risk_score": round(
+            sum(f.get("cvss_score", 0) or 0 for f in all_findings) / max(1, len(all_findings)) * 10,
+            1,
+        ),
         "critical_count": severity_counts.get("Critical", 0),
         "high_count": severity_counts.get("High", 0),
         "severity_distribution": severity_counts,
         "top_findings": [
             {"name": f["vulnerability_name"], "severity": f["severity"], "cwe": f.get("cwe_id")}
-            for f in sorted(all_findings, key=lambda x: {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}.get(x.get("severity"), 5))[:10]
+            for f in sorted(
+                all_findings,
+                key=lambda x: {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}.get(
+                    x.get("severity"), 5
+                ),
+            )[:10]
         ],
     }
 
@@ -179,6 +188,7 @@ def generate_executive_report(
 
 # ── Risk Explanation ──────────────────────────────────────────────────────
 
+
 @router.post("/ai/risk-explain")
 def explain_risk(
     data: RiskExplainRequest,
@@ -186,6 +196,7 @@ def explain_risk(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     findings = _get_all_findings_for_user(db, current_user.id)
@@ -196,6 +207,7 @@ def explain_risk(
 
 # ── Threat Prediction ─────────────────────────────────────────────────────
 
+
 @router.post("/ai/threat-predict")
 def predict_threats(
     data: ThreatPredictRequest,
@@ -203,6 +215,7 @@ def predict_threats(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     if data.scan_id:
@@ -215,6 +228,7 @@ def predict_threats(
 
 # ── Root Cause ────────────────────────────────────────────────────────────
 
+
 @router.post("/ai/root-cause")
 def explain_root_cause(
     data: RootCauseRequest,
@@ -222,6 +236,7 @@ def explain_root_cause(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     finding = db.query(Finding).filter(Finding.id == data.finding_id).first()
@@ -242,6 +257,7 @@ def explain_root_cause(
 
 # ── Code Fix ──────────────────────────────────────────────────────────────
 
+
 @router.post("/ai/code-fix")
 def generate_code_fix(
     data: CodeFixRequest,
@@ -249,6 +265,7 @@ def generate_code_fix(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     finding = db.query(Finding).filter(Finding.id == data.finding_id).first()
@@ -268,6 +285,7 @@ def generate_code_fix(
 
 # ── Architecture Review ───────────────────────────────────────────────────
 
+
 @router.post("/ai/architecture-review")
 def review_architecture(
     data: ArchitectureReviewRequest,
@@ -275,6 +293,7 @@ def review_architecture(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     scan, findings = _get_scan_findings(db, data.scan_id, current_user.id)
@@ -286,6 +305,7 @@ def review_architecture(
 
 
 # ── Security Advisor ──────────────────────────────────────────────────────
+
 
 @router.post("/ai/advise")
 @limiter.limit(f"{get_settings().COPILOT_RATE_LIMIT_PER_MINUTE}/minute")
@@ -299,10 +319,11 @@ def security_advisor(
     if _detect_prompt_injection(data.question):
         raise HTTPException(
             status_code=400,
-            detail="Input contains patterns that are not allowed. Please ask security-related questions only."
+            detail="Input contains patterns that are not allowed. Please ask security-related questions only.",
         )
 
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     findings = _get_all_findings_for_user(db, current_user.id)
@@ -317,6 +338,7 @@ def security_advisor(
     result = engine.advise(data.question, context, current_user.id)
     # Store in memory
     from app.core.ai_platform.conversation_memory import get_conversation_memory
+
     mem = get_conversation_memory()
     mem.add_entry(current_user.id, "user", data.question, scan_id=data.scan_id)
     if result.get("data", {}).get("answer"):
@@ -326,6 +348,7 @@ def security_advisor(
 
 # ── Scan Summarizer ───────────────────────────────────────────────────────
 
+
 @router.post("/ai/summarize")
 def summarize_scan(
     data: ExecutiveReportRequest,
@@ -333,6 +356,7 @@ def summarize_scan(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     scan, findings = _get_scan_findings(db, data.scan_id, current_user.id)
@@ -353,6 +377,7 @@ def summarize_scan(
 
 # ── Natural Language Search ───────────────────────────────────────────────
 
+
 @router.post("/ai/search")
 @limiter.limit(f"{get_settings().COPILOT_RATE_LIMIT_PER_MINUTE}/minute")
 def nl_search(
@@ -363,12 +388,10 @@ def nl_search(
 ):
     # Prompt injection protection
     if _detect_prompt_injection(data.query):
-        raise HTTPException(
-            status_code=400,
-            detail="Input contains patterns that are not allowed."
-        )
+        raise HTTPException(status_code=400, detail="Input contains patterns that are not allowed.")
 
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     findings = _get_all_findings_for_user(db, current_user.id)
@@ -377,6 +400,7 @@ def nl_search(
 
 # ── Knowledge Graph ───────────────────────────────────────────────────────
 
+
 @router.post("/ai/knowledge-graph")
 def build_knowledge_graph(
     data: KnowledgeGraphRequest,
@@ -384,6 +408,7 @@ def build_knowledge_graph(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.engine import get_ai_engine
+
     engine = get_ai_engine()
 
     _, findings = _get_scan_findings(db, data.scan_id, current_user.id)
@@ -392,11 +417,13 @@ def build_knowledge_graph(
 
 # ── Conversation Memory ───────────────────────────────────────────────────
 
+
 @router.get("/ai/memory")
 def get_conversation_history(
     current_user: User = Depends(get_current_user),
 ):
     from app.core.ai_platform.conversation_memory import get_conversation_memory
+
     mem = get_conversation_memory()
     return {
         "history": mem.get_full_history(current_user.id),
@@ -409,6 +436,7 @@ def clear_conversation_memory(
     current_user: User = Depends(get_current_user),
 ):
     from app.core.ai_platform.conversation_memory import get_conversation_memory
+
     mem = get_conversation_memory()
     mem.clear(current_user.id)
     return {"detail": "Conversation memory cleared"}
@@ -416,14 +444,17 @@ def clear_conversation_memory(
 
 # ── Prompt Registry ───────────────────────────────────────────────────────
 
+
 @router.get("/ai/prompts")
 def list_prompts():
     from app.core.ai_platform.prompt_registry import get_prompt_registry
+
     registry = get_prompt_registry()
     return {"prompts": registry.list_all()}
 
 
 # ── Semantic Search (standalone) ──────────────────────────────────────────
+
 
 @router.get("/ai/search-index")
 def get_search_index(
@@ -431,6 +462,7 @@ def get_search_index(
     db: Session = Depends(get_db),
 ):
     from app.core.ai_platform.semantic_search import get_semantic_search
+
     search = get_semantic_search()
     findings = _get_all_findings_for_user(db, current_user.id)
     search.add_findings(findings)

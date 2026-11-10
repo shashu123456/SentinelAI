@@ -17,6 +17,44 @@ Domain modules:
 - email_service: Email templates and notifications
 """
 
+from app.services.saas.analytics_service import (
+    get_analytics_summary,
+    track_event,
+)
+from app.services.saas.branding_service import (
+    get_branding,
+    upsert_branding,
+    verify_custom_domain,
+)
+from app.services.saas.email_service import (
+    get_email_template,
+    get_notification_preferences,
+    render_email_template,
+    seed_email_templates,
+    set_notification_preference,
+)
+from app.services.saas.feature_flag_service import (
+    create_feature_flag,
+    get_org_features,
+    is_feature_enabled,
+    seed_feature_flags,
+    set_org_feature_override,
+)
+from app.services.saas.feedback_service import (
+    get_feedback_list,
+    submit_feedback,
+    triage_feedback,
+)
+from app.services.saas.licensing_service import (
+    activate_license,
+    create_license,
+    validate_license,
+)
+from app.services.saas.onboarding_service import (
+    ONBOARDING_STEPS,
+    complete_onboarding_step,
+    get_onboarding_progress,
+)
 from app.services.saas.plan_service import (
     create_plan,
     get_all_plans,
@@ -40,50 +78,6 @@ from app.services.saas.usage_service import (
     get_usage_total,
     record_usage,
 )
-from app.services.saas.feature_flag_service import (
-    create_feature_flag,
-    get_org_features,
-    is_feature_enabled,
-    seed_feature_flags,
-    set_org_feature_override,
-)
-from app.services.saas.licensing_service import (
-    activate_license,
-    create_license,
-    validate_license,
-)
-from app.services.saas.onboarding_service import (
-    ONBOARDING_STEPS,
-    complete_onboarding_step,
-    get_onboarding_progress,
-)
-from app.services.saas.branding_service import (
-    get_branding,
-    upsert_branding,
-    verify_custom_domain,
-)
-from app.services.saas.feedback_service import (
-    get_feedback_list,
-    submit_feedback,
-    triage_feedback,
-)
-from app.services.saas.analytics_service import (
-    get_analytics_summary,
-    track_event,
-)
-from app.services.saas.email_service import (
-    get_email_template,
-    get_notification_preferences,
-    render_email_template,
-    seed_email_templates,
-    set_notification_preference,
-)
-
-from app.models.models import Organization
-from app.services.saas.plan_service import get_plan_by_slug as _get_plan
-from app.services.saas.subscription_service import get_organization_subscription as _get_sub
-from app.services.saas.feature_flag_service import get_org_features as _get_features
-from app.services.saas.branding_service import get_branding as _get_branding
 
 
 def get_saa_dashboard(db, org_id: int) -> dict:
@@ -120,28 +114,56 @@ def get_saa_dashboard(db, org_id: int) -> dict:
 
 __all__ = [
     # Plans
-    "get_all_plans", "get_plan_by_slug", "create_plan", "update_plan", "seed_default_plans",
+    "get_all_plans",
+    "get_plan_by_slug",
+    "create_plan",
+    "update_plan",
+    "seed_default_plans",
     # Subscriptions
-    "get_organization_subscription", "get_organization_plan", "create_subscription",
-    "cancel_subscription", "start_trial", "check_trial_expiration", "expire_trials",
+    "get_organization_subscription",
+    "get_organization_plan",
+    "create_subscription",
+    "cancel_subscription",
+    "start_trial",
+    "check_trial_expiration",
+    "expire_trials",
     # Usage
-    "record_usage", "get_usage_total", "check_quota", "get_usage_summary", "enforce_quotas",
+    "record_usage",
+    "get_usage_total",
+    "check_quota",
+    "get_usage_summary",
+    "enforce_quotas",
     # Feature flags
-    "is_feature_enabled", "get_org_features", "create_feature_flag",
-    "set_org_feature_override", "seed_feature_flags",
+    "is_feature_enabled",
+    "get_org_features",
+    "create_feature_flag",
+    "set_org_feature_override",
+    "seed_feature_flags",
     # Licensing
-    "validate_license", "activate_license", "create_license",
+    "validate_license",
+    "activate_license",
+    "create_license",
     # Onboarding
-    "ONBOARDING_STEPS", "get_onboarding_progress", "complete_onboarding_step",
+    "ONBOARDING_STEPS",
+    "get_onboarding_progress",
+    "complete_onboarding_step",
     # Branding
-    "get_branding", "upsert_branding", "verify_custom_domain",
+    "get_branding",
+    "upsert_branding",
+    "verify_custom_domain",
     # Feedback
-    "submit_feedback", "get_feedback_list", "triage_feedback",
+    "submit_feedback",
+    "get_feedback_list",
+    "triage_feedback",
     # Analytics
-    "track_event", "get_analytics_summary",
+    "track_event",
+    "get_analytics_summary",
     # Email
-    "get_email_template", "render_email_template", "seed_email_templates",
-    "get_notification_preferences", "set_notification_preference",
+    "get_email_template",
+    "render_email_template",
+    "seed_email_templates",
+    "get_notification_preferences",
+    "set_notification_preference",
     # Dashboard
     "get_saa_dashboard",
 ]

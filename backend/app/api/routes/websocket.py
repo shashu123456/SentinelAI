@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from jose import jwt
 
 from app.config import get_settings
@@ -86,7 +86,9 @@ async def scan_websocket(
                     "status": task.status,
                     "progress": task.progress,
                     "message": task.message,
-                    "transition_history": task.transition_history if hasattr(task, 'transition_history') else [],
+                    "transition_history": (
+                        task.transition_history if hasattr(task, "transition_history") else []
+                    ),
                 },
             }
         )
@@ -120,7 +122,7 @@ async def scan_websocket(
         # Include AI analysis data if available
         if task.result and task.result.get("scan_id"):
             from app.database.database import SessionLocal
-            from app.models.models import Scan, AIAnalysis
+            from app.models.models import Scan
 
             db = SessionLocal()
             try:
@@ -133,9 +135,15 @@ async def scan_websocket(
                         "business_impact": ai_analysis.business_impact,
                         "attack_scenario": ai_analysis.attack_scenario,
                         "recommended_mitigation": ai_analysis.recommended_mitigation,
-                        "confidence": ai_analysis.confidence if hasattr(ai_analysis, 'confidence') else 95,
-                        "references": ai_analysis.references if hasattr(ai_analysis, 'references') else [],
-                        "reasoning": ai_analysis.reasoning if hasattr(ai_analysis, 'reasoning') else '',
+                        "confidence": (
+                            ai_analysis.confidence if hasattr(ai_analysis, "confidence") else 95
+                        ),
+                        "references": (
+                            ai_analysis.references if hasattr(ai_analysis, "references") else []
+                        ),
+                        "reasoning": (
+                            ai_analysis.reasoning if hasattr(ai_analysis, "reasoning") else ""
+                        ),
                     }
             except Exception as e:
                 logger.warning(f"Failed to fetch AI analysis: {e}")

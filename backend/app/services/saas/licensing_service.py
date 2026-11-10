@@ -39,9 +39,7 @@ def validate_license(db: Session, license_key: str) -> License | None:
     return lic
 
 
-def activate_license(
-    db: Session, *, license_key: str, organization_id: int
-) -> License | None:
+def activate_license(db: Session, *, license_key: str, organization_id: int) -> License | None:
     """Activate a license key for an organization."""
     lic = validate_license(db, license_key)
     if not lic:

@@ -40,7 +40,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # Enums
 # ═══════════════════════════════════════════════════════════════════════
@@ -146,8 +145,16 @@ class PluginManifest:
 
         try:
             pv = Version(platform_version)
-            min_v = Version(self.min_platform_version) if self.min_platform_version else Version("0.0.0")
-            max_v = Version(self.max_platform_version) if self.max_platform_version else Version("999.999.999")
+            min_v = (
+                Version(self.min_platform_version)
+                if self.min_platform_version
+                else Version("0.0.0")
+            )
+            max_v = (
+                Version(self.max_platform_version)
+                if self.max_platform_version
+                else Version("999.999.999")
+            )
             return min_v <= pv <= max_v
         except Exception:
             return True  # If we can't parse, assume compatible
@@ -157,14 +164,20 @@ class PluginManifest:
             "id": self.id,
             "name": self.name,
             "version": self.version,
-            "plugin_type": self.plugin_type.value if isinstance(self.plugin_type, PluginType) else self.plugin_type,
+            "plugin_type": (
+                self.plugin_type.value
+                if isinstance(self.plugin_type, PluginType)
+                else self.plugin_type
+            ),
             "description": self.description,
             "author": self.author,
             "homepage": self.homepage,
             "license": self.license,
             "min_platform_version": self.min_platform_version,
             "max_platform_version": self.max_platform_version,
-            "permissions": [p.value if isinstance(p, PluginPermission) else p for p in self.permissions],
+            "permissions": [
+                p.value if isinstance(p, PluginPermission) else p for p in self.permissions
+            ],
             "config_schema": self.config_schema,
             "dependencies": self.dependencies,
             "entry_point": self.entry_point,

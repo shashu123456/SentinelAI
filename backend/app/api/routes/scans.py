@@ -1,11 +1,10 @@
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 
 import yaml
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
-from datetime import UTC, datetime, timedelta
-
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -297,30 +296,30 @@ def get_analytics(
     thirty_days_ago = now - timedelta(days=29)
     day_start = datetime.combine(thirty_days_ago.date(), datetime.min.time()).replace(tzinfo=UTC)
 
-    activity_rows = (
-        db.execute(
-            select(
-                func.date(Scan.created_at).label("day"),
-                func.count(Scan.id).label("count"),
-            )
-            .where(
-                Scan.user_id == user_id,
-                Scan.created_at >= day_start,
-                Scan.deleted_at.is_(None),
-            )
-            .group_by(func.date(Scan.created_at))
-            .order_by(func.date(Scan.created_at).asc())
-        ).all()
-    )
+    activity_rows = db.execute(
+        select(
+            func.date(Scan.created_at).label("day"),
+            func.count(Scan.id).label("count"),
+        )
+        .where(
+            Scan.user_id == user_id,
+            Scan.created_at >= day_start,
+            Scan.deleted_at.is_(None),
+        )
+        .group_by(func.date(Scan.created_at))
+        .order_by(func.date(Scan.created_at).asc())
+    ).all()
     activity_map = {str(row.day): row.count for row in activity_rows}
 
     scan_activity = []
     for i in range(29, -1, -1):
         day = (now - timedelta(days=i)).date()
-        scan_activity.append({
-            "date": day.isoformat(),
-            "scans": activity_map.get(day.isoformat(), 0),
-        })
+        scan_activity.append(
+            {
+                "date": day.isoformat(),
+                "scans": activity_map.get(day.isoformat(), 0),
+            }
+        )
 
     # Risk score trend over time
     risk_trend = []

@@ -11,8 +11,6 @@ Covers:
 - Cache utility
 """
 
-import pytest
-
 # ── Config Validation Tests ──────────────────────────────────────────────
 
 
@@ -175,8 +173,8 @@ class TestAuditService:
         assert _extract_module("unknown.action") == "unknown"
 
     def test_record_action_creates_audit_log(self, db_session):
-        from app.services.audit_service import record_action
         from app.repositories.audit import AuditLogRepository
+        from app.services.audit_service import record_action
 
         record_action(
             db_session,
@@ -366,16 +364,16 @@ class TestBaseRepository:
         assert repo.get(99999) is None
 
     def test_count_empty(self, db_session):
-        from app.repositories.scans import ScanRepository
         from app.models.models import Scan
+        from app.repositories.scans import ScanRepository
 
         repo = ScanRepository(db_session)
         count = repo.count(Scan.user_id == 99999)
         assert count == 0
 
     def test_paginate_empty(self, db_session):
-        from app.repositories.scans import ScanRepository
         from app.models.models import Scan
+        from app.repositories.scans import ScanRepository
 
         repo = ScanRepository(db_session)
         items, total = repo.paginate(Scan.user_id == 99999)
@@ -384,7 +382,6 @@ class TestBaseRepository:
 
     def test_paginate_respects_limits(self, db_session):
         from app.repositories.scans import ScanRepository
-        from app.models.models import Scan
 
         repo = ScanRepository(db_session)
         # page_size should be clamped to [1, 100]

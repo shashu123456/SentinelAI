@@ -7,8 +7,8 @@ token's remaining lifetime.
 """
 
 import os
-import time
 import threading
+import time
 
 from app.utils.logger import logger
 
@@ -102,17 +102,13 @@ class TokenBlacklist:
             try:
                 key = f"bl:user:{user_id}"
                 revocation_time = self._redis_client.get(key)
-                if revocation_time and float(revocation_time) > issued_at:
-                    return True
-                return False
+                return bool(revocation_time and float(revocation_time) > issued_at)
             except Exception:
                 return False
         else:
             with self._lock:
                 revocation_time = self._memory_store.get(f"user_rev:{user_id}")
-                if revocation_time and revocation_time > issued_at:
-                    return True
-                return False
+                return bool(revocation_time and revocation_time > issued_at)
 
     def cleanup(self) -> int:
         """Remove expired entries from in-memory store. Returns count removed."""

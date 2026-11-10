@@ -102,10 +102,7 @@ def revoke_access_token(token: str) -> None:
         exp = payload.get("exp")
         if jti and exp:
             # exp is a datetime or timestamp
-            if isinstance(exp, datetime):
-                exp_ts = exp.timestamp()
-            else:
-                exp_ts = exp
+            exp_ts = exp.timestamp() if isinstance(exp, datetime) else exp
             blacklist.add(jti, exp_ts)
     except jwt.JWTError:
         pass  # Invalid token, nothing to revoke

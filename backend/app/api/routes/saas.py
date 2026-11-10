@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.models.models import User
-from app.utils.security import get_current_user
 from app.services import saas_service
+from app.utils.security import get_current_user
 
 router = APIRouter(prefix="/api/saas", tags=["SaaS Platform"])
 
@@ -81,7 +81,7 @@ def create_plan(
 
     import asyncio
 
-    body = asyncio.ensure_future(request.json()) if hasattr(request, "json") else {}
+    asyncio.ensure_future(request.json()) if hasattr(request, "json") else {}
     # For simplicity, accept via query params in production this would be a Pydantic model
     plan = saas_service.seed_default_plans(db)
     return {"message": "Plans seeded", "count": len(plan)}
@@ -100,9 +100,7 @@ def get_subscription(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -111,20 +109,24 @@ def get_subscription(
     plan = saas_service.get_organization_plan(db, membership.organization_id)
 
     return {
-        "subscription": {
-            "id": sub.id if sub else None,
-            "status": sub.status if sub else None,
-            "plan": {
-                "name": plan.name if plan else "Free",
-                "slug": plan.slug if plan else "free",
-            },
-            "billing_cycle": sub.billing_cycle if sub else None,
-            "is_trial": sub.is_trial if sub else False,
-            "trial_ends_at": sub.trial_ends_at.isoformat() if sub and sub.trial_ends_at else None,
-            "current_period_end": sub.current_period_end.isoformat() if sub else None,
-        }
-        if sub
-        else {"subscription": None, "plan": {"name": "Free", "slug": "free"}},
+        "subscription": (
+            {
+                "id": sub.id if sub else None,
+                "status": sub.status if sub else None,
+                "plan": {
+                    "name": plan.name if plan else "Free",
+                    "slug": plan.slug if plan else "free",
+                },
+                "billing_cycle": sub.billing_cycle if sub else None,
+                "is_trial": sub.is_trial if sub else False,
+                "trial_ends_at": (
+                    sub.trial_ends_at.isoformat() if sub and sub.trial_ends_at else None
+                ),
+                "current_period_end": sub.current_period_end.isoformat() if sub else None,
+            }
+            if sub
+            else {"subscription": None, "plan": {"name": "Free", "slug": "free"}}
+        ),
     }
 
 
@@ -138,22 +140,16 @@ def start_trial(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
 
-    existing = saas_service.get_organization_subscription(
-        db, membership.organization_id
-    )
+    existing = saas_service.get_organization_subscription(db, membership.organization_id)
     if existing and existing.status in ("active", "trialing"):
         raise HTTPException(status_code=400, detail="Active subscription exists")
 
-    sub = saas_service.start_trial(
-        db, membership.organization_id, plan_slug=plan_slug
-    )
+    sub = saas_service.start_trial(db, membership.organization_id, plan_slug=plan_slug)
     if not sub:
         raise HTTPException(status_code=404, detail="Plan not found")
 
@@ -169,9 +165,7 @@ def cancel_subscription(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -195,9 +189,7 @@ def get_usage(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -215,9 +207,7 @@ def check_usage_quota(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -247,9 +237,7 @@ def get_features(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -268,9 +256,7 @@ def check_feature(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     org_id = membership.organization_id if membership else None
     plan = saas_service.get_organization_plan(db, org_id) if org_id else None
@@ -305,9 +291,7 @@ def activate_license(
         .first()
     )
     if not membership:
-        raise HTTPException(
-            status_code=403, detail="Organization admin access required"
-        )
+        raise HTTPException(status_code=403, detail="Organization admin access required")
 
     lic = saas_service.activate_license(
         db, license_key=license_key, organization_id=membership.organization_id
@@ -391,9 +375,7 @@ def get_branding(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -439,13 +421,11 @@ def update_branding(
     # Check if org has white_label feature
     plan = saas_service.get_organization_plan(db, membership.organization_id)
     if not plan or not plan.features.get("white_label", False):
-        raise HTTPException(
-            status_code=403, detail="White-label requires Enterprise plan"
-        )
+        raise HTTPException(status_code=403, detail="White-label requires Enterprise plan")
 
     import json
 
-    body = json.loads("{}")  # placeholder — real impl uses Pydantic
+    json.loads("{}")  # placeholder — real impl uses Pydantic
 
     branding = saas_service.upsert_branding(
         db, organization_id=membership.organization_id, is_enabled=True
@@ -466,9 +446,7 @@ def submit_feedback(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
 
     fb = saas_service.submit_feedback(
@@ -493,9 +471,7 @@ def list_feedback(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -535,9 +511,7 @@ def get_analytics(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")
@@ -557,9 +531,7 @@ def track_analytics_event(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
 
     event = saas_service.track_event(
@@ -584,9 +556,7 @@ def saas_dashboard(
     from app.models.models import OrganizationMember
 
     membership = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == current_user.id)
-        .first()
+        db.query(OrganizationMember).filter(OrganizationMember.user_id == current_user.id).first()
     )
     if not membership:
         raise HTTPException(status_code=404, detail="No organization found")

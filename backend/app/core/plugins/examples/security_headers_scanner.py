@@ -100,16 +100,15 @@ class SecurityHeadersScannerPlugin(ScannerPlugin):
         # Check for response headers that should be defined
         endpoints = parsed_api.get("endpoints", [])
         auth_endpoints = [
-            ep for ep in endpoints
+            ep
+            for ep in endpoints
             if any(
-                kw in ep.get("path", "").lower()
-                for kw in ("login", "auth", "token", "password")
+                kw in ep.get("path", "").lower() for kw in ("login", "auth", "token", "password")
             )
         ]
 
         if auth_endpoints and not any(
-            "429" in str(ep.get("responses", {}))
-            for ep in auth_endpoints
+            "429" in str(ep.get("responses", {})) for ep in auth_endpoints
         ):
             findings.append(
                 self._make_finding(

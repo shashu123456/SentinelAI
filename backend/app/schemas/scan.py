@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.schemas.constants import (
-    FINDING_SORT_FIELDS,
     RISK_LEVELS,
     SCAN_SORT_FIELDS,
     SCAN_STATUSES,

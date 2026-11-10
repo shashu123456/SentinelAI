@@ -41,9 +41,7 @@ class ScheduledScan(Base):
     project_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("projects.id"), nullable=True
     )
-    created_by: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     template_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("scan_templates.id"), nullable=True
     )
@@ -76,9 +74,7 @@ class ScheduledScan(Base):
     run_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     failure_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -96,18 +92,14 @@ class ScanTemplate(Base):
     __tablename__ = "scan_templates"
     __table_args__ = (
         Index("ix_scan_templates_org_id", "organization_id"),
-        UniqueConstraint(
-            "organization_id", "name", name="uq_scan_template_name_org"
-        ),
+        UniqueConstraint("organization_id", "name", name="uq_scan_template_name_org"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     organization_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    created_by: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -125,9 +117,7 @@ class ScanTemplate(Base):
     is_shared: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     use_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -150,9 +140,7 @@ class Policy(Base):
     organization_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    created_by: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -176,21 +164,15 @@ class Policy(Base):
         String(20), default="high", nullable=False
     )  # critical, high, medium, low
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    enforce_on_scans: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
-    )
-    notify_on_violation: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
-    )
+    enforce_on_scans: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    notify_on_violation: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Statistics
     evaluation_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     violation_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     last_evaluated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -213,9 +195,7 @@ class Webhook(Base):
     organization_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    created_by: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     webhook_type: Mapped[str] = mapped_column(
@@ -241,9 +221,7 @@ class Webhook(Base):
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_failure_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     organization = relationship("Organization")
     creator = relationship("User", foreign_keys=[created_by])
@@ -254,9 +232,7 @@ class ComplianceFramework(Base):
     """Pre-defined compliance frameworks (OWASP, PCI-DSS, SOC2, etc.)."""
 
     __tablename__ = "compliance_frameworks"
-    __table_args__ = (
-        Index("ix_compliance_frameworks_slug", "slug"),
-    )
+    __table_args__ = (Index("ix_compliance_frameworks_slug", "slug"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -267,9 +243,7 @@ class ComplianceFramework(Base):
     # security, privacy, industry, regulatory
     controls: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     # [{"id": "PCI-DSS-1.2.1", "title": "...", "description": "...", "severity": "high"}]
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class OrganizationCompliance(Base):
@@ -278,9 +252,7 @@ class OrganizationCompliance(Base):
     __tablename__ = "org_compliance"
     __table_args__ = (
         Index("ix_org_compliance_org_framework", "organization_id", "framework_id"),
-        UniqueConstraint(
-            "organization_id", "framework_id", name="uq_org_framework"
-        ),
+        UniqueConstraint("organization_id", "framework_id", name="uq_org_framework"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -304,9 +276,7 @@ class OrganizationCompliance(Base):
 
     last_assessed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     next_assessment_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -329,16 +299,12 @@ class ExportJob(Base):
     organization_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     export_type: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # scan_report, compliance_report, executive_report, findings_export
-    format: Mapped[str] = mapped_column(
-        String(10), nullable=False
-    )  # pdf, csv, json, sarif
+    format: Mapped[str] = mapped_column(String(10), nullable=False)  # pdf, csv, json, sarif
     scope: Mapped[dict] = mapped_column(JSON, nullable=False)
     # {"scan_ids": [1,2,3], "framework": "pci_dss", "date_from": "...", "date_to": "..."}
 
@@ -356,9 +322,7 @@ class ExportJob(Base):
     # Metadata
     result_summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -377,20 +341,14 @@ class WebhookDelivery(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    webhook_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("webhooks.id"), nullable=False
-    )
+    webhook_id: Mapped[int] = mapped_column(Integer, ForeignKey("webhooks.id"), nullable=False)
     event: Mapped[str] = mapped_column(String(50), nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # success, failed, pending
+    status: Mapped[str] = mapped_column(String(20), nullable=False)  # success, failed, pending
     response_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
     response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     attempt_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     webhook = relationship("Webhook")

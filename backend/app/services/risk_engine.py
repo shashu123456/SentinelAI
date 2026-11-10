@@ -90,13 +90,9 @@ def compute_risk_assessment(findings: list[dict[str, Any]]) -> RiskAssessment:
     # Priority
     crit_count = severity_breakdown.get("Critical", 0)
     high_count = severity_breakdown.get("High", 0)
-    if crit_count > 0:
+    if crit_count > 0 or high_count >= 3:
         priority = "P1"
-    elif high_count >= 3:
-        priority = "P1"
-    elif high_count > 0:
-        priority = "P2"
-    elif severity_breakdown.get("Medium", 0) >= 5:
+    elif high_count > 0 or severity_breakdown.get("Medium", 0) >= 5:
         priority = "P2"
     elif severity_breakdown.get("Medium", 0) > 0:
         priority = "P3"

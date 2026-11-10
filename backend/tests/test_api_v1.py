@@ -142,10 +142,7 @@ class TestListScans:
         assert resp.json()["meta"]["total"] == 1
 
         resp = client.get(
-            "/api/v1/scans?date_from={}&date_to={}".format(
-                (utcnow() - timedelta(days=1)).isoformat(),
-                utcnow().isoformat(),
-            ),
+            f"/api/v1/scans?date_from={(utcnow() - timedelta(days=1)).isoformat()}&date_to={utcnow().isoformat()}",
             headers=user["headers"],
         )
         assert resp.json()["meta"]["total"] == 1
@@ -168,9 +165,7 @@ class TestListScans:
     def test_date_range_inverted_rejected(self, client):
         user = _register(client)
         resp = client.get(
-            "/api/v1/scans?date_from={}&date_to={}".format(
-                utcnow().isoformat(), (utcnow() - timedelta(days=1)).isoformat()
-            ),
+            f"/api/v1/scans?date_from={utcnow().isoformat()}&date_to={(utcnow() - timedelta(days=1)).isoformat()}",
             headers=user["headers"],
         )
         assert resp.status_code == 422

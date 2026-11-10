@@ -12,10 +12,7 @@ Tests cover:
 - Session monitoring
 """
 
-import io
 import json
-
-import pytest
 
 from app.utils.sanitization import (
     contains_xss,

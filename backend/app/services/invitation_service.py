@@ -6,11 +6,11 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app.models.models import User
-from app.utils.security import utcnow
 from app.repositories.invitations import InvitationRepository
 from app.repositories.organizations import OrganizationRepository
 from app.services.audit_service import record_org_event
 from app.utils.logger import logger
+from app.utils.security import utcnow
 
 INVITATION_EXPIRY_DAYS = 7
 
@@ -29,9 +29,8 @@ def create_invitation(
 
     # Check if user is already a member
     existing_user = db.query(User).filter(User.email == email).first()
-    if existing_user:
-        if org_repo.is_member(org_id, existing_user.id):
-            raise ValueError("User is already a member of this organization")
+    if existing_user and org_repo.is_member(org_id, existing_user.id):
+        raise ValueError("User is already a member of this organization")
 
     # Check if there's already a pending invitation
     existing_invite = invite_repo.get_pending_by_email(org_id, email)

@@ -61,7 +61,9 @@ class VulnerabilityKnowledgeGraph:
                     label=cwe_id,
                     properties={},
                 )
-            self.edges.append(GraphEdge(source=fid, target=cwe_node_id, relationship="classified_as"))
+            self.edges.append(
+                GraphEdge(source=fid, target=cwe_node_id, relationship="classified_as")
+            )
 
             # Add OWASP node
             owasp_node_id = f"owasp_{owasp}"
@@ -72,7 +74,9 @@ class VulnerabilityKnowledgeGraph:
                     label=owasp,
                     properties={},
                 )
-            self.edges.append(GraphEdge(source=fid, target=owasp_node_id, relationship="in_category"))
+            self.edges.append(
+                GraphEdge(source=fid, target=owasp_node_id, relationship="in_category")
+            )
 
             # Add endpoint node
             if endpoint and endpoint != "unknown":
@@ -91,41 +95,57 @@ class VulnerabilityKnowledgeGraph:
 
     def _build_attack_chains(self, findings: list[dict]) -> None:
         """Identify potential attack chains between findings."""
-        auth_findings = [f for f in findings if any(
-            w in f.get("vulnerability_name", "").lower()
-            for w in ["auth", "authentication", "session", "token"]
-        )]
-        injection_findings = [f for f in findings if any(
-            w in f.get("vulnerability_name", "").lower()
-            for w in ["injection", "sql", "xss", "command"]
-        )]
-        access_findings = [f for f in findings if any(
-            w in f.get("vulnerability_name", "").lower()
-            for w in ["bola", "idor", "access", "authorization", "broken object"]
-        )]
+        auth_findings = [
+            f
+            for f in findings
+            if any(
+                w in f.get("vulnerability_name", "").lower()
+                for w in ["auth", "authentication", "session", "token"]
+            )
+        ]
+        injection_findings = [
+            f
+            for f in findings
+            if any(
+                w in f.get("vulnerability_name", "").lower()
+                for w in ["injection", "sql", "xss", "command"]
+            )
+        ]
+        access_findings = [
+            f
+            for f in findings
+            if any(
+                w in f.get("vulnerability_name", "").lower()
+                for w in ["bola", "idor", "access", "authorization", "broken object"]
+            )
+        ]
 
         # Auth bypass → Injection → Data access chain
         for auth_f in auth_findings:
             for inj_f in injection_findings:
                 auth_id = f"finding_{auth_f.get('id', 'unknown')}"
                 inj_id = f"finding_{inj_f.get('id', 'unknown')}"
-                self.edges.append(GraphEdge(
-                    source=auth_id,
-                    target=inj_id,
-                    relationship="enables",
-                    properties={"chain_step": "authentication_bypass_enables_injection"},
-                ))
+                self.edges.append(
+                    GraphEdge(
+                        source=auth_id,
+                        target=inj_id,
+                        relationship="enables",
+                        properties={"chain_step": "authentication_bypass_enables_injection"},
+                    )
+                )
 
         for inj_f in injection_findings:
             for acc_f in access_findings:
                 inj_id = f"finding_{inj_f.get('id', 'unknown')}"
                 acc_id = f"finding_{acc_f.get('id', 'unknown')}"
-                self.edges.append(GraphEdge(
-                    source=inj_id,
-                    target=acc_id,
-                    relationship="escalates_to",
-                    properties={"chain_step": "injection_enables_privilege_escalation"},
-                ))
+                self.edges.append(
+                    GraphEdge(
+                        source=inj_id,
+                        target=acc_id,
+                        relationship="escalates_to",
+                        properties={"chain_step": "injection_enables_privilege_escalation"},
+                    )
+                )
 
     def get_attack_paths(self) -> list[dict]:
         """Find all attack paths (chains of related findings)."""
@@ -138,11 +158,13 @@ class VulnerabilityKnowledgeGraph:
             if edge.source not in visited:
                 chain = self._trace_chain(edge.source)
                 if len(chain) > 1:
-                    chains.append({
-                        "path_length": len(chain),
-                        "nodes": chain,
-                        "description": self._describe_chain(chain),
-                    })
+                    chains.append(
+                        {
+                            "path_length": len(chain),
+                            "nodes": chain,
+                            "description": self._describe_chain(chain),
+                        }
+                    )
                     visited.update(n["id"] for n in chain)
 
         return chains
@@ -197,11 +219,13 @@ class VulnerabilityKnowledgeGraph:
         for node_id in related:
             node = self.nodes.get(node_id)
             if node and node.type == "finding":
-                results.append({
-                    "id": node.id,
-                    "label": node.label,
-                    "severity": node.properties.get("severity", "Unknown"),
-                })
+                results.append(
+                    {
+                        "id": node.id,
+                        "label": node.label,
+                        "severity": node.properties.get("severity", "Unknown"),
+                    }
+                )
 
         return results
 

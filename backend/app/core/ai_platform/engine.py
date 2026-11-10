@@ -28,6 +28,7 @@ settings = get_settings()
 # LLM CALLER
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def _is_safe_url(url: str) -> bool:
     """SSRF protection: validate that a URL is safe to request.
 
@@ -39,6 +40,7 @@ def _is_safe_url(url: str) -> bool:
     """
     try:
         from urllib.parse import urlparse
+
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
             return False
@@ -59,7 +61,9 @@ def _is_safe_url(url: str) -> bool:
         return False
 
 
-def _call_llm(prompt: str, system: str = "", temperature: float = 0.3, max_tokens: int = 2048) -> str | None:
+def _call_llm(
+    prompt: str, system: str = "", temperature: float = 0.3, max_tokens: int = 2048
+) -> str | None:
     """Call the LLM with a prompt and return the response text."""
     # SSRF protection: validate the LLM endpoint URL
     if not _is_safe_url(settings.OLLAMA_URL):
@@ -79,8 +83,10 @@ def _call_llm(prompt: str, system: str = "", temperature: float = 0.3, max_token
     try:
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
-            settings.OLLAMA_URL, data=data,
-            headers={"Content-Type": "application/json"}, method="POST",
+            settings.OLLAMA_URL,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.read().decode("utf-8")
@@ -122,7 +128,7 @@ def _parse_json_response(text: str) -> dict | None:
                 depth -= 1
                 if depth == 0:
                     try:
-                        return json.loads(text[start:i+1])
+                        return json.loads(text[start : i + 1])
                     except json.JSONDecodeError:
                         return None
     return None
@@ -145,6 +151,7 @@ def _validate_response(data: dict, required_fields: list[str]) -> tuple[bool, li
 # AI PLATFORM
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class SentinelAIEngine:
     """Comprehensive AI engine with validation and hallucination prevention."""
 
@@ -156,7 +163,9 @@ class SentinelAIEngine:
         self.memory = get_conversation_memory()
 
     # ── Executive Report ──────────────────────────────────────────────────
-    def generate_executive_report(self, scan_data: dict, compliance_data: dict = None, trend_data: dict = None) -> dict:
+    def generate_executive_report(
+        self, scan_data: dict, compliance_data: dict = None, trend_data: dict = None
+    ) -> dict:
         prompt, meta = self.prompts.render(
             "executive_report",
             scan_data=json.dumps(scan_data, indent=2, default=str),
@@ -164,7 +173,9 @@ class SentinelAIEngine:
             trend_data=json.dumps(trend_data or {}, indent=2, default=str),
         )
 
-        response_text = _call_llm(prompt, meta.get("system_prompt", ""), meta.get("temperature", 0.3))
+        response_text = _call_llm(
+            prompt, meta.get("system_prompt", ""), meta.get("temperature", 0.3)
+        )
         result = _parse_json_response(response_text)
 
         if result:
@@ -173,17 +184,26 @@ class SentinelAIEngine:
                 return {"success": True, "data": result, "source": "ai", "validated": True}
 
         # Fallback: rule-based executive report
-        return {"success": True, "data": self._fallback_executive_report(scan_data), "source": "rule_based", "validated": True}
+        return {
+            "success": True,
+            "data": self._fallback_executive_report(scan_data),
+            "source": "rule_based",
+            "validated": True,
+        }
 
     def _fallback_executive_report(self, data: dict) -> dict:
         score = data.get("risk_score", 0)
         findings = data.get("total_findings", 0)
-        critical = data.get("critical_count", 0)
+        data.get("critical_count", 0)
         return {
             "executive_summary": f"Security assessment identified {findings} vulnerabilities with an average risk score of {score}/100.",
             "risk_assessment": f"The application has a {'critical' if score > 80 else 'high' if score > 60 else 'medium' if score > 30 else 'low'} risk posture.",
             "key_findings": [],
-            "recommendations": ["Address critical findings immediately", "Implement input validation", "Add authentication to all endpoints"],
+            "recommendations": [
+                "Address critical findings immediately",
+                "Implement input validation",
+                "Add authentication to all endpoints",
+            ],
             "trend": "stable",
         }
 
@@ -204,11 +224,19 @@ class SentinelAIEngine:
             if valid:
                 return {"success": True, "data": result, "source": "ai"}
 
-        return {"success": True, "data": {
-            "explanation": f"Risk score {risk_score}/100 indicates a {risk_level} risk posture.",
-            "factors": ["Findings severity distribution", "Number of affected endpoints", "CVSS scores"],
-            "improvement_steps": ["Address critical findings", "Implement security controls"],
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "explanation": f"Risk score {risk_score}/100 indicates a {risk_level} risk posture.",
+                "factors": [
+                    "Findings severity distribution",
+                    "Number of affected endpoints",
+                    "CVSS scores",
+                ],
+                "improvement_steps": ["Address critical findings", "Implement security controls"],
+            },
+            "source": "rule_based",
+        }
 
     # ── Threat Prediction ─────────────────────────────────────────────────
     def predict_threats(self, vulnerabilities: list[dict], api_surface: dict = None) -> dict:
@@ -229,22 +257,37 @@ class SentinelAIEngine:
             if valid:
                 # Cross-reference with knowledge base
                 for threat in result.get("immediate_threats", []):
-                    kb_validation = self.kb.validate_finding_against_knowledge(threat) if "cwe_id" in threat else None
+                    (
+                        self.kb.validate_finding_against_knowledge(threat)
+                        if "cwe_id" in threat
+                        else None
+                    )
                 return {"success": True, "data": result, "source": "ai"}
 
-        return {"success": True, "data": self._fallback_threat_prediction(vulnerabilities), "source": "rule_based"}
+        return {
+            "success": True,
+            "data": self._fallback_threat_prediction(vulnerabilities),
+            "source": "rule_based",
+        }
 
     def _fallback_threat_prediction(self, vulns: list[dict]) -> dict:
         threats = []
         for v in vulns[:5]:
-            kb = self.kb.get_vulnerability(v.get("cwe_id", ""))
-            threats.append({
-                "threat_name": f"Exploitation of {v.get('vulnerability_name', 'unknown')}",
-                "likelihood": "high" if v.get("severity") in ("Critical", "High") else "medium",
-                "impact": v.get("impact", "Data breach possible"),
-                "affected_components": [v.get("affected_endpoint", "unknown")],
-            })
-        return {"immediate_threats": threats, "attack_scenarios": [], "risk_factors": [], "predictions": []}
+            self.kb.get_vulnerability(v.get("cwe_id", ""))
+            threats.append(
+                {
+                    "threat_name": f"Exploitation of {v.get('vulnerability_name', 'unknown')}",
+                    "likelihood": "high" if v.get("severity") in ("Critical", "High") else "medium",
+                    "impact": v.get("impact", "Data breach possible"),
+                    "affected_components": [v.get("affected_endpoint", "unknown")],
+                }
+            )
+        return {
+            "immediate_threats": threats,
+            "attack_scenarios": [],
+            "risk_factors": [],
+            "predictions": [],
+        }
 
     # ── Root Cause Explanation ────────────────────────────────────────────
     def explain_root_cause(self, finding: dict) -> dict:
@@ -278,19 +321,29 @@ class SentinelAIEngine:
 
         # Fallback to KB knowledge
         if kb:
-            return {"success": True, "data": {
-                "root_cause": kb.root_cause,
-                "code_pattern": kb.common_patterns[0] if kb.common_patterns else "Unknown pattern",
-                "design_flaw": "Insufficient input validation",
-                "common_mistakes": kb.common_patterns,
-            }, "source": "knowledge_base"}
+            return {
+                "success": True,
+                "data": {
+                    "root_cause": kb.root_cause,
+                    "code_pattern": (
+                        kb.common_patterns[0] if kb.common_patterns else "Unknown pattern"
+                    ),
+                    "design_flaw": "Insufficient input validation",
+                    "common_mistakes": kb.common_patterns,
+                },
+                "source": "knowledge_base",
+            }
 
-        return {"success": True, "data": {
-            "root_cause": f"The vulnerability ({finding.get('cwe_id', 'Unknown')}) exists due to insufficient security controls.",
-            "code_pattern": "See OWASP guidelines for this CWE",
-            "design_flaw": "Security was not considered in the design phase",
-            "common_mistakes": ["Lack of input validation", "Missing authorization checks"],
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "root_cause": f"The vulnerability ({finding.get('cwe_id', 'Unknown')}) exists due to insufficient security controls.",
+                "code_pattern": "See OWASP guidelines for this CWE",
+                "design_flaw": "Security was not considered in the design phase",
+                "common_mistakes": ["Lack of input validation", "Missing authorization checks"],
+            },
+            "source": "rule_based",
+        }
 
     # ── Code Fix Generation ───────────────────────────────────────────────
     def generate_code_fix(self, finding: dict) -> dict:
@@ -309,27 +362,37 @@ class SentinelAIEngine:
         result = _parse_json_response(response_text)
 
         if result:
-            valid, _ = _validate_response(result, ["vulnerable_pattern", "secure_pattern", "explanation"])
+            valid, _ = _validate_response(
+                result, ["vulnerable_pattern", "secure_pattern", "explanation"]
+            )
             if valid:
                 return {"success": True, "data": result, "source": "ai"}
 
         # Fallback to KB
         if kb:
-            return {"success": True, "data": {
-                "vulnerable_pattern": kb.code_example_vulnerable,
-                "secure_pattern": kb.code_example_secure,
-                "explanation": f"Apply {kb.name} prevention: {kb.remediation_steps[0] if kb.remediation_steps else 'Use secure coding practices'}",
-                "dependencies": [],
-                "testing": f"Test for {kb.name} using standard security testing tools",
-            }, "source": "knowledge_base"}
+            return {
+                "success": True,
+                "data": {
+                    "vulnerable_pattern": kb.code_example_vulnerable,
+                    "secure_pattern": kb.code_example_secure,
+                    "explanation": f"Apply {kb.name} prevention: {kb.remediation_steps[0] if kb.remediation_steps else 'Use secure coding practices'}",
+                    "dependencies": [],
+                    "testing": f"Test for {kb.name} using standard security testing tools",
+                },
+                "source": "knowledge_base",
+            }
 
-        return {"success": True, "data": {
-            "vulnerable_pattern": "Review the affected endpoint for the vulnerability pattern",
-            "secure_pattern": "Apply input validation and parameterized queries",
-            "explanation": "Follow OWASP secure coding guidelines",
-            "dependencies": [],
-            "testing": "Run security scan to verify fix",
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "vulnerable_pattern": "Review the affected endpoint for the vulnerability pattern",
+                "secure_pattern": "Apply input validation and parameterized queries",
+                "explanation": "Follow OWASP secure coding guidelines",
+                "dependencies": [],
+                "testing": "Run security scan to verify fix",
+            },
+            "source": "rule_based",
+        }
 
     # ── Architecture Review ───────────────────────────────────────────────
     def review_architecture(self, api_spec: dict, findings: list[dict]) -> dict:
@@ -339,7 +402,9 @@ class SentinelAIEngine:
             "architecture_review",
             api_spec=json.dumps(api_spec, indent=2, default=str)[:2000],
             total_endpoints=str(len(api_spec.get("paths", {}))),
-            auth_schemes=str(list(api_spec.get("components", {}).get("securitySchemes", {}).keys())),
+            auth_schemes=str(
+                list(api_spec.get("components", {}).get("securitySchemes", {}).keys())
+            ),
             findings_summary=findings_summary[:1500],
         )
 
@@ -351,13 +416,26 @@ class SentinelAIEngine:
             if valid:
                 return {"success": True, "data": result, "source": "ai"}
 
-        return {"success": True, "data": {
-            "overall_assessment": 2,
-            "strengths": ["API uses OpenAPI specification"],
-            "weaknesses": [{"title": "Review needed", "severity": "medium", "description": "Manual review recommended"}],
-            "recommendations": ["Implement authentication on all endpoints", "Add input validation"],
-            "security_debt": 5,
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "overall_assessment": 2,
+                "strengths": ["API uses OpenAPI specification"],
+                "weaknesses": [
+                    {
+                        "title": "Review needed",
+                        "severity": "medium",
+                        "description": "Manual review recommended",
+                    }
+                ],
+                "recommendations": [
+                    "Implement authentication on all endpoints",
+                    "Add input validation",
+                ],
+                "security_debt": 5,
+            },
+            "source": "rule_based",
+        }
 
     # ── Security Advisor ──────────────────────────────────────────────────
     def advise(self, question: str, security_context: dict, user_id: int = 0) -> dict:
@@ -385,11 +463,15 @@ class SentinelAIEngine:
                     self.memory.add_entry(user_id, "assistant", result["answer"])
                 return {"success": True, "data": result, "source": "ai"}
 
-        return {"success": True, "data": {
-            "answer": "I can help with security analysis. Please provide scan results for specific recommendations.",
-            "relevant_findings": [],
-            "action_items": [],
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "answer": "I can help with security analysis. Please provide scan results for specific recommendations.",
+                "relevant_findings": [],
+                "action_items": [],
+            },
+            "source": "rule_based",
+        }
 
     # ── Scan Summarizer ───────────────────────────────────────────────────
     def summarize_scan(self, scan: dict, findings: list[dict]) -> dict:
@@ -426,13 +508,27 @@ class SentinelAIEngine:
         # Fallback
         critical = severity_breakdown.get("Critical", 0)
         high = severity_breakdown.get("High", 0)
-        return {"success": True, "data": {
-            "headline": f"Scan found {len(findings)} vulnerabilities (score: {scan.get('risk_score', 0)}/100)",
-            "risk_level": scan.get("risk_level", "Unknown"),
-            "key_issues": [f"{f.get('vulnerability_name')} ({f.get('severity')})" for f in findings[:3]],
-            "next_step": "Address critical findings" if critical > 0 else "Review high-severity findings" if high > 0 else "Maintain current security posture",
-            "confidence": 85,
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "headline": f"Scan found {len(findings)} vulnerabilities (score: {scan.get('risk_score', 0)}/100)",
+                "risk_level": scan.get("risk_level", "Unknown"),
+                "key_issues": [
+                    f"{f.get('vulnerability_name')} ({f.get('severity')})" for f in findings[:3]
+                ],
+                "next_step": (
+                    "Address critical findings"
+                    if critical > 0
+                    else (
+                        "Review high-severity findings"
+                        if high > 0
+                        else "Maintain current security posture"
+                    )
+                ),
+                "confidence": 85,
+            },
+            "source": "rule_based",
+        }
 
     # ── Natural Language Search ────────────────────────────────────────────
     def nl_search(self, query: str, findings: list[dict]) -> dict:
@@ -483,16 +579,20 @@ class SentinelAIEngine:
             if valid:
                 return {"success": True, "data": result, "source": "ai"}
 
-        return {"success": True, "data": {
-            "status_line": f"Security posture: {dashboard_data.get('risk_level', 'Unknown')}",
-            "highlights": [
-                f"Risk Score: {dashboard_data.get('risk_score', 0)}/100",
-                f"Findings: {dashboard_data.get('total_findings', 0)}",
-                f"Scans: {dashboard_data.get('total_scans', 0)}",
-            ],
-            "alert": dashboard_data.get("critical_count", 0) > 0,
-            "score_trend": "stable",
-        }, "source": "rule_based"}
+        return {
+            "success": True,
+            "data": {
+                "status_line": f"Security posture: {dashboard_data.get('risk_level', 'Unknown')}",
+                "highlights": [
+                    f"Risk Score: {dashboard_data.get('risk_score', 0)}/100",
+                    f"Findings: {dashboard_data.get('total_findings', 0)}",
+                    f"Scans: {dashboard_data.get('total_scans', 0)}",
+                ],
+                "alert": dashboard_data.get("critical_count", 0) > 0,
+                "score_trend": "stable",
+            },
+            "source": "rule_based",
+        }
 
 
 # Singleton

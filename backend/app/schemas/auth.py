@@ -20,9 +20,7 @@ class Role(StrEnum):
 def validate_password_strength(password: str) -> str:
     """Validate password meets minimum requirements."""
     if len(password) < _settings.PASSWORD_MIN_LENGTH:
-        raise ValueError(
-            f"Password must be at least {_settings.PASSWORD_MIN_LENGTH} characters"
-        )
+        raise ValueError(f"Password must be at least {_settings.PASSWORD_MIN_LENGTH} characters")
     if _settings.PASSWORD_REQUIRE_UPPER and not any(c.isupper() for c in password):
         raise ValueError("Password must contain at least one uppercase letter")
     if _settings.PASSWORD_REQUIRE_NUMBER and not any(c.isdigit() for c in password):

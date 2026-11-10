@@ -81,14 +81,10 @@ class PluginRecord(Base):
     error_since: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Lifecycle
-    installed_by: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=True
-    )
+    installed_by: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     enabled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
@@ -124,6 +120,4 @@ class PluginExecutionLog(Base):
     # Metadata
     result_summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))

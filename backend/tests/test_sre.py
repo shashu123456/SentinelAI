@@ -13,40 +13,39 @@ Tests cover:
 - Performance metrics
 """
 
-import pytest
-import time
+import contextlib
 import threading
-from unittest.mock import MagicMock
+import time
+
+import pytest
 
 from app.utils.resilience import (
+    Bulkhead,
+    BulkheadRejectionError,
     CircuitBreaker,
     CircuitBreakerOpenError,
     CircuitState,
-    Bulkhead,
-    BulkheadRejectionError,
-    retry_with_backoff,
     graceful_fallback,
+    retry_with_backoff,
 )
 from app.utils.sla import (
-    SLATracker,
-    SLADefinition,
     AlertManager,
     AlertSeverity,
     AlertStatus,
-    UptimeMonitor,
     IncidentTracker,
+    SLATracker,
+    UptimeMonitor,
 )
 from app.utils.tracing import (
-    create_span,
-    traced,
+    clear_spans,
     correlation_id,
-    set_correlation_id,
-    get_trace_context,
+    create_span,
     extract_trace_context,
     get_recent_spans,
-    clear_spans,
+    get_trace_context,
+    set_correlation_id,
+    traced,
 )
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Circuit Breaker Tests
@@ -63,10 +62,8 @@ class TestCircuitBreaker:
     def test_opens_after_threshold(self):
         cb = CircuitBreaker("test", failure_threshold=3)
         for _ in range(3):
-            try:
+            with contextlib.suppress(Exception):
                 cb._on_failure()
-            except Exception:
-                pass
         assert cb.state == CircuitState.OPEN
 
     def test_protect_raises_when_open(self):
@@ -186,9 +183,7 @@ class TestRetryWithBackoff:
                 raise ValueError("nope")
             return "ok"
 
-        retry_with_backoff(
-            flaky, max_retries=3, base_delay=0.01, on_retry=on_retry
-        )
+        retry_with_backoff(flaky, max_retries=3, base_delay=0.01, on_retry=on_retry)
         assert len(callback_calls) == 2  # 2 retries before success
 
 
@@ -511,9 +506,8 @@ class TestDistributedTracing:
 
     def test_span_on_exception(self):
         clear_spans()
-        with pytest.raises(ValueError):
-            with create_span("failing_span") as span:
-                raise ValueError("test error")
+        with pytest.raises(ValueError), create_span("failing_span") as span:
+            raise ValueError("test error")
         assert span.status == "ERROR"
 
     def test_traced_decorator(self):

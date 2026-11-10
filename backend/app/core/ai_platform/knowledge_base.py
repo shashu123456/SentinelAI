@@ -57,9 +57,9 @@ VULNERABILITY_KNOWLEDGE: dict[str, VulnerabilityKnowledge] = {
         description="SQL injection occurs when user-supplied data is incorporated into SQL queries without proper sanitization or parameterization.",
         root_cause="Direct string concatenation or formatting of user input into SQL query strings instead of using parameterized queries.",
         common_patterns=[
-            "f\"SELECT * FROM users WHERE id = {user_id}\"",
-            "\"SELECT * FROM users WHERE name = '\" + name + \"'\"",
-            "cursor.execute(f\"SELECT * FROM users WHERE id = {id}\")",
+            'f"SELECT * FROM users WHERE id = {user_id}"',
+            '"SELECT * FROM users WHERE name = \'" + name + "\'"',
+            'cursor.execute(f"SELECT * FROM users WHERE id = {id}")',
         ],
         remediation_steps=[
             "Use parameterized queries or prepared statements",
@@ -72,7 +72,7 @@ VULNERABILITY_KNOWLEDGE: dict[str, VulnerabilityKnowledge] = {
             "cursor.execute(f\"SELECT * FROM users WHERE username = '{username}'\")"
         ),
         code_example_secure=(
-            "cursor.execute(\"SELECT * FROM users WHERE username = %s\", (username,))"
+            'cursor.execute("SELECT * FROM users WHERE username = %s", (username,))'
         ),
         references=[
             "https://cwe.mitre.org/data/definitions/89.html",
@@ -200,22 +200,93 @@ VULNERABILITY_KNOWLEDGE: dict[str, VulnerabilityKnowledge] = {
 # ═══════════════════════════════════════════════════════════════════════════
 
 CWE_KNOWLEDGE: dict[str, CWEEntry] = {
-    "CWE-89": CWEEntry("CWE-89", "SQL Injection", "Improper sanitization of SQL queries", "Critical", ["Python", "Java", "PHP"], "Use parameterized queries"),
-    "CWE-79": CWEEntry("CWE-79", "XSS", "Improper output encoding", "High", ["JavaScript", "HTML"], "Encode all output"),
-    "CWE-22": CWEEntry("CWE-22", "Path Traversal", "Improper path validation", "High", ["Python", "Node.js"], "Validate and sanitize file paths"),
-    "CWE-78": CWEEntry("CWE-78", "OS Command Injection", "Unsanitized input in system commands", "Critical", ["Python", "PHP"], "Avoid shell execution, use subprocess"),
-    "CWE-639": CWEEntry("CWE-639", "BOLA", "Missing object-level authorization", "High", ["REST APIs"], "Check ownership on every request"),
-    "CWE-306": CWEEntry("CWE-306", "Missing Auth", "No authentication on sensitive ops", "Critical", ["REST APIs"], "Require auth on all endpoints"),
-    "CWE-918": CWEEntry("CWE-918", "SSRF", "Unvalidated server-side requests", "High", ["Python", "Node.js"], "Whitelist allowed URLs"),
-    "CWE-502": CWEEntry("CWE-502", "Deserialization", "Unsafe deserialization of untrusted data", "Critical", ["Python", "Java"], "Avoid deserializing untrusted data"),
-    "CWE-798": CWEEntry("CWE-798", "Hard-coded Credentials", "Credentials embedded in source code", "High", ["All languages"], "Use environment variables"),
-    "CWE-327": CWEEntry("CWE-327", "Broken Crypto", "Use of weak cryptographic algorithms", "High", ["All languages"], "Use modern algorithms (AES-256, SHA-256)"),
+    "CWE-89": CWEEntry(
+        "CWE-89",
+        "SQL Injection",
+        "Improper sanitization of SQL queries",
+        "Critical",
+        ["Python", "Java", "PHP"],
+        "Use parameterized queries",
+    ),
+    "CWE-79": CWEEntry(
+        "CWE-79",
+        "XSS",
+        "Improper output encoding",
+        "High",
+        ["JavaScript", "HTML"],
+        "Encode all output",
+    ),
+    "CWE-22": CWEEntry(
+        "CWE-22",
+        "Path Traversal",
+        "Improper path validation",
+        "High",
+        ["Python", "Node.js"],
+        "Validate and sanitize file paths",
+    ),
+    "CWE-78": CWEEntry(
+        "CWE-78",
+        "OS Command Injection",
+        "Unsanitized input in system commands",
+        "Critical",
+        ["Python", "PHP"],
+        "Avoid shell execution, use subprocess",
+    ),
+    "CWE-639": CWEEntry(
+        "CWE-639",
+        "BOLA",
+        "Missing object-level authorization",
+        "High",
+        ["REST APIs"],
+        "Check ownership on every request",
+    ),
+    "CWE-306": CWEEntry(
+        "CWE-306",
+        "Missing Auth",
+        "No authentication on sensitive ops",
+        "Critical",
+        ["REST APIs"],
+        "Require auth on all endpoints",
+    ),
+    "CWE-918": CWEEntry(
+        "CWE-918",
+        "SSRF",
+        "Unvalidated server-side requests",
+        "High",
+        ["Python", "Node.js"],
+        "Whitelist allowed URLs",
+    ),
+    "CWE-502": CWEEntry(
+        "CWE-502",
+        "Deserialization",
+        "Unsafe deserialization of untrusted data",
+        "Critical",
+        ["Python", "Java"],
+        "Avoid deserializing untrusted data",
+    ),
+    "CWE-798": CWEEntry(
+        "CWE-798",
+        "Hard-coded Credentials",
+        "Credentials embedded in source code",
+        "High",
+        ["All languages"],
+        "Use environment variables",
+    ),
+    "CWE-327": CWEEntry(
+        "CWE-327",
+        "Broken Crypto",
+        "Use of weak cryptographic algorithms",
+        "High",
+        ["All languages"],
+        "Use modern algorithms (AES-256, SHA-256)",
+    ),
 }
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # KNOWLEDGE BASE ACCESS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class KnowledgeBase:
     """Central knowledge base for security knowledge retrieval."""
@@ -246,8 +317,10 @@ class KnowledgeBase:
             "validated": True,
             "enrichment": {
                 "known_root_cause": getattr(kb_entry, "root_cause", None),
-                "known_mitigation": getattr(kb_entry, "mitigation", None) or getattr(kb_entry, "remediation_steps", []),
-                "severity_baseline": getattr(kb_entry, "severity_baseline", None) or getattr(kb_entry, "severity", None),
+                "known_mitigation": getattr(kb_entry, "mitigation", None)
+                or getattr(kb_entry, "remediation_steps", []),
+                "severity_baseline": getattr(kb_entry, "severity_baseline", None)
+                or getattr(kb_entry, "severity", None),
                 "references": getattr(kb_entry, "references", []),
             },
         }

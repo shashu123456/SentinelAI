@@ -56,7 +56,7 @@ def is_internal_ip(hostname: str) -> bool:
     # Resolve hostname and check
     try:
         resolved = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC)
-        for family, _, _, _, sockaddr in resolved:
+        for _family, _, _, _, sockaddr in resolved:
             ip = ipaddress.ip_address(sockaddr[0])
             if any(ip in network for network in _BLOCKED_NETWORKS):
                 return True
@@ -153,12 +153,11 @@ def validate_file_upload(
     # Magic bytes check
     header = content[:256].lstrip()  # Skip leading whitespace
     magic_patterns = _MAGIC_BYTES.get(ext.lstrip("."), [])
-    if magic_patterns:
-        if not any(header.startswith(pattern) for pattern in magic_patterns):
-            # Also check if content starts with BOM or whitespace + pattern
-            text_start = content[:512].decode("utf-8", errors="ignore").strip()
-            if not any(text_start.startswith(p.decode()) for p in magic_patterns):
-                return False, f"Content does not match {ext} format"
+    if magic_patterns and not any(header.startswith(pattern) for pattern in magic_patterns):
+        # Also check if content starts with BOM or whitespace + pattern
+        text_start = content[:512].decode("utf-8", errors="ignore").strip()
+        if not any(text_start.startswith(p.decode()) for p in magic_patterns):
+            return False, f"Content does not match {ext} format"
 
     # UTF-8 validation for text files
     try:

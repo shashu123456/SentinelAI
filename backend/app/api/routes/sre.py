@@ -15,17 +15,17 @@ All routes require authentication.
 from fastapi import APIRouter, Depends, Query
 
 from app.models.models import User
-from app.utils.security import get_current_user
+from app.utils.performance import get_cache_stats, get_cpu_stats, get_performance_stats
 from app.utils.resilience import get_resilience_status
+from app.utils.security import get_current_user
 from app.utils.sla import (
+    AlertSeverity,
     alert_manager,
     incident_tracker,
     sla_tracker,
     uptime_monitor,
-    AlertSeverity,
 )
-from app.utils.tracing import get_recent_spans, get_trace_spans, clear_spans
-from app.utils.performance import get_performance_stats, get_cache_stats, get_cpu_stats
+from app.utils.tracing import clear_spans, get_recent_spans, get_trace_spans
 
 router = APIRouter(prefix="/api/sre", tags=["SRE & Observability"])
 
@@ -117,8 +117,7 @@ def check_alerts(
     return {
         "fired": len(fired),
         "alerts": [
-            {"name": a.name, "severity": a.severity.value, "message": a.message}
-            for a in fired
+            {"name": a.name, "severity": a.severity.value, "message": a.message} for a in fired
         ],
     }
 
@@ -161,7 +160,11 @@ def create_incident(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new incident."""
-    sev = AlertSeverity(severity) if severity in AlertSeverity.__members__.values() else AlertSeverity.WARNING
+    sev = (
+        AlertSeverity(severity)
+        if severity in AlertSeverity.__members__.values()
+        else AlertSeverity.WARNING
+    )
     incident = incident_tracker.create_incident(title=title, severity=sev)
     return {"incident_id": incident.id, "message": "Incident created"}
 

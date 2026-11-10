@@ -3,7 +3,6 @@
 from sqlalchemy.orm import Session
 
 from app.models.saas import EmailTemplate, NotificationPreference
-from app.utils.logger import logger
 
 
 def get_email_template(db: Session, slug: str) -> EmailTemplate | None:
@@ -28,25 +27,33 @@ def seed_email_templates(db: Session) -> list[EmailTemplate]:
     """Seed default email templates."""
     defaults = [
         {
-            "slug": "welcome", "name": "Welcome Email", "category": "transactional",
+            "slug": "welcome",
+            "name": "Welcome Email",
+            "category": "transactional",
             "subject_template": "Welcome to SentinelAI, {{user_name}}!",
             "body_html_template": "<h1>Welcome, {{user_name}}!</h1><p>Your organization <strong>{{org_name}}</strong> has been created.</p>",
             "variables": ["user_name", "org_name"],
         },
         {
-            "slug": "scan_completed", "name": "Scan Completed", "category": "notification",
+            "slug": "scan_completed",
+            "name": "Scan Completed",
+            "category": "notification",
             "subject_template": "Scan Complete: {{scan_name}} — {{finding_count}} findings",
             "body_html_template": "<h2>Scan Complete</h2><p>Your scan <strong>{{scan_name}}</strong> found <strong>{{finding_count}}</strong> vulnerabilities.</p>",
             "variables": ["scan_name", "finding_count", "highest_severity"],
         },
         {
-            "slug": "trial_ending", "name": "Trial Ending Soon", "category": "marketing",
+            "slug": "trial_ending",
+            "name": "Trial Ending Soon",
+            "category": "marketing",
             "subject_template": "Your SentinelAI trial ends in {{days_remaining}} days",
             "body_html_template": "<h2>Your trial is ending</h2><p>You have <strong>{{days_remaining}} days</strong> remaining.</p>",
             "variables": ["days_remaining", "plan_name"],
         },
         {
-            "slug": "quota_exceeded", "name": "Quota Exceeded", "category": "security",
+            "slug": "quota_exceeded",
+            "name": "Quota Exceeded",
+            "category": "security",
             "subject_template": "Usage limit reached for {{metric_name}}",
             "body_html_template": "<h2>Usage Limit Reached</h2><p>You've reached your <strong>{{metric_name}}</strong> limit.</p>",
             "variables": ["metric_name", "limit", "plan_name"],
@@ -70,15 +77,23 @@ def get_notification_preferences(db: Session, user_id: int) -> list[Notification
 
 
 def set_notification_preference(
-    db: Session, *, user_id: int, notification_type: str,
-    email_enabled: bool | None = None, in_app_enabled: bool | None = None,
-    webhook_enabled: bool | None = None, slack_enabled: bool | None = None,
+    db: Session,
+    *,
+    user_id: int,
+    notification_type: str,
+    email_enabled: bool | None = None,
+    in_app_enabled: bool | None = None,
+    webhook_enabled: bool | None = None,
+    slack_enabled: bool | None = None,
     frequency: str | None = None,
 ) -> NotificationPreference:
     """Set or update a notification preference."""
     pref = (
         db.query(NotificationPreference)
-        .filter(NotificationPreference.user_id == user_id, NotificationPreference.notification_type == notification_type)
+        .filter(
+            NotificationPreference.user_id == user_id,
+            NotificationPreference.notification_type == notification_type,
+        )
         .first()
     )
     if not pref:

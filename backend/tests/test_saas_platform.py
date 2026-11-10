@@ -15,24 +15,14 @@ Tests cover:
 - Dashboard aggregation
 """
 
-import pytest
 from datetime import UTC, datetime, timedelta
 
-from app.database.database import Base, get_db, engine
+import pytest
+
+from app.database.database import Base, engine
 from app.models.models import Organization, User
 from app.models.saas import (
-    Plan,
-    Subscription,
-    License,
     FeatureFlag,
-    FeatureFlagOverride,
-    UsageRecord,
-    OnboardingProgress,
-    EmailTemplate,
-    NotificationPreference,
-    CustomBranding,
-    Feedback,
-    AnalyticsEvent,
 )
 from app.services import saas_service
 
@@ -122,9 +112,7 @@ class TestPlanManagement:
 
     def test_update_plan(self, db_session):
         plan = saas_service.create_plan(db_session, name="Old", slug="old")
-        updated = saas_service.update_plan(
-            db_session, plan.id, name="New", max_members=50
-        )
+        updated = saas_service.update_plan(db_session, plan.id, name="New", max_members=50)
         assert updated.name == "New"
         assert updated.max_members == 50
 
@@ -203,18 +191,14 @@ class TestSubscriptionLifecycle:
 
     def test_get_subscription(self, db_session, org):
         self._setup_plans(db_session)
-        saas_service.create_subscription(
-            db_session, organization_id=org.id, plan_slug="starter"
-        )
+        saas_service.create_subscription(db_session, organization_id=org.id, plan_slug="starter")
         sub = saas_service.get_organization_subscription(db_session, org.id)
         assert sub is not None
         assert sub.plan.slug == "starter"
 
     def test_cancel_subscription(self, db_session, org):
         self._setup_plans(db_session)
-        saas_service.create_subscription(
-            db_session, organization_id=org.id, plan_slug="starter"
-        )
+        saas_service.create_subscription(db_session, organization_id=org.id, plan_slug="starter")
         canceled = saas_service.cancel_subscription(db_session, org.id)
         assert canceled.status == "canceled"
         assert canceled.canceled_at is not None
@@ -225,9 +209,7 @@ class TestSubscriptionLifecycle:
 
     def test_get_org_plan(self, db_session, org):
         self._setup_plans(db_session)
-        saas_service.create_subscription(
-            db_session, organization_id=org.id, plan_slug="enterprise"
-        )
+        saas_service.create_subscription(db_session, organization_id=org.id, plan_slug="enterprise")
         plan = saas_service.get_organization_plan(db_session, org.id)
         assert plan.slug == "enterprise"
 
@@ -244,9 +226,7 @@ class TestSubscriptionLifecycle:
 
     def test_subscription_cancels_existing(self, db_session, org):
         self._setup_plans(db_session)
-        saas_service.create_subscription(
-            db_session, organization_id=org.id, plan_slug="starter"
-        )
+        saas_service.create_subscription(db_session, organization_id=org.id, plan_slug="starter")
         new_sub = saas_service.create_subscription(
             db_session, organization_id=org.id, plan_slug="professional"
         )
@@ -273,19 +253,13 @@ class TestUsageTracking:
 
     def test_get_usage_total(self, db_session, org):
         for _ in range(5):
-            saas_service.record_usage(
-                db_session, organization_id=org.id, metric="scan"
-            )
-        total = saas_service.get_usage_total(
-            db_session, organization_id=org.id, metric="scan"
-        )
+            saas_service.record_usage(db_session, organization_id=org.id, metric="scan")
+        total = saas_service.get_usage_total(db_session, organization_id=org.id, metric="scan")
         assert total == 5
 
     def test_check_quota_within_limit(self, db_session, org):
         for _ in range(3):
-            saas_service.record_usage(
-                db_session, organization_id=org.id, metric="scan"
-            )
+            saas_service.record_usage(db_session, organization_id=org.id, metric="scan")
         allowed, current, limit = saas_service.check_quota(
             db_session, organization_id=org.id, metric="scan", limit=10
         )
@@ -295,9 +269,7 @@ class TestUsageTracking:
 
     def test_check_quota_exceeded(self, db_session, org):
         for _ in range(10):
-            saas_service.record_usage(
-                db_session, organization_id=org.id, metric="scan"
-            )
+            saas_service.record_usage(db_session, organization_id=org.id, metric="scan")
         allowed, current, limit = saas_service.check_quota(
             db_session, organization_id=org.id, metric="scan", limit=10
         )
@@ -306,9 +278,7 @@ class TestUsageTracking:
 
     def test_usage_summary(self, db_session, org):
         saas_service.seed_default_plans(db_session)
-        saas_service.record_usage(
-            db_session, organization_id=org.id, metric="scan"
-        )
+        saas_service.record_usage(db_session, organization_id=org.id, metric="scan")
         summary = saas_service.get_usage_summary(db_session, org.id)
         assert "period_start" in summary
         assert "usage" in summary
@@ -352,12 +322,14 @@ class TestFeatureFlags:
             is_enabled=True,
             plan_overrides={"free": False, "starter": True},
         )
-        assert saas_service.is_feature_enabled(
-            db_session, feature_key="sast", plan_slug="free"
-        ) is False
-        assert saas_service.is_feature_enabled(
-            db_session, feature_key="sast", plan_slug="starter"
-        ) is True
+        assert (
+            saas_service.is_feature_enabled(db_session, feature_key="sast", plan_slug="free")
+            is False
+        )
+        assert (
+            saas_service.is_feature_enabled(db_session, feature_key="sast", plan_slug="starter")
+            is True
+        )
 
     def test_org_override_takes_priority(self, db_session, org):
         saas_service.create_feature_flag(
@@ -366,13 +338,16 @@ class TestFeatureFlags:
             name="Custom",
             is_enabled=False,
         )
-        flag = db_session.query(FeatureFlag).filter(FeatureFlag.key == "custom_feature").first()
+        db_session.query(FeatureFlag).filter(FeatureFlag.key == "custom_feature").first()
         saas_service.set_org_feature_override(
             db_session, organization_id=org.id, feature_key="custom_feature", is_enabled=True
         )
-        assert saas_service.is_feature_enabled(
-            db_session, feature_key="custom_feature", organization_id=org.id
-        ) is True
+        assert (
+            saas_service.is_feature_enabled(
+                db_session, feature_key="custom_feature", organization_id=org.id
+            )
+            is True
+        )
 
     def test_get_org_features(self, db_session, org):
         saas_service.seed_feature_flags(db_session)
@@ -408,17 +383,13 @@ class TestLicenseManagement:
         assert lic.status == "active"
 
     def test_validate_license(self, db_session):
-        lic = saas_service.create_license(
-            db_session, license_type="enterprise", expires_in_days=30
-        )
+        lic = saas_service.create_license(db_session, license_type="enterprise", expires_in_days=30)
         validated = saas_service.validate_license(db_session, lic.license_key)
         assert validated is not None
         assert validated.status == "active"
 
     def test_validate_expired_license(self, db_session):
-        lic = saas_service.create_license(
-            db_session, license_type="trial", expires_in_days=0
-        )
+        lic = saas_service.create_license(db_session, license_type="trial", expires_in_days=0)
         # Manually expire
         lic.expires_at = datetime.now(UTC) - timedelta(days=1)
         db_session.commit()
@@ -426,9 +397,7 @@ class TestLicenseManagement:
         assert validated is None
 
     def test_activate_license(self, db_session, org):
-        lic = saas_service.create_license(
-            db_session, license_type="enterprise", expires_in_days=30
-        )
+        lic = saas_service.create_license(db_session, license_type="enterprise", expires_in_days=30)
         activated = saas_service.activate_license(
             db_session, license_key=lic.license_key, organization_id=org.id
         )
@@ -461,18 +430,21 @@ class TestOnboardingWizard:
         assert progress.current_step == "profile"
 
     def test_complete_all_steps(self, db_session, user):
-        for step in ["welcome", "profile", "first_project", "first_scan", "invite_team", "completed"]:
-            progress = saas_service.complete_onboarding_step(
-                db_session, user_id=user.id, step=step
-            )
+        for step in [
+            "welcome",
+            "profile",
+            "first_project",
+            "first_scan",
+            "invite_team",
+            "completed",
+        ]:
+            progress = saas_service.complete_onboarding_step(db_session, user_id=user.id, step=step)
         assert progress.is_complete is True
         assert progress.current_step == "completed"
 
     def test_invalid_step_raises(self, db_session, user):
         with pytest.raises(ValueError, match="Invalid onboarding step"):
-            saas_service.complete_onboarding_step(
-                db_session, user_id=user.id, step="nonexistent"
-            )
+            saas_service.complete_onboarding_step(db_session, user_id=user.id, step="nonexistent")
 
     def test_onboarding_with_role(self, db_session, user):
         progress = saas_service.complete_onboarding_step(
@@ -580,18 +552,14 @@ class TestCustomBranding:
         assert branding.is_enabled is True
 
     def test_update_branding(self, db_session, org):
-        saas_service.upsert_branding(
-            db_session, organization_id=org.id, primary_color="#0000FF"
-        )
+        saas_service.upsert_branding(db_session, organization_id=org.id, primary_color="#0000FF")
         updated = saas_service.upsert_branding(
             db_session, organization_id=org.id, primary_color="#00FF00"
         )
         assert updated.primary_color == "#00FF00"
 
     def test_get_branding(self, db_session, org):
-        saas_service.upsert_branding(
-            db_session, organization_id=org.id, is_enabled=True
-        )
+        saas_service.upsert_branding(db_session, organization_id=org.id, is_enabled=True)
         branding = saas_service.get_branding(db_session, org.id)
         assert branding is not None
         assert branding.is_enabled is True
@@ -601,15 +569,13 @@ class TestCustomBranding:
         assert branding is None
 
     def test_verify_custom_domain(self, db_session, org):
-        branding = saas_service.upsert_branding(
+        saas_service.upsert_branding(
             db_session,
             organization_id=org.id,
             custom_domain="security.acme.com",
             domain_verification_token="verify-token-123",
         )
-        result = saas_service.verify_custom_domain(
-            db_session, org.id, "verify-token-123"
-        )
+        result = saas_service.verify_custom_domain(db_session, org.id, "verify-token-123")
         assert result is True
         updated = saas_service.get_branding(db_session, org.id)
         assert updated.domain_verified is True
@@ -671,9 +637,7 @@ class TestFeedback:
         assert triaged.resolved_at is not None
 
     def test_triage_not_found(self, db_session):
-        result = saas_service.triage_feedback(
-            db_session, feedback_id=999, status="resolved"
-        )
+        result = saas_service.triage_feedback(db_session, feedback_id=999, status="resolved")
         assert result is None
 
     def test_list_with_filters(self, db_session, user):
@@ -737,9 +701,7 @@ class TestSAASDashboard:
     def test_dashboard(self, db_session, user, org):
         from app.models.models import OrganizationMember
 
-        member = OrganizationMember(
-            organization_id=org.id, user_id=user.id, role="owner"
-        )
+        member = OrganizationMember(organization_id=org.id, user_id=user.id, role="owner")
         db_session.add(member)
         db_session.commit()
 
@@ -767,8 +729,6 @@ class TestQuotaEnforcement:
     def test_enforce_quotas_exhausted(self, db_session, org):
         saas_service.seed_default_plans(db_session)
         for _ in range(10):
-            saas_service.record_usage(
-                db_session, organization_id=org.id, metric="scan"
-            )
+            saas_service.record_usage(db_session, organization_id=org.id, metric="scan")
         results = saas_service.enforce_quotas(db_session, org.id)
         assert results["scans"]["exhausted"] is True

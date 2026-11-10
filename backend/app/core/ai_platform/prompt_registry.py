@@ -58,11 +58,17 @@ class PromptRecord:
                 if field_name in output:
                     value = output[field_name]
                     if expected_type == "string" and not isinstance(value, str):
-                        errors.append(f"Field '{field_name}' must be string, got {type(value).__name__}")
+                        errors.append(
+                            f"Field '{field_name}' must be string, got {type(value).__name__}"
+                        )
                     elif expected_type == "list" and not isinstance(value, list):
-                        errors.append(f"Field '{field_name}' must be list, got {type(value).__name__}")
-                    elif expected_type == "number" and not isinstance(value, (int, float)):
-                        errors.append(f"Field '{field_name}' must be number, got {type(value).__name__}")
+                        errors.append(
+                            f"Field '{field_name}' must be list, got {type(value).__name__}"
+                        )
+                    elif expected_type == "number" and not isinstance(value, int | float):
+                        errors.append(
+                            f"Field '{field_name}' must be number, got {type(value).__name__}"
+                        )
 
         self.total_validations += 1
         if errors:

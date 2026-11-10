@@ -118,7 +118,7 @@ def delete_team(
     if team is None:
         raise ValueError("Team not found")
 
-    team_repo = TeamRepository(db)
+    TeamRepository(db)
     record_org_event(
         db,
         "team.deleted",

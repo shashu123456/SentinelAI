@@ -13,7 +13,7 @@ from app.models.models import Finding, OrganizationMember, Project, Scan, Team
 
 def get_organization_dashboard(db: Session, org_id: int) -> dict:
     """Compute organization-level dashboard stats across all projects."""
-    now = datetime.now(UTC)
+    datetime.now(UTC)
 
     # Total scans in this org
     total_scans = (
@@ -63,7 +63,7 @@ def get_organization_dashboard(db: Session, org_id: int) -> dict:
     total_projects = (
         db.scalar(
             select(func.count(Project.id)).filter(
-                Project.organization_id == org_id, Project.is_active == True
+                Project.organization_id == org_id, Project.is_active is True
             )  # noqa: E712
         )
         or 0

@@ -11,6 +11,8 @@ Metrics categories:
 - System: CPU, memory, DB latency, uptime, task queue
 """
 
+import contextlib
+
 from fastapi import APIRouter, Depends, Request
 from prometheus_client import (
     REGISTRY,
@@ -180,10 +182,8 @@ SCANS_BY_STATUS = Gauge("sentinelai_scans_by_status", "Scans by status", ["statu
 
 def _update_system_gauges():
     """Update system-level gauge metrics."""
-    try:
+    with contextlib.suppress(Exception):
         SYSTEM_UPTIME.set(get_uptime())
-    except Exception:
-        pass
 
     try:
         cpu = get_cpu_info()

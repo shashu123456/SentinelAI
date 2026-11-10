@@ -42,7 +42,7 @@ class BaseRepository(Generic[ModelT]):
         if order_by is not None:
             stmt = (
                 stmt.order_by(*order_by)
-                if isinstance(order_by, (list, tuple))
+                if isinstance(order_by, list | tuple)
                 else stmt.order_by(order_by)
             )
         return self.db.scalars(stmt).first()
@@ -60,7 +60,7 @@ class BaseRepository(Generic[ModelT]):
         if order_by is not None:
             stmt = (
                 stmt.order_by(*order_by)
-                if isinstance(order_by, (list, tuple))
+                if isinstance(order_by, list | tuple)
                 else stmt.order_by(order_by)
             )
         if limit is not None:

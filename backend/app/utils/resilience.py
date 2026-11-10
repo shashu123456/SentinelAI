@@ -41,12 +41,12 @@ import functools
 import random
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 from app.utils.logger import logger
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Circuit Breaker
@@ -115,8 +115,7 @@ class CircuitBreaker:
             if self._state == CircuitState.HALF_OPEN:
                 self._state = CircuitState.OPEN
                 logger.warning(
-                    f"Circuit breaker '{self.name}' → OPEN "
-                    f"(failed during half-open recovery)"
+                    f"Circuit breaker '{self.name}' → OPEN " f"(failed during half-open recovery)"
                 )
             elif self._failure_count >= self.failure_threshold:
                 self._state = CircuitState.OPEN
@@ -182,11 +181,9 @@ class CircuitBreaker:
             "failure_threshold": self.failure_threshold,
             "recovery_timeout": self.recovery_timeout,
             "last_failure": self._last_failure_time,
-            "time_since_failure": round(
-                time.time() - self._last_failure_time, 1
-            )
-            if self._last_failure_time
-            else None,
+            "time_since_failure": (
+                round(time.time() - self._last_failure_time, 1) if self._last_failure_time else None
+            ),
         }
 
 
@@ -339,8 +336,7 @@ async def async_graceful_fallback(
         return await primary()
     except Exception as e:
         logger.warning(
-            f"Graceful degradation: primary failed ({type(e).__name__}), "
-            f"using {fallback_name}"
+            f"Graceful degradation: primary failed ({type(e).__name__}), " f"using {fallback_name}"
         )
         if fallback:
             try:
@@ -376,8 +372,7 @@ class Bulkhead:
             with self._lock:
                 self._rejected += 1
             raise BulkheadRejectionError(
-                f"Bulkhead '{self.name}' full "
-                f"({self.max_concurrent} concurrent limit)"
+                f"Bulkhead '{self.name}' full " f"({self.max_concurrent} concurrent limit)"
             )
         try:
             with self._lock:

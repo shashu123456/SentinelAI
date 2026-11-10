@@ -204,10 +204,7 @@ def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
         return False
 
     # No userinfo (prevents user:pass@host attacks)
-    if parsed.username or parsed.password:
-        return False
-
-    return True
+    return not (parsed.username or parsed.password)
 
 
 def validate_email_domain(email: str, allowed_domains: list[str] | None = None) -> bool:

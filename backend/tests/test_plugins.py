@@ -13,24 +13,20 @@ Tests cover:
 
 import pytest
 
+from app.core.plugins.examples.security_headers_scanner import (
+    SecurityHeadersScannerPlugin,
+)
+from app.core.plugins.registry import (
+    PluginInstallError,
+    PluginRegistry,
+)
 from app.core.plugins.sdk import (
     PluginContext,
     PluginManifest,
     PluginPermission,
     PluginResult,
-    PluginStatus,
-    PluginType,
     ScannerPlugin,
 )
-from app.core.plugins.registry import (
-    PluginRegistry,
-    PluginInstallError,
-    plugin_registry,
-)
-from app.core.plugins.examples.security_headers_scanner import (
-    SecurityHeadersScannerPlugin,
-)
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Test Fixtures
@@ -379,9 +375,7 @@ class TestSecurityHeadersScanner:
                 }
             }
         )
-        result = fresh_registry.execute(
-            "security-headers-scanner", "scan", context
-        )
+        result = fresh_registry.execute("security-headers-scanner", "scan", context)
         assert result.success is True
         assert len(result.data) > 0
         # Should find HTTPS not enforced

@@ -41,7 +41,6 @@ from app.core.plugins.sdk import (
 )
 from app.utils.logger import logger
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # Plugin Registry
 # ═══════════════════════════════════════════════════════════════════════
@@ -83,7 +82,9 @@ class PluginRegistry:
         # Validate manifest
         manifest = getattr(plugin_instance, "manifest", None)
         if not manifest or not isinstance(manifest, PluginManifest):
-            raise PluginInstallError("Plugin must have a 'manifest' attribute of type PluginManifest")
+            raise PluginInstallError(
+                "Plugin must have a 'manifest' attribute of type PluginManifest"
+            )
 
         # Validate required fields
         if not manifest.id:
@@ -99,6 +100,7 @@ class PluginRegistry:
 
         # Validate compatibility
         from app.config import get_settings
+
         settings = get_settings()
         if not manifest.is_compatible_with(settings.VERSION):
             raise PluginInstallError(
@@ -265,7 +267,7 @@ class PluginRegistry:
             return PluginResult.fail(plugin_id, f"Method '{method}' not found on plugin")
 
         # Check permissions
-        manifest = self._manifests[plugin_id]
+        self._manifests[plugin_id]
         # (Permission checking is done at a higher level via the API layer)
 
         # Execute with timing and error isolation
@@ -279,9 +281,7 @@ class PluginRegistry:
             stats["total"] += 1
             stats["success"] += 1
             n = stats["total"]
-            stats["avg_latency_ms"] = (
-                (stats["avg_latency_ms"] * (n - 1) + duration_ms) / n
-            )
+            stats["avg_latency_ms"] = (stats["avg_latency_ms"] * (n - 1) + duration_ms) / n
 
             # Log execution
             self._log_execution(plugin_id, context, "success", duration_ms)
@@ -307,13 +307,9 @@ class PluginRegistry:
                 )
 
             # Log execution
-            self._log_execution(
-                plugin_id, context, "error", duration_ms, str(e)
-            )
+            self._log_execution(plugin_id, context, "error", duration_ms, str(e))
 
-            logger.error(
-                f"Plugin execution failed: {plugin_id}.{method} — {type(e).__name__}: {e}"
-            )
+            logger.error(f"Plugin execution failed: {plugin_id}.{method} — {type(e).__name__}: {e}")
 
             return PluginResult.fail(
                 plugin_id,
@@ -370,25 +366,26 @@ class PluginRegistry:
                 continue
 
             stats = self._execution_stats.get(pid, {})
-            results.append({
-                "id": pid,
-                "name": manifest.name,
-                "version": manifest.version,
-                "plugin_type": plugin_type_val,
-                "description": manifest.description,
-                "author": manifest.author,
-                "status": plugin_status.value if plugin_status else "unknown",
-                "permissions": [
-                    p.value if hasattr(p, "value") else p
-                    for p in manifest.permissions
-                ],
-                "tags": manifest.tags,
-                "executions": stats.get("total", 0),
-                "success_rate": round(
-                    (stats.get("success", 0) / max(stats.get("total", 1), 1)) * 100, 1
-                ),
-                "avg_latency_ms": round(stats.get("avg_latency_ms", 0), 1),
-            })
+            results.append(
+                {
+                    "id": pid,
+                    "name": manifest.name,
+                    "version": manifest.version,
+                    "plugin_type": plugin_type_val,
+                    "description": manifest.description,
+                    "author": manifest.author,
+                    "status": plugin_status.value if plugin_status else "unknown",
+                    "permissions": [
+                        p.value if hasattr(p, "value") else p for p in manifest.permissions
+                    ],
+                    "tags": manifest.tags,
+                    "executions": stats.get("total", 0),
+                    "success_rate": round(
+                        (stats.get("success", 0) / max(stats.get("total", 1), 1)) * 100, 1
+                    ),
+                    "avg_latency_ms": round(stats.get("avg_latency_ms", 0), 1),
+                }
+            )
 
         return sorted(results, key=lambda x: x["name"])
 
@@ -398,7 +395,12 @@ class PluginRegistry:
         return [
             pid
             for pid, manifest in self._manifests.items()
-            if (manifest.plugin_type.value if isinstance(manifest.plugin_type, PluginType) else manifest.plugin_type) == type_val
+            if (
+                manifest.plugin_type.value
+                if isinstance(manifest.plugin_type, PluginType)
+                else manifest.plugin_type
+            )
+            == type_val
             and self._status.get(pid) == PluginStatus.ENABLED
         ]
 
@@ -486,9 +488,7 @@ class PluginRegistry:
             "failed": failed,
             "success_rate": round((success / max(total, 1)) * 100, 1),
             "plugins_installed": len(self._plugins),
-            "plugins_enabled": sum(
-                1 for s in self._status.values() if s == PluginStatus.ENABLED
-            ),
+            "plugins_enabled": sum(1 for s in self._status.values() if s == PluginStatus.ENABLED),
         }
 
 
@@ -499,16 +499,19 @@ class PluginRegistry:
 
 class PluginInstallError(Exception):
     """Raised when a plugin fails to install."""
+
     pass
 
 
 class PluginExecutionError(Exception):
     """Raised when a plugin execution fails critically."""
+
     pass
 
 
 class PluginPermissionError(Exception):
     """Raised when a plugin lacks required permissions."""
+
     pass
 
 

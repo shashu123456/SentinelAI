@@ -13,14 +13,13 @@ continues to work.  Prefer importing from the specific sub-module in new code.
 """
 
 # Constants
-from app.schemas.constants import (  # noqa: F401
-    FINDING_SORT_FIELDS,
-    RISK_LEVELS,
-    SCAN_SORT_FIELDS,
-    SCAN_STATUSES,
-    SEVERITIES,
-    SORT_DIRECTIONS,
-    parse_sort_fields,
+# Analytics schemas
+from app.schemas.analytics import (  # noqa: F401
+    AnalyticsResponse,
+    OwaspCategoryItem,
+    RiskScoreResponse,
+    RiskTrendItem,
+    ScanActivityItem,
 )
 
 # Auth schemas
@@ -38,13 +37,21 @@ from app.schemas.auth import (  # noqa: F401
     UserResponse,
     validate_password_strength,
 )
+from app.schemas.constants import (  # noqa: F401
+    FINDING_SORT_FIELDS,
+    RISK_LEVELS,
+    SCAN_SORT_FIELDS,
+    SCAN_STATUSES,
+    SEVERITIES,
+    SORT_DIRECTIONS,
+    parse_sort_fields,
+)
 
-# Scan schemas
-from app.schemas.scan import (  # noqa: F401
-    ScanCreate,
-    ScanDetailResponse,
-    ScanListParams,
-    ScanResponse,
+# Dashboard schemas
+from app.schemas.dashboard import (  # noqa: F401
+    DashboardOverviewResponse,
+    DashboardStats,
+    ReportResponse,
 )
 
 # Finding schemas
@@ -55,20 +62,12 @@ from app.schemas.finding import (  # noqa: F401
     VulnerabilityItem,
 )
 
-# Analytics schemas
-from app.schemas.analytics import (  # noqa: F401
-    AnalyticsResponse,
-    OwaspCategoryItem,
-    RiskScoreResponse,
-    RiskTrendItem,
-    ScanActivityItem,
-)
-
-# Dashboard schemas
-from app.schemas.dashboard import (  # noqa: F401
-    DashboardOverviewResponse,
-    DashboardStats,
-    ReportResponse,
+# Scan schemas
+from app.schemas.scan import (  # noqa: F401
+    ScanCreate,
+    ScanDetailResponse,
+    ScanListParams,
+    ScanResponse,
 )
 
 # Resolve circular forward references

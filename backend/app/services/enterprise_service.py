@@ -11,7 +11,7 @@ Architecture:
 """
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,6 @@ from app.models.enterprise import (
     WebhookDelivery,
 )
 from app.models.models import Finding, Scan
-from app.utils.logger import logger
 
 ModelT = TypeVar("ModelT")
 
@@ -34,6 +33,7 @@ ModelT = TypeVar("ModelT")
 # ═══════════════════════════════════════════════════════════════════════════
 # GENERIC CRUD HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def _paginate_org(
     db: Session, model: type, org_id: int, page: int = 1, page_size: int = 20
@@ -52,11 +52,7 @@ def _paginate_org(
 
 def _get_org_resource(db: Session, model: type, resource_id: int, org_id: int):
     """Fetch a single resource scoped to an organization, or None."""
-    return (
-        db.query(model)
-        .filter(model.id == resource_id, model.organization_id == org_id)
-        .first()
-    )
+    return db.query(model).filter(model.id == resource_id, model.organization_id == org_id).first()
 
 
 def _create_org_resource(db: Session, model: type, org_id: int, user_id: int, data: dict):
@@ -100,6 +96,7 @@ def _delete_org_resource(db: Session, model: type, resource_id: int, org_id: int
 # SCHEDULED SCANS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def list_scheduled_scans(db: Session, org_id: int, page: int = 1, page_size: int = 20):
     return _paginate_org(db, ScheduledScan, org_id, page, page_size)
 
@@ -113,7 +110,10 @@ def update_scheduled_scan(db: Session, scan_id: int, org_id: int, data: dict):
     record = _update_org_resource(db, ScheduledScan, scan_id, org_id, data)
     if record and any(k in data for k in ("frequency", "hour", "day_of_week")):
         record.next_run_at = _calculate_next_run(
-            {k: getattr(record, k) for k in ("frequency", "hour", "minute", "day_of_week", "day_of_month")}
+            {
+                k: getattr(record, k)
+                for k in ("frequency", "hour", "minute", "day_of_week", "day_of_month")
+            }
         )
         db.commit()
         db.refresh(record)
@@ -128,7 +128,7 @@ def get_due_scans(db: Session) -> list:
     """Get scans that are due to run (for the scheduler worker)."""
     return (
         db.query(ScheduledScan)
-        .filter(ScheduledScan.is_active == True, ScheduledScan.next_run_at <= datetime.now(UTC))
+        .filter(ScheduledScan.is_active is True, ScheduledScan.next_run_at <= datetime.now(UTC))
         .all()
     )
 
@@ -154,13 +154,16 @@ def _calculate_next_run(config: dict) -> datetime:
         year = now.year
         if month > 12:
             month, year = 1, year + 1
-        return now.replace(year=year, month=month, day=dom, hour=hour, minute=minute, second=0, microsecond=0)
+        return now.replace(
+            year=year, month=month, day=dom, hour=hour, minute=minute, second=0, microsecond=0
+        )
     return now + timedelta(days=7)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SCAN TEMPLATES
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def list_templates(db: Session, org_id: int, page: int = 1, page_size: int = 20):
     return _paginate_org(db, ScanTemplate, org_id, page, page_size)
@@ -182,6 +185,7 @@ def delete_template(db: Session, template_id: int, org_id: int) -> bool:
 # CUSTOM POLICIES
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def list_policies(db: Session, org_id: int, page: int = 1, page_size: int = 20):
     return _paginate_org(db, Policy, org_id, page, page_size)
 
@@ -201,9 +205,7 @@ def delete_policy(db: Session, policy_id: int, org_id: int) -> bool:
 def evaluate_policies(db: Session, org_id: int, findings: list[Finding]) -> list[dict]:
     """Evaluate all active policies against a set of findings."""
     policies = (
-        db.query(Policy)
-        .filter(Policy.organization_id == org_id, Policy.is_active == True)
-        .all()
+        db.query(Policy).filter(Policy.organization_id == org_id, Policy.is_active is True).all()
     )
 
     violations = []
@@ -220,19 +222,21 @@ def evaluate_policies(db: Session, org_id: int, findings: list[Finding]) -> list
 
         if violated_findings:
             policy.violation_count += 1
-            violations.append({
-                "policy_id": policy.id,
-                "policy_name": policy.name,
-                "policy_type": policy.policy_type,
-                "action": action,
-                "message": message,
-                "severity": policy.severity,
-                "violated_findings_count": len(violated_findings),
-                "violated_findings": [
-                    {"id": f.id, "name": f.vulnerability_name, "severity": f.severity}
-                    for f in violated_findings[:10]
-                ],
-            })
+            violations.append(
+                {
+                    "policy_id": policy.id,
+                    "policy_name": policy.name,
+                    "policy_type": policy.policy_type,
+                    "action": action,
+                    "message": message,
+                    "severity": policy.severity,
+                    "violated_findings_count": len(violated_findings),
+                    "violated_findings": [
+                        {"id": f.id, "name": f.vulnerability_name, "severity": f.severity}
+                        for f in violated_findings[:10]
+                    ],
+                }
+            )
 
     db.commit()
     return violations
@@ -252,19 +256,22 @@ def _matches_conditions(finding: Finding, conditions: list[dict]) -> bool:
         if finding_value is None:
             return False
 
-        if operator == "eq" and finding_value != value:
-            return False
-        elif operator == "neq" and finding_value == value:
-            return False
-        elif operator == "in" and finding_value not in value:
-            return False
-        elif operator == "not_in" and finding_value in value:
-            return False
-        elif operator == "gte" and float(finding_value) < float(value):
-            return False
-        elif operator == "lte" and float(finding_value) > float(value):
-            return False
-        elif operator == "contains" and value.lower() not in str(finding_value).lower():
+        if (
+            operator == "eq"
+            and finding_value != value
+            or operator == "neq"
+            and finding_value == value
+            or operator == "in"
+            and finding_value not in value
+            or operator == "not_in"
+            and finding_value in value
+            or operator == "gte"
+            and float(finding_value) < float(value)
+            or operator == "lte"
+            and float(finding_value) > float(value)
+            or operator == "contains"
+            and value.lower() not in str(finding_value).lower()
+        ):
             return False
 
     return True
@@ -273,6 +280,7 @@ def _matches_conditions(finding: Finding, conditions: list[dict]) -> bool:
 # ═══════════════════════════════════════════════════════════════════════════
 # WEBHOOKS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def list_webhooks(db: Session, org_id: int, page: int = 1, page_size: int = 20):
     return _paginate_org(db, Webhook, org_id, page, page_size)
@@ -293,9 +301,7 @@ def delete_webhook(db: Session, webhook_id: int, org_id: int) -> bool:
 def trigger_webhooks(db: Session, org_id: int, event: str, payload: dict) -> int:
     """Trigger all active webhooks subscribed to an event. Returns count triggered."""
     webhooks = (
-        db.query(Webhook)
-        .filter(Webhook.organization_id == org_id, Webhook.is_active == True)
-        .all()
+        db.query(Webhook).filter(Webhook.organization_id == org_id, Webhook.is_active is True).all()
     )
 
     count = 0
@@ -357,16 +363,56 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "category": "security",
         "description": "OWASP Top 10 most critical web application security risks",
         "controls": [
-            {"id": "A01", "title": "Broken Access Control", "description": "Restrictions on what authenticated users are allowed to do are not properly enforced"},
-            {"id": "A02", "title": "Cryptographic Failures", "description": "Failures related to cryptography which often leads to exposure of sensitive data"},
-            {"id": "A03", "title": "Injection", "description": "Application is vulnerable to attack when user-supplied data is not validated or sanitized"},
-            {"id": "A04", "title": "Insecure Design", "description": "Risks related to design flaws, missing or ineffective security controls"},
-            {"id": "A05", "title": "Security Misconfiguration", "description": "Missing appropriate security hardening across any part of the application stack"},
-            {"id": "A06", "title": "Vulnerable Components", "description": "Using components with known vulnerabilities"},
-            {"id": "A07", "title": "Auth Failures", "description": "Confirmation of the user's identity, authentication, and session management"},
-            {"id": "A08", "title": "Data Integrity Failures", "description": "Failures to properly validate the integrity of data"},
-            {"id": "A09", "title": "Logging Failures", "description": "Insufficient logging, detection, monitoring, and active response"},
-            {"id": "A10", "title": "SSRF", "description": "Server-Side Request Forgery flaws occur when a web app fetches a remote resource"},
+            {
+                "id": "A01",
+                "title": "Broken Access Control",
+                "description": "Restrictions on what authenticated users are allowed to do are not properly enforced",
+            },
+            {
+                "id": "A02",
+                "title": "Cryptographic Failures",
+                "description": "Failures related to cryptography which often leads to exposure of sensitive data",
+            },
+            {
+                "id": "A03",
+                "title": "Injection",
+                "description": "Application is vulnerable to attack when user-supplied data is not validated or sanitized",
+            },
+            {
+                "id": "A04",
+                "title": "Insecure Design",
+                "description": "Risks related to design flaws, missing or ineffective security controls",
+            },
+            {
+                "id": "A05",
+                "title": "Security Misconfiguration",
+                "description": "Missing appropriate security hardening across any part of the application stack",
+            },
+            {
+                "id": "A06",
+                "title": "Vulnerable Components",
+                "description": "Using components with known vulnerabilities",
+            },
+            {
+                "id": "A07",
+                "title": "Auth Failures",
+                "description": "Confirmation of the user's identity, authentication, and session management",
+            },
+            {
+                "id": "A08",
+                "title": "Data Integrity Failures",
+                "description": "Failures to properly validate the integrity of data",
+            },
+            {
+                "id": "A09",
+                "title": "Logging Failures",
+                "description": "Insufficient logging, detection, monitoring, and active response",
+            },
+            {
+                "id": "A10",
+                "title": "SSRF",
+                "description": "Server-Side Request Forgery flaws occur when a web app fetches a remote resource",
+            },
         ],
     },
     {
@@ -377,15 +423,47 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "description": "OWASP Top 10 for API Security",
         "controls": [
             {"id": "API1", "title": "BOLA", "description": "Broken Object Level Authorization"},
-            {"id": "API2", "title": "Broken Authentication", "description": "Authentication mechanisms are often implemented incorrectly"},
-            {"id": "API3", "title": "Broken Object Property", "description": "Exposure of sensitive object properties"},
-            {"id": "API4", "title": "Resource Consumption", "description": "Unrestricted access to sensitive business flows"},
-            {"id": "API5", "title": "Broken Function Auth", "description": "Broken Function Level Authorization"},
-            {"id": "API6", "title": "Unrestricted Access", "description": "Unrestricted access to sensitive business flows"},
+            {
+                "id": "API2",
+                "title": "Broken Authentication",
+                "description": "Authentication mechanisms are often implemented incorrectly",
+            },
+            {
+                "id": "API3",
+                "title": "Broken Object Property",
+                "description": "Exposure of sensitive object properties",
+            },
+            {
+                "id": "API4",
+                "title": "Resource Consumption",
+                "description": "Unrestricted access to sensitive business flows",
+            },
+            {
+                "id": "API5",
+                "title": "Broken Function Auth",
+                "description": "Broken Function Level Authorization",
+            },
+            {
+                "id": "API6",
+                "title": "Unrestricted Access",
+                "description": "Unrestricted access to sensitive business flows",
+            },
             {"id": "API7", "title": "SSRF", "description": "Server Side Request Forgery"},
-            {"id": "API8", "title": "Security Misconfiguration", "description": "Security misconfiguration in APIs"},
-            {"id": "API9", "title": "Improper Inventory", "description": "Improper inventory management"},
-            {"id": "API10", "title": "Unsafe Consumption", "description": "Unsafe consumption of APIs"},
+            {
+                "id": "API8",
+                "title": "Security Misconfiguration",
+                "description": "Security misconfiguration in APIs",
+            },
+            {
+                "id": "API9",
+                "title": "Improper Inventory",
+                "description": "Improper inventory management",
+            },
+            {
+                "id": "API10",
+                "title": "Unsafe Consumption",
+                "description": "Unsafe consumption of APIs",
+            },
         ],
     },
     {
@@ -395,12 +473,36 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "category": "regulatory",
         "description": "NIST framework for improving critical infrastructure cybersecurity",
         "controls": [
-            {"id": "GV", "title": "Govern", "description": "Establish cybersecurity strategy, expectations, and policy"},
-            {"id": "ID", "title": "Identify", "description": "Understand current cybersecurity risks"},
-            {"id": "PR", "title": "Protect", "description": "Safeguards to manage cybersecurity risks"},
-            {"id": "DE", "title": "Detect", "description": "Find and analyze possible cybersecurity attacks"},
-            {"id": "RS", "title": "Respond", "description": "Actions regarding a detected cybersecurity incident"},
-            {"id": "RC", "title": "Recover", "description": "Restore assets and operations affected by cybersecurity incident"},
+            {
+                "id": "GV",
+                "title": "Govern",
+                "description": "Establish cybersecurity strategy, expectations, and policy",
+            },
+            {
+                "id": "ID",
+                "title": "Identify",
+                "description": "Understand current cybersecurity risks",
+            },
+            {
+                "id": "PR",
+                "title": "Protect",
+                "description": "Safeguards to manage cybersecurity risks",
+            },
+            {
+                "id": "DE",
+                "title": "Detect",
+                "description": "Find and analyze possible cybersecurity attacks",
+            },
+            {
+                "id": "RS",
+                "title": "Respond",
+                "description": "Actions regarding a detected cybersecurity incident",
+            },
+            {
+                "id": "RC",
+                "title": "Recover",
+                "description": "Restore assets and operations affected by cybersecurity incident",
+            },
         ],
     },
     {
@@ -410,12 +512,36 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "category": "industry",
         "description": "Payment Card Industry Data Security Standard",
         "controls": [
-            {"id": "PCI-1", "title": "Install Network Controls", "description": "Install and maintain network security controls"},
-            {"id": "PCI-2", "title": "Protect Account Data", "description": "Apply protections to all account data"},
-            {"id": "PCI-3", "title": "Maintain Vuln Program", "description": "Maintain a vulnerability management program"},
-            {"id": "PCI-4", "title": "Access Controls", "description": "Implement strong access control measures"},
-            {"id": "PCI-5", "title": "Security Testing", "description": "Regularly test networks and systems"},
-            {"id": "PCI-6", "title": "Security Policies", "description": "Maintain an information security policy"},
+            {
+                "id": "PCI-1",
+                "title": "Install Network Controls",
+                "description": "Install and maintain network security controls",
+            },
+            {
+                "id": "PCI-2",
+                "title": "Protect Account Data",
+                "description": "Apply protections to all account data",
+            },
+            {
+                "id": "PCI-3",
+                "title": "Maintain Vuln Program",
+                "description": "Maintain a vulnerability management program",
+            },
+            {
+                "id": "PCI-4",
+                "title": "Access Controls",
+                "description": "Implement strong access control measures",
+            },
+            {
+                "id": "PCI-5",
+                "title": "Security Testing",
+                "description": "Regularly test networks and systems",
+            },
+            {
+                "id": "PCI-6",
+                "title": "Security Policies",
+                "description": "Maintain an information security policy",
+            },
         ],
     },
     {
@@ -425,10 +551,26 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "category": "regulatory",
         "description": "International standard for information security management",
         "controls": [
-            {"id": "A.5", "title": "Organizational Controls", "description": "Controls around organizational context and leadership"},
-            {"id": "A.6", "title": "People Controls", "description": "Controls related to human resource security"},
-            {"id": "A.7", "title": "Physical Controls", "description": "Physical and environmental security controls"},
-            {"id": "A.8", "title": "Technological Controls", "description": "Technology-related security controls"},
+            {
+                "id": "A.5",
+                "title": "Organizational Controls",
+                "description": "Controls around organizational context and leadership",
+            },
+            {
+                "id": "A.6",
+                "title": "People Controls",
+                "description": "Controls related to human resource security",
+            },
+            {
+                "id": "A.7",
+                "title": "Physical Controls",
+                "description": "Physical and environmental security controls",
+            },
+            {
+                "id": "A.8",
+                "title": "Technological Controls",
+                "description": "Technology-related security controls",
+            },
         ],
     },
     {
@@ -438,15 +580,51 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "category": "regulatory",
         "description": "Service Organization Control 2 trust service criteria",
         "controls": [
-            {"id": "CC1", "title": "Control Environment", "description": "Demonstrate commitment to integrity and ethical values"},
-            {"id": "CC2", "title": "Communication", "description": "Demonstrate commitment to quality information"},
-            {"id": "CC3", "title": "Risk Assessment", "description": "Specify objectives with sufficient clarity"},
-            {"id": "CC4", "title": "Monitoring", "description": "Demonstrate commitment to selecting and developing control activities"},
-            {"id": "CC5", "title": "Control Activities", "description": "Select and develop control activities that mitigate risks"},
-            {"id": "CC6", "title": "Logical Access", "description": "Select and develop general controls over technology"},
-            {"id": "CC7", "title": "System Operations", "description": "Detect and monitor for changes and anomalies"},
-            {"id": "CC8", "title": "Change Management", "description": "Manage changes to mitigate risks"},
-            {"id": "CC9", "title": "Risk Mitigation", "description": "Mitigate and manage risks from vendors"},
+            {
+                "id": "CC1",
+                "title": "Control Environment",
+                "description": "Demonstrate commitment to integrity and ethical values",
+            },
+            {
+                "id": "CC2",
+                "title": "Communication",
+                "description": "Demonstrate commitment to quality information",
+            },
+            {
+                "id": "CC3",
+                "title": "Risk Assessment",
+                "description": "Specify objectives with sufficient clarity",
+            },
+            {
+                "id": "CC4",
+                "title": "Monitoring",
+                "description": "Demonstrate commitment to selecting and developing control activities",
+            },
+            {
+                "id": "CC5",
+                "title": "Control Activities",
+                "description": "Select and develop control activities that mitigate risks",
+            },
+            {
+                "id": "CC6",
+                "title": "Logical Access",
+                "description": "Select and develop general controls over technology",
+            },
+            {
+                "id": "CC7",
+                "title": "System Operations",
+                "description": "Detect and monitor for changes and anomalies",
+            },
+            {
+                "id": "CC8",
+                "title": "Change Management",
+                "description": "Manage changes to mitigate risks",
+            },
+            {
+                "id": "CC9",
+                "title": "Risk Mitigation",
+                "description": "Mitigate and manage risks from vendors",
+            },
         ],
     },
     {
@@ -456,14 +634,46 @@ COMPLIANCE_FRAMEWORKS_DATA = [
         "category": "security",
         "description": "Most Dangerous Software Weaknesses (CWE/SANS Top 25)",
         "controls": [
-            {"id": "CWE-787", "title": "Out-of-bounds Write", "description": "The software writes data past the end, or before the beginning, of the intended buffer"},
-            {"id": "CWE-79", "title": "XSS", "description": "The software does not neutralize or incorrectly neutralizes user-controllable input"},
-            {"id": "CWE-89", "title": "SQL Injection", "description": "The software constructs all or part of a command using externally-influenced input"},
-            {"id": "CWE-416", "title": "Use After Free", "description": "The software references memory after it has been freed"},
-            {"id": "CWE-78", "title": "OS Command Injection", "description": "The software constructs all or part of an OS command using externally-influenced input"},
-            {"id": "CWE-20", "title": "Improper Input Validation", "description": "The product does not validate or incorrectly validates input"},
-            {"id": "CWE-125", "title": "Out-of-bounds Read", "description": "The software reads data past the end, or before the beginning, of the intended buffer"},
-            {"id": "CWE-22", "title": "Path Traversal", "description": "The software uses external input to construct a pathname"},
+            {
+                "id": "CWE-787",
+                "title": "Out-of-bounds Write",
+                "description": "The software writes data past the end, or before the beginning, of the intended buffer",
+            },
+            {
+                "id": "CWE-79",
+                "title": "XSS",
+                "description": "The software does not neutralize or incorrectly neutralizes user-controllable input",
+            },
+            {
+                "id": "CWE-89",
+                "title": "SQL Injection",
+                "description": "The software constructs all or part of a command using externally-influenced input",
+            },
+            {
+                "id": "CWE-416",
+                "title": "Use After Free",
+                "description": "The software references memory after it has been freed",
+            },
+            {
+                "id": "CWE-78",
+                "title": "OS Command Injection",
+                "description": "The software constructs all or part of an OS command using externally-influenced input",
+            },
+            {
+                "id": "CWE-20",
+                "title": "Improper Input Validation",
+                "description": "The product does not validate or incorrectly validates input",
+            },
+            {
+                "id": "CWE-125",
+                "title": "Out-of-bounds Read",
+                "description": "The software reads data past the end, or before the beginning, of the intended buffer",
+            },
+            {
+                "id": "CWE-22",
+                "title": "Path Traversal",
+                "description": "The software uses external input to construct a pathname",
+            },
         ],
     },
 ]
@@ -508,25 +718,37 @@ def get_org_compliance_status(db: Session, org_id: int) -> list[dict]:
 
         scan_score = _calculate_framework_compliance(db, org_id, fw)
 
-        results.append({
-            "framework_id": fw.id,
-            "name": fw.name,
-            "slug": fw.slug,
-            "version": fw.version,
-            "category": fw.category,
-            "description": fw.description,
-            "controls_count": len(fw.controls),
-            "score": scan_score if scan_score is not None else (status.overall_score if status else 0),
-            "controls_passed": status.controls_passed if status else 0,
-            "controls_failed": status.controls_failed if status else 0,
-            "controls_total": status.controls_total if status else len(fw.controls),
-            "last_assessed_at": status.last_assessed_at.isoformat() if status and status.last_assessed_at else None,
-        })
+        results.append(
+            {
+                "framework_id": fw.id,
+                "name": fw.name,
+                "slug": fw.slug,
+                "version": fw.version,
+                "category": fw.category,
+                "description": fw.description,
+                "controls_count": len(fw.controls),
+                "score": (
+                    scan_score
+                    if scan_score is not None
+                    else (status.overall_score if status else 0)
+                ),
+                "controls_passed": status.controls_passed if status else 0,
+                "controls_failed": status.controls_failed if status else 0,
+                "controls_total": status.controls_total if status else len(fw.controls),
+                "last_assessed_at": (
+                    status.last_assessed_at.isoformat()
+                    if status and status.last_assessed_at
+                    else None
+                ),
+            }
+        )
 
     return results
 
 
-def _calculate_framework_compliance(db: Session, org_id: int, framework: ComplianceFramework) -> float | None:
+def _calculate_framework_compliance(
+    db: Session, org_id: int, framework: ComplianceFramework
+) -> float | None:
     """Calculate compliance score based on scan findings mapped to framework controls."""
     recent_scans = (
         db.query(Scan)
@@ -555,11 +777,7 @@ def _calculate_framework_compliance(db: Session, org_id: int, framework: Complia
 
 def get_framework_detail(db: Session, framework_slug: str, org_id: int) -> dict | None:
     """Get detailed compliance status for a specific framework."""
-    fw = (
-        db.query(ComplianceFramework)
-        .filter(ComplianceFramework.slug == framework_slug)
-        .first()
-    )
+    fw = db.query(ComplianceFramework).filter(ComplianceFramework.slug == framework_slug).first()
     if not fw:
         return None
 
@@ -587,7 +805,9 @@ def get_framework_detail(db: Session, framework_slug: str, org_id: int) -> dict 
             "controls_passed": status.controls_passed if status else 0,
             "controls_failed": status.controls_failed if status else 0,
             "control_status": status.control_status if status else {},
-            "last_assessed_at": status.last_assessed_at.isoformat() if status and status.last_assessed_at else None,
+            "last_assessed_at": (
+                status.last_assessed_at.isoformat() if status and status.last_assessed_at else None
+            ),
         },
     }
 
@@ -595,6 +815,7 @@ def get_framework_detail(db: Session, framework_slug: str, org_id: int) -> dict 
 # ═══════════════════════════════════════════════════════════════════════════
 # EXPORT CENTER
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def create_export_job(db: Session, org_id: int, user_id: int, data: dict) -> ExportJob:
     return _create_org_resource(db, ExportJob, org_id, user_id, data)
@@ -636,21 +857,23 @@ def generate_sarif_export(db: Session, scan_ids: list[int]) -> dict:
                     "id": rule_id,
                     "shortDescription": {"text": finding.vulnerability_name},
                     "fullDescription": {"text": finding.description},
-                    "defaultConfiguration": {
-                        "level": _severity_to_sarif_level(finding.severity)
-                    },
+                    "defaultConfiguration": {"level": _severity_to_sarif_level(finding.severity)},
                 }
-            run["results"].append({
-                "ruleId": rule_id,
-                "message": {"text": finding.description},
-                "locations": [{
-                    "physicalLocation": {
-                        "artifactLocation": {"uri": finding.affected_endpoint or "unknown"},
-                        "region": {"startLine": 1},
-                    }
-                }],
-                "level": _severity_to_sarif_level(finding.severity),
-            })
+            run["results"].append(
+                {
+                    "ruleId": rule_id,
+                    "message": {"text": finding.description},
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {"uri": finding.affected_endpoint or "unknown"},
+                                "region": {"startLine": 1},
+                            }
+                        }
+                    ],
+                    "level": _severity_to_sarif_level(finding.severity),
+                }
+            )
 
         run["tool"]["driver"]["rules"] = list(rules_map.values())
         sarif["runs"].append(run)
@@ -671,6 +894,7 @@ def _severity_to_sarif_level(severity: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 # VERSION COMPARISON & HISTORICAL ANALYTICS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def compare_scans(db: Session, scan_id_1: int, scan_id_2: int) -> dict | None:
     """Compare two scans and show differences."""
@@ -697,20 +921,24 @@ def compare_scans(db: Session, scan_id_1: int, scan_id_2: int) -> dict | None:
         in_second = name in f2_map
 
         if in_first and not in_second:
-            fixed_findings.append({"name": name, "severity": f1_map[name].severity, "status": "fixed"})
+            fixed_findings.append(
+                {"name": name, "severity": f1_map[name].severity, "status": "fixed"}
+            )
         elif not in_first and in_second:
             new_findings.append({"name": name, "severity": f2_map[name].severity, "status": "new"})
         elif in_first and in_second:
             f1, f2 = f1_map[name], f2_map[name]
             if f1.severity != f2.severity or f1.cvss_score != f2.cvss_score:
-                changed_findings.append({
-                    "name": name,
-                    "old_severity": f1.severity,
-                    "new_severity": f2.severity,
-                    "old_cvss": f1.cvss_score,
-                    "new_cvss": f2.cvss_score,
-                    "status": "changed",
-                })
+                changed_findings.append(
+                    {
+                        "name": name,
+                        "old_severity": f1.severity,
+                        "new_severity": f2.severity,
+                        "old_cvss": f1.cvss_score,
+                        "new_cvss": f2.cvss_score,
+                        "status": "changed",
+                    }
+                )
             else:
                 unchanged_count += 1
 
@@ -785,7 +1013,9 @@ def get_historical_analytics(db: Session, org_id: int, months: int = 12) -> dict
         "period_months": months,
         "total_scans": len(scans),
         "total_findings": total_findings,
-        "avg_risk_score": round(sum(all_risk_scores) / len(all_risk_scores), 1) if all_risk_scores else 0,
+        "avg_risk_score": (
+            round(sum(all_risk_scores) / len(all_risk_scores), 1) if all_risk_scores else 0
+        ),
         "risk_score_trend": severity_trend,
         "month_over_month": _calculate_mom_trend(severity_trend),
     }
@@ -797,18 +1027,21 @@ def _calculate_mom_trend(data: list[dict]) -> list[dict]:
     for i in range(1, len(data)):
         prev = data[i - 1]
         curr = data[i]
-        result.append({
-            "month": curr["month"],
-            "scans_change": curr["scans"] - prev["scans"],
-            "findings_change": curr["total_findings"] - prev["total_findings"],
-            "risk_score_change": round(curr["avg_risk_score"] - prev["avg_risk_score"], 1),
-        })
+        result.append(
+            {
+                "month": curr["month"],
+                "scans_change": curr["scans"] - prev["scans"],
+                "findings_change": curr["total_findings"] - prev["total_findings"],
+                "risk_score_change": round(curr["avg_risk_score"] - prev["avg_risk_score"], 1),
+            }
+        )
     return result
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # EXECUTIVE REPORTS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def generate_executive_summary(db: Session, org_id: int) -> dict:
     """Generate an executive security summary for CISO-level reporting."""
@@ -839,9 +1072,7 @@ def generate_executive_summary(db: Session, org_id: int) -> dict:
     # Load findings for recent scans (single query via subquery)
     recent_scan_ids = [s.id for s in recent_scans]
     recent_findings = (
-        db.query(Finding)
-        .filter(Finding.scan_id.in_(recent_scan_ids))
-        .all()
+        db.query(Finding).filter(Finding.scan_id.in_(recent_scan_ids)).all()
         if recent_scan_ids
         else []
     )
@@ -869,7 +1100,11 @@ def generate_executive_summary(db: Session, org_id: int) -> dict:
         "risk": {
             "average_score_30d": avg_risk_30d,
             "average_score_90d": avg_risk_90d,
-            "trend": "improving" if avg_risk_30d < avg_risk_90d else "worsening" if avg_risk_30d > avg_risk_90d else "stable",
+            "trend": (
+                "improving"
+                if avg_risk_30d < avg_risk_90d
+                else "worsening" if avg_risk_30d > avg_risk_90d else "stable"
+            ),
         },
         "findings": {
             "total_30d": len(recent_findings),
@@ -885,35 +1120,43 @@ def _generate_recommendations(severity_dist: dict, avg_risk: float) -> list[dict
     recs = []
 
     if severity_dist["Critical"] > 0:
-        recs.append({
-            "priority": "critical",
-            "title": "Address Critical Vulnerabilities",
-            "description": f"{severity_dist['Critical']} critical vulnerabilities require immediate remediation",
-            "action": "Review and remediate critical findings within 24 hours",
-        })
+        recs.append(
+            {
+                "priority": "critical",
+                "title": "Address Critical Vulnerabilities",
+                "description": f"{severity_dist['Critical']} critical vulnerabilities require immediate remediation",
+                "action": "Review and remediate critical findings within 24 hours",
+            }
+        )
 
     if severity_dist["High"] > 5:
-        recs.append({
-            "priority": "high",
-            "title": "Reduce High-Severity Findings",
-            "description": f"{severity_dist['High']} high-severity findings detected",
-            "action": "Prioritize high-severity fixes in the current sprint",
-        })
+        recs.append(
+            {
+                "priority": "high",
+                "title": "Reduce High-Severity Findings",
+                "description": f"{severity_dist['High']} high-severity findings detected",
+                "action": "Prioritize high-severity fixes in the current sprint",
+            }
+        )
 
     if avg_risk > 60:
-        recs.append({
-            "priority": "high",
-            "title": "Improve Overall Security Posture",
-            "description": f"Average risk score ({avg_risk}) is above acceptable threshold",
-            "action": "Schedule comprehensive security review and implement hardening measures",
-        })
+        recs.append(
+            {
+                "priority": "high",
+                "title": "Improve Overall Security Posture",
+                "description": f"Average risk score ({avg_risk}) is above acceptable threshold",
+                "action": "Schedule comprehensive security review and implement hardening measures",
+            }
+        )
 
     if severity_dist["Critical"] == 0 and severity_dist["High"] == 0:
-        recs.append({
-            "priority": "info",
-            "title": "Maintain Security Posture",
-            "description": "No critical or high-severity findings. Continue regular scanning.",
-            "action": "Maintain current scanning schedule and review medium/low findings quarterly",
-        })
+        recs.append(
+            {
+                "priority": "info",
+                "title": "Maintain Security Posture",
+                "description": "No critical or high-severity findings. Continue regular scanning.",
+                "action": "Maintain current scanning schedule and review medium/low findings quarterly",
+            }
+        )
 
     return recs

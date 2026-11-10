@@ -12,13 +12,13 @@ Covers:
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.database.database import Base, get_db
+from app.main import app
 from app.models.models import User
 from app.services.audit_service import (
-    record_action,
     _classify_risk,
     _extract_module,
+    record_action,
 )
 
 # ── Fixtures ──────────────────────────────────────────────────────

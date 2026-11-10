@@ -6,10 +6,10 @@ execute, health check, and listing.
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.models.models import User
-from app.utils.security import get_current_user
 from app.core.plugins.registry import plugin_registry
 from app.core.plugins.sdk import PluginContext, PluginType
+from app.models.models import User
+from app.utils.security import get_current_user
 
 router = APIRouter(prefix="/api/plugins", tags=["Plugin System"])
 
@@ -40,12 +40,7 @@ def plugin_types(
     current_user: User = Depends(get_current_user),
 ):
     """List available plugin types."""
-    return {
-        "types": [
-            {"value": t.value, "name": t.name}
-            for t in PluginType
-        ]
-    }
+    return {"types": [{"value": t.value, "name": t.name} for t in PluginType]}
 
 
 # ── Plugin Details ────────────────────────────────────────────────────
@@ -64,9 +59,11 @@ def get_plugin(
     stats = plugin_registry._execution_stats.get(plugin_id, {})
     return {
         "manifest": manifest.to_dict(),
-        "status": plugin_registry.get_status(plugin_id).value
-        if plugin_registry.get_status(plugin_id)
-        else "unknown",
+        "status": (
+            plugin_registry.get_status(plugin_id).value
+            if plugin_registry.get_status(plugin_id)
+            else "unknown"
+        ),
         "config": plugin_registry.get_config(plugin_id),
         "stats": stats,
     }

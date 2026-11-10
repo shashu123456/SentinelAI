@@ -8,17 +8,18 @@ from app.models.saas import OnboardingProgress
 from app.utils.logger import logger
 
 ONBOARDING_STEPS = [
-    "welcome", "profile", "first_project", "first_scan", "invite_team", "completed",
+    "welcome",
+    "profile",
+    "first_project",
+    "first_scan",
+    "invite_team",
+    "completed",
 ]
 
 
 def get_onboarding_progress(db: Session, user_id: int) -> OnboardingProgress:
     """Get or create onboarding progress for a user."""
-    progress = (
-        db.query(OnboardingProgress)
-        .filter(OnboardingProgress.user_id == user_id)
-        .first()
-    )
+    progress = db.query(OnboardingProgress).filter(OnboardingProgress.user_id == user_id).first()
     if not progress:
         progress = OnboardingProgress(user_id=user_id, completed_steps=[], current_step="welcome")
         db.add(progress)
@@ -28,7 +29,12 @@ def get_onboarding_progress(db: Session, user_id: int) -> OnboardingProgress:
 
 
 def complete_onboarding_step(
-    db: Session, *, user_id: int, step: str, role: str | None = None, use_case: str | None = None,
+    db: Session,
+    *,
+    user_id: int,
+    step: str,
+    role: str | None = None,
+    use_case: str | None = None,
 ) -> OnboardingProgress:
     """Mark an onboarding step as complete."""
     progress = get_onboarding_progress(db, user_id)

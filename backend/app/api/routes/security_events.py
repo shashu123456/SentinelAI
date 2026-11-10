@@ -14,11 +14,11 @@ from fastapi import APIRouter, Depends, Query
 from app.models.models import User
 from app.utils.security import get_current_user
 from app.utils.threat_detection import (
+    check_ip_reputation,
     detect_brute_force_pattern,
     get_active_sessions,
     get_security_events,
     get_security_stats,
-    check_ip_reputation,
 )
 
 router = APIRouter(prefix="/api/security-events", tags=["Security Events"])

@@ -13,7 +13,6 @@ import statistics
 import time
 
 import pytest
-from sqlalchemy import text
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -188,7 +187,7 @@ class TestDatabasePerformance:
 
     def test_connection_pool_efficiency(self, client, db_session):
         """Multiple rapid requests should reuse connections."""
-        headers = _register_and_login(client, "poolbench")
+        _register_and_login(client, "poolbench")
 
         # Fire 50 rapid requests
         times = []
@@ -251,7 +250,7 @@ class TestConcurrentPerformance:
 
     def test_sequential_rapid_requests(self, client, db_session):
         """50 sequential requests should complete without errors."""
-        headers = _register_and_login(client, "rapidbench")
+        _register_and_login(client, "rapidbench")
 
         errors = 0
         total_ms = 0
@@ -368,7 +367,7 @@ class TestBenchmarkSummary:
             ("Findings", "GET", "/api/v1/findings", headers),
         ]
 
-        for name, method, path, hdrs in endpoints:
+        for name, _method, path, hdrs in endpoints:
             times = []
             for _ in range(20):
                 _, ms = _timed(client.get, path, headers=hdrs)

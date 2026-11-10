@@ -39,9 +39,8 @@ def is_feature_enabled(
             return override.is_enabled
 
     # Check plan-level override
-    if plan_slug and flag.plan_overrides:
-        if plan_slug in flag.plan_overrides:
-            return flag.plan_overrides[plan_slug]
+    if plan_slug and flag.plan_overrides and plan_slug in flag.plan_overrides:
+        return flag.plan_overrides[plan_slug]
 
     return flag.is_enabled
 
@@ -137,7 +136,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Analyze source code for security vulnerabilities",
             "is_enabled": True,
             "category": "scanning",
-            "plan_overrides": {"free": False, "starter": True, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": True,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "ai_copilot",
@@ -145,7 +149,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "AI-powered vulnerability analysis and remediation",
             "is_enabled": True,
             "category": "ai",
-            "plan_overrides": {"free": False, "starter": True, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": True,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "compliance_center",
@@ -153,7 +162,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "OWASP, PCI-DSS, SOC2, ISO27001 compliance tracking",
             "is_enabled": True,
             "category": "compliance",
-            "plan_overrides": {"free": False, "starter": False, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": False,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "scheduled_scans",
@@ -161,7 +175,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Automated recurring scan scheduling",
             "is_enabled": True,
             "category": "automation",
-            "plan_overrides": {"free": False, "starter": True, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": True,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "webhooks",
@@ -169,7 +188,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Send notifications to Slack, Teams, Discord, Email",
             "is_enabled": True,
             "category": "integration",
-            "plan_overrides": {"free": False, "starter": False, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": False,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "white_label",
@@ -177,7 +201,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Custom logo, colors, and domain for the platform",
             "is_enabled": True,
             "category": "enterprise",
-            "plan_overrides": {"free": False, "starter": False, "professional": False, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": False,
+                "professional": False,
+                "enterprise": True,
+            },
         },
         {
             "key": "export_sarif",
@@ -185,7 +214,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Export findings in SARIF format for CI/CD integration",
             "is_enabled": True,
             "category": "export",
-            "plan_overrides": {"free": False, "starter": False, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": False,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "export_pdf",
@@ -193,7 +227,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Export reports as formatted PDF documents",
             "is_enabled": True,
             "category": "export",
-            "plan_overrides": {"free": False, "starter": True, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": True,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "team_management",
@@ -201,7 +240,12 @@ def seed_feature_flags(db: Session) -> list[FeatureFlag]:
             "description": "Organize users into teams with role-based access",
             "is_enabled": True,
             "category": "enterprise",
-            "plan_overrides": {"free": False, "starter": True, "professional": True, "enterprise": True},
+            "plan_overrides": {
+                "free": False,
+                "starter": True,
+                "professional": True,
+                "enterprise": True,
+            },
         },
         {
             "key": "experimental_threat_intel",
