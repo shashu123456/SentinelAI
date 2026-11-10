@@ -20,8 +20,11 @@ from app.schemas.schemas import (
     AnalyticsResponse,
     DashboardStats,
     FindingResponse,
+    RiskTrendItem,
+    ScanActivityItem,
     ScanDetailResponse,
     ScanResponse,
+    OwaspCategoryItem,
 )
 from app.services.audit_service import record_report_export, record_scan_event
 from app.services.scan_service import build_report_data, execute_scan
@@ -314,11 +317,9 @@ def get_analytics(
     scan_activity = []
     for i in range(29, -1, -1):
         day = (now - timedelta(days=i)).date()
+        scans_count = activity_map.get(day.isoformat(), 0)
         scan_activity.append(
-            {
-                "date": day.isoformat(),
-                "scans": activity_map.get(day.isoformat(), 0),
-            }
+            ScanActivityItem(date=day.isoformat(), scans=scans_count if isinstance(scans_count, int) else 0)
         )
 
     # Risk score trend over time
@@ -334,14 +335,11 @@ def get_analytics(
     ).all()
     for created_at, risk_score in rows:
         risk_trend.append(
-            {
-                "date": (
-                    created_at.date().isoformat()
-                    if hasattr(created_at, "date")
-                    else str(created_at)
-                ),
-                "score": risk_score,
-            }
+            RiskTrendItem(date=(
+                created_at.date().isoformat()
+                if hasattr(created_at, "date")
+                else str(created_at)
+            ), score=risk_score)
         )
 
     # Findings by OWASP category
@@ -352,7 +350,7 @@ def get_analytics(
         .group_by(Finding.owasp_category)
         .order_by(func.count(Finding.id).desc())
     )
-    owasp_dist = [{"category": cat, "count": cnt} for cat, cnt in db.execute(owasp_stmt).all()]
+    owasp_dist = [OwaspCategoryItem(category=cat, count=cnt) for cat, cnt in db.execute(owasp_stmt).all()]
 
     response = AnalyticsResponse(
         scan_activity=scan_activity,
