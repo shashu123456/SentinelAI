@@ -6,14 +6,19 @@ Everything below was produced by a command in this repository on the branch
 
 - Date: 2026-11-10
 - Branch: `release/sentinelai-v1.1`
-- Tip commit checked: `3d1ef53` (`refactor(repositories): keep the pagination default type-check clean`)
+- Tip commits checked: `3d1ef53` (code) and `61058b7` (this document). Documentation-only
+  commits reproduce the same job conclusions listed below.
 - Pull request: [#1](https://github.com/shashu123456/SentinelAI/pull/1) (draft, not merged)
 
 ## CI — run 42873263175
 
-Workflow `.github/workflows/ci.yml`, triggered by the pull request on head
-`3d1ef530`. Conclusions are the ones reported by the Actions API
-(`gh api repos/shashu123456/SentinelAI/actions/runs/42873263175/jobs`).
+Workflow `.github/workflows/ci.yml`, triggered by the pull request. Conclusions
+are the ones reported by the Actions API:
+
+- code tip `3d1ef530` → run [42873263175](https://github.com/shashu123456/SentinelAI/actions/runs/42873263175)
+- documentation tip `61058b78` → run [42877206618](https://github.com/shashu123456/SentinelAI/actions/runs/42877206618) (identical conclusions)
+
+Table below is run 42873263175.
 
 | Job | Conclusion | Detail |
 |---|---|---|
@@ -169,4 +174,5 @@ cd ../frontend
 npm ci && npm test && npm run build
 ```
 
-CI: `gh api repos/shashu123456/SentinelAI/actions/runs/42873263175/jobs`.
+CI: `gh api repos/shashu123456/SentinelAI/actions/runs/42877206618/jobs` (tip) or
+`gh api repos/shashu123456/SentinelAI/actions/runs/42873263175/jobs` (code tip).
