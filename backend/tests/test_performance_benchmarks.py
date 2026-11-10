@@ -15,7 +15,6 @@ import time
 import pytest
 from sqlalchemy import text
 
-
 # ── Helpers ───────────────────────────────────────────────────────────
 
 
@@ -41,6 +40,16 @@ def _timed(func, *args, **kwargs):
     return result, elapsed
 
 
+def _warm(client, path, headers=None):
+    """Issue one untimed request.
+
+    The first request through a fresh TestClient pays one-off initialisation
+    (lazy imports, middleware and encoder setup); measuring it benchmarks app
+    startup, not the endpoint.
+    """
+    client.get(path, headers=headers or {})
+
+
 def _percentile(values, p):
     """Compute p-th percentile of a sorted list."""
     idx = int(len(values) * p / 100)
@@ -55,6 +64,7 @@ class TestAPIResponseTimes:
 
     def test_health_endpoint_speed(self, client):
         """Health endpoint should respond in < 50ms."""
+        _warm(client, "/api/v1/health")
         times = []
         for _ in range(20):
             _, ms = _timed(client.get, "/api/v1/health")
@@ -64,11 +74,21 @@ class TestAPIResponseTimes:
 
     def test_login_response_time(self, client):
         """Login should complete in < 500ms."""
+        # Warm up hashing and auth dependencies before timing.
+        client.post(
+            "/api/auth/register",
+            json={"username": "perfwarm", "email": "perfwarm@test.com", "password": "Test123!@#"},
+        )
+        client.post("/api/auth/login", json={"username": "perfwarm", "password": "Test123!@#"})
         times = []
         for i in range(10):
             client.post(
                 "/api/auth/register",
-                json={"username": f"perf{i}", "email": f"perf{i}@test.com", "password": "Test123!@#"},
+                json={
+                    "username": f"perf{i}",
+                    "email": f"perf{i}@test.com",
+                    "password": "Test123!@#",
+                },
             )
             _, ms = _timed(
                 client.post,
@@ -82,9 +102,10 @@ class TestAPIResponseTimes:
     def test_dashboard_load_time(self, client):
         """Dashboard endpoint should load in < 1s."""
         headers = _register_and_login(client, "dashbench")
+        _warm(client, "/api/v1/dashboard/overview", headers)
         times = []
         for _ in range(10):
-            _, ms = _timed(client.get, "/api/v1/dashboard", headers=headers)
+            _, ms = _timed(client.get, "/api/v1/dashboard/overview", headers=headers)
             times.append(ms)
         p95 = _percentile(sorted(times), 95)
         assert p95 < 1000, f"Dashboard p95={p95:.1f}ms exceeds 1s threshold"
@@ -102,9 +123,10 @@ class TestAPIResponseTimes:
     def test_analytics_endpoint_time(self, client):
         """Analytics endpoint should respond in < 2s."""
         headers = _register_and_login(client, "analyticsbench")
+        _warm(client, "/api/scans/analytics", headers)
         times = []
         for _ in range(5):
-            _, ms = _timed(client.get, "/api/v1/analytics", headers=headers)
+            _, ms = _timed(client.get, "/api/scans/analytics", headers=headers)
             times.append(ms)
         p95 = _percentile(sorted(times), 95)
         assert p95 < 2000, f"Analytics p95={p95:.1f}ms exceeds 2s threshold"
@@ -114,9 +136,7 @@ class TestAPIResponseTimes:
         headers = _register_and_login(client, "searchbench")
         times = []
         for _ in range(10):
-            _, ms = _timed(
-                client.get, "/api/v1/scans?search=test", headers=headers
-            )
+            _, ms = _timed(client.get, "/api/v1/scans?search=test", headers=headers)
             times.append(ms)
         p95 = _percentile(sorted(times), 95)
         assert p95 < 500, f"Search p95={p95:.1f}ms exceeds 500ms threshold"
@@ -132,13 +152,13 @@ class TestDatabasePerformance:
         """Single record lookup should be < 5ms."""
         headers = _register_and_login(client, "dbbench")
 
-        # Create a scan to lookup
-        resp = client.post(
-            "/api/v1/scans",
-            json={"api_name": "bench-api", "spec_data": {"openapi": "3.0.0", "info": {"title": "Bench", "version": "1.0"}, "paths": {}}},
-            headers=headers,
-        )
-        scan_id = resp.json()["id"]
+        # Create a scan to look up. There is no POST /api/v1/scans; scans are
+        # created by uploading a spec to /api/scans/upload.
+        from tests.helpers import make_spec, upload_spec
+
+        created = upload_spec(client, headers, make_spec(["/v1/orders"]), api_name="bench-api")
+        assert created.status_code == 200, created.text
+        scan_id = created.json()["id"]
 
         times = []
         for _ in range(50):
@@ -156,11 +176,11 @@ class TestDatabasePerformance:
 
         # Run analytics multiple times to warm up
         for _ in range(3):
-            client.get("/api/v1/analytics", headers=headers)
+            client.get("/api/scans/analytics", headers=headers)
 
         times = []
         for _ in range(10):
-            _, ms = _timed(client.get, "/api/v1/analytics", headers=headers)
+            _, ms = _timed(client.get, "/api/scans/analytics", headers=headers)
             times.append(ms)
 
         p95 = _percentile(sorted(times), 95)
@@ -193,12 +213,12 @@ class TestCachePerformance:
         headers = _register_and_login(client, "cachebench")
 
         # First call (cold cache)
-        client.get("/api/v1/dashboard", headers=headers)
+        client.get("/api/v1/dashboard/overview", headers=headers)
 
         # Second call (warm cache)
         cached_times = []
         for _ in range(10):
-            _, ms = _timed(client.get, "/api/v1/dashboard", headers=headers)
+            _, ms = _timed(client.get, "/api/v1/dashboard/overview", headers=headers)
             cached_times.append(ms)
 
         avg_cached = statistics.mean(cached_times)
@@ -208,19 +228,19 @@ class TestCachePerformance:
         """Cache invalidation after mutation should work."""
         headers = _register_and_login(client, "invalidatebench")
 
+        from tests.helpers import make_spec, upload_spec
+
         # Warm cache
-        client.get("/api/v1/dashboard", headers=headers)
+        client.get("/api/v1/dashboard/overview", headers=headers)
 
         # Create a scan (should invalidate related cache)
-        client.post(
-            "/api/v1/scans",
-            json={"api_name": "test-api", "spec_data": {"openapi": "3.0.0", "info": {"title": "Test", "version": "1.0"}, "paths": {}}},
-            headers=headers,
-        )
+        created = upload_spec(client, headers, make_spec(["/v1/orders"]), api_name="test-api")
+        assert created.status_code == 200, created.text
 
         # Next dashboard call should have fresh data
-        resp = client.get("/api/v1/dashboard", headers=headers)
+        resp = client.get("/api/v1/dashboard/overview", headers=headers)
         assert resp.status_code == 200
+        assert resp.json()["data"]["total_scans"] >= 1
 
 
 # ── Concurrent Request Benchmarks ─────────────────────────────────────
@@ -282,6 +302,7 @@ class TestMemoryPerformance:
 
         try:
             import psutil
+
             process = psutil.Process()
             mem_before = process.memory_info().rss / (1024 * 1024)
         except (ImportError, Exception):
@@ -290,7 +311,7 @@ class TestMemoryPerformance:
         # Fire 100 requests
         for _ in range(100):
             client.get("/api/v1/health")
-            client.get("/api/v1/dashboard", headers=headers)
+            client.get("/api/v1/dashboard/overview", headers=headers)
 
         try:
             mem_after = process.memory_info().rss / (1024 * 1024)
@@ -310,7 +331,7 @@ class TestResponseSize:
     def test_dashboard_response_size(self, client, db_session):
         """Dashboard response should not exceed 100KB."""
         headers = _register_and_login(client, "sizebench")
-        resp = client.get("/api/v1/dashboard", headers=headers)
+        resp = client.get("/api/v1/dashboard/overview", headers=headers)
         size_kb = len(resp.content) / 1024
         assert size_kb < 100, f"Dashboard response is {size_kb:.1f}KB (exceeds 100KB limit)"
 
@@ -336,14 +357,14 @@ class TestBenchmarkSummary:
         # Warm up
         for _ in range(3):
             client.get("/api/v1/health")
-            client.get("/api/v1/dashboard", headers=headers)
+            client.get("/api/v1/dashboard/overview", headers=headers)
 
         # Benchmark endpoints
         endpoints = [
             ("Health", "GET", "/api/v1/health", {}),
-            ("Dashboard", "GET", "/api/v1/dashboard", headers),
+            ("Dashboard", "GET", "/api/v1/dashboard/overview", headers),
             ("Scans", "GET", "/api/v1/scans", headers),
-            ("Analytics", "GET", "/api/v1/analytics", headers),
+            ("Analytics", "GET", "/api/scans/analytics", headers),
             ("Findings", "GET", "/api/v1/findings", headers),
         ]
 
@@ -365,7 +386,9 @@ class TestBenchmarkSummary:
         print("\n" + "=" * 70)
         print("SENTINELAI PERFORMANCE BENCHMARK REPORT")
         print("=" * 70)
-        print(f"{'Endpoint':<20} {'Avg (ms)':<12} {'P50 (ms)':<12} {'P95 (ms)':<12} {'P99 (ms)':<12} {'Max (ms)':<12}")
+        print(
+            f"{'Endpoint':<20} {'Avg (ms)':<12} {'P50 (ms)':<12} {'P95 (ms)':<12} {'P99 (ms)':<12} {'Max (ms)':<12}"
+        )
         print("-" * 70)
         for name, stats in results.items():
             print(
