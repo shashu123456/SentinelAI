@@ -394,12 +394,19 @@ class TestTokenRobustness:
 
 class TestRateLimiting:
     def test_login_rate_limit_exceeded(self, client):
-        codes = []
-        for i in range(settings.LOGIN_RATE_LIMIT_PER_MINUTE + 1):
-            r = client.post(
+        # conftest pins LOGIN_RATE_LIMIT_PER_MINUTE to the per-IP block threshold
+        # (10). With the production default of 30 the IP reputation block answers
+        # first, so this test would only ever exercise the block; the pin is what
+        # keeps the limiter observable. Removing it makes this test fail.
+        responses = [
+            client.post(
                 "/api/auth/login",
                 json={"username": f"ghost_{i}", "password": "Wrongpass1"},
             )
-            codes.append(r.status_code)
+            for i in range(settings.LOGIN_RATE_LIMIT_PER_MINUTE + 1)
+        ]
+        codes = [r.status_code for r in responses]
         assert all(c == 401 for c in codes[:-1])
         assert codes[-1] == 429
+        # The 429 must come from slowapi, not from the IP reputation block.
+        assert "Rate limit exceeded" in responses[-1].text
