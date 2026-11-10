@@ -188,7 +188,7 @@ class TestAuditService:
 
         repo = AuditLogRepository(db_session)
         logs = repo.list(limit=10)
-        matching = [l for l in logs if l.action == "test.action"]
+        matching = [entry for entry in logs if entry.action == "test.action"]
         assert len(matching) == 1
         assert matching[0].risk_level == "info"
         assert matching[0].module == "test"

@@ -278,11 +278,11 @@ class ScannerPlugin(ABC):
 
     def initialize(self, context: PluginContext) -> None:
         """Called when the plugin is loaded. Override for setup logic."""
-        pass
+        return None
 
     def shutdown(self) -> None:
         """Called when the plugin is disabled. Override for cleanup logic."""
-        pass
+        return None
 
     def health_check(self) -> dict[str, Any]:
         """Return plugin health status."""
@@ -330,10 +330,10 @@ class ReportPlugin(ABC):
     manifest: PluginManifest
 
     def initialize(self, context: PluginContext) -> None:
-        pass
+        return None
 
     def shutdown(self) -> None:
-        pass
+        return None
 
     def health_check(self) -> dict[str, Any]:
         return {"healthy": True}
@@ -381,10 +381,10 @@ class AIProviderPlugin(ABC):
     manifest: PluginManifest
 
     def initialize(self, context: PluginContext) -> None:
-        pass
+        return None
 
     def shutdown(self) -> None:
-        pass
+        return None
 
     def health_check(self) -> dict[str, Any]:
         return {"healthy": True}
@@ -434,10 +434,10 @@ class NotificationPlugin(ABC):
     manifest: PluginManifest
 
     def initialize(self, context: PluginContext) -> None:
-        pass
+        return None
 
     def shutdown(self) -> None:
-        pass
+        return None
 
     def health_check(self) -> dict[str, Any]:
         return {"healthy": True}
@@ -489,10 +489,10 @@ class ExportPlugin(ABC):
     manifest: PluginManifest
 
     def initialize(self, context: PluginContext) -> None:
-        pass
+        return None
 
     def shutdown(self) -> None:
-        pass
+        return None
 
     def health_check(self) -> dict[str, Any]:
         return {"healthy": True}
@@ -543,10 +543,10 @@ class AuthProviderPlugin(ABC):
     manifest: PluginManifest
 
     def initialize(self, context: PluginContext) -> None:
-        pass
+        return None
 
     def shutdown(self) -> None:
-        pass
+        return None
 
     def health_check(self) -> dict[str, Any]:
         return {"healthy": True}

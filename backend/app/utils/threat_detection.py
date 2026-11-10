@@ -253,10 +253,9 @@ def assess_login(
         if recent_logins and ip:
             last_login = recent_logins[-1]
             time_diff_hours = (now - last_login["timestamp"]) / 3600
-            if time_diff_hours > 0 and time_diff_hours < 24:
-                # Check if IP changed significantly
-                if last_login["ip"] and last_login["ip"] != ip:
-                    reasons.append(f"Login from different IP ({time_diff_hours:.1f}h gap)")
+            # Check if the IP changed significantly within a plausible window
+            if 0 < time_diff_hours < 24 and last_login["ip"] and last_login["ip"] != ip:
+                reasons.append(f"Login from different IP ({time_diff_hours:.1f}h gap)")
 
     # Determine final risk level
     if should_alert and risk_level not in ("high", "critical"):
@@ -348,11 +347,8 @@ def register_session(
 def is_session_replay(token_hash: str, user_id: int) -> bool:
     """Check if a token is being replayed (used after being replaced)."""
     with _lock:
-        session = _active_sessions.get(token_hash)
-        if session is None:
-            return False  # New token, not a replay
-        # Token exists in active sessions — check if it's the current one
-        return True  # Token is valid and tracked
+        # A token absent from active sessions is new, not a replay.
+        return token_hash in _active_sessions
 
 
 def revoke_session(token_hash: str) -> None:

@@ -354,7 +354,7 @@ def complete_step(
             db, user_id=current_user.id, step=step, role=role, use_case=use_case
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     return {
         "current_step": progress.current_step,

@@ -54,7 +54,7 @@ def create_team_endpoint(
         )
         return team
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("")
@@ -130,7 +130,7 @@ def add_team_member_endpoint(
         )
         return MessageResponse(detail="Team member added")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.delete("/{team_id}/members/{user_id}")
@@ -156,7 +156,7 @@ def remove_team_member_endpoint(
         )
         return MessageResponse(detail="Team member removed")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.delete("/{team_id}")
@@ -175,4 +175,4 @@ def delete_team_endpoint(
         delete_team(db, team_id=team_id, org_id=org_id, deleted_by=org_ctx.user_id)
         return MessageResponse(detail="Team deleted")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e

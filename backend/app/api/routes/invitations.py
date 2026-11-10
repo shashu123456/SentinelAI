@@ -60,7 +60,7 @@ def send_invitation(
         )
         return invitation
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("")
@@ -100,7 +100,7 @@ def revoke_invitation_endpoint(
         )
         return MessageResponse(detail="Invitation revoked")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Public endpoint (no auth required - for accepting invitations) ────
@@ -121,7 +121,7 @@ def accept_invitation_endpoint(
             "role": result["role"],
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Admin: cleanup expired invitations ────────────────────────────────

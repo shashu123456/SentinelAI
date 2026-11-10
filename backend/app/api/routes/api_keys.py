@@ -49,7 +49,7 @@ def create_api_key_endpoint(
         )
         return result
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("")
@@ -77,4 +77,4 @@ def revoke_api_key_endpoint(
         )
         return MessageResponse(detail="API key revoked")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e

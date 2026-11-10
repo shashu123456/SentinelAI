@@ -88,11 +88,13 @@ class CircuitBreaker:
     def state(self) -> CircuitState:
         """Check if we should transition from OPEN to HALF_OPEN."""
         with self._lock:
-            if self._state == CircuitState.OPEN:
-                if time.time() - self._last_failure_time >= self.recovery_timeout:
-                    self._state = CircuitState.HALF_OPEN
-                    self._half_open_successes = 0
-                    logger.info(f"Circuit breaker '{self.name}' → HALF_OPEN")
+            if (
+                self._state == CircuitState.OPEN
+                and time.time() - self._last_failure_time >= self.recovery_timeout
+            ):
+                self._state = CircuitState.HALF_OPEN
+                self._half_open_successes = 0
+                logger.info(f"Circuit breaker '{self.name}' → HALF_OPEN")
             return self._state
 
     def _on_success(self) -> None:

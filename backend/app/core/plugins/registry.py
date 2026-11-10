@@ -474,7 +474,7 @@ class PluginRegistry:
         """Get recent plugin execution logs."""
         logs = self._execution_log
         if plugin_id:
-            logs = [l for l in logs if l["plugin_id"] == plugin_id]
+            logs = [entry for entry in logs if entry["plugin_id"] == plugin_id]
         return logs[-limit:]
 
     def get_execution_stats(self) -> dict:
