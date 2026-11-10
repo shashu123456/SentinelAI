@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { ToastProvider, useToast } from './Toast';
@@ -46,7 +46,10 @@ describe('Toast', () => {
     const toast = screen.getByText('Saved successfully');
     expect(toast).toBeInTheDocument();
     await user.click(toast.closest('.toast').querySelector('.toast-close'));
-    expect(screen.queryByText('Saved successfully')).not.toBeInTheDocument();
+    // Removal waits for the exit animation before unmounting.
+    await waitFor(() =>
+      expect(screen.queryByText('Saved successfully')).not.toBeInTheDocument()
+    );
   });
 
   it('stacks multiple toasts', async () => {

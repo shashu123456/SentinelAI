@@ -35,7 +35,7 @@ describe('Login', () => {
     const { container } = renderLogin();
     expect(container.querySelector('.login-btn')).toBeInTheDocument();
     expect(container.querySelector('.login-tab')).toHaveTextContent('Sign In');
-    expect(screen.getByPlaceholderText('Enter username')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('analyst@sentinel')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter password')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Enter email')).not.toBeInTheDocument();
   });
@@ -44,8 +44,8 @@ describe('Login', () => {
     const user = userEvent.setup();
     renderLogin();
     await user.click(screen.getByRole('button', { name: 'Register' }));
-    expect(screen.getByPlaceholderText('Enter email')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create Account' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('analyst@company.io')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
   });
 
   it('submits login credentials and stores the session', async () => {
@@ -56,7 +56,7 @@ describe('Login', () => {
       user: { username: 'alice', email: 'alice@example.com' },
     });
 
-    await user.type(screen.getByPlaceholderText('Enter username'), 'alice');
+    await user.type(screen.getByPlaceholderText('analyst@sentinel'), 'alice');
     await user.type(screen.getByPlaceholderText('Enter password'), 'secret123');
     await user.click(container.querySelector('.login-btn'));
 
@@ -77,10 +77,10 @@ describe('Login', () => {
     renderLogin();
 
     await user.click(screen.getByRole('button', { name: 'Register' }));
-    await user.type(screen.getByPlaceholderText('Enter username'), 'bob');
-    await user.type(screen.getByPlaceholderText('Enter email'), 'bob@example.com');
+    await user.type(screen.getByPlaceholderText('analyst@sentinel'), 'bob');
+    await user.type(screen.getByPlaceholderText('analyst@company.io'), 'bob@example.com');
     await user.type(screen.getByPlaceholderText('Enter password'), 'secret123');
-    await user.click(screen.getByRole('button', { name: 'Create Account' }));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() => {
       expect(registerMock).toHaveBeenCalledWith({
@@ -96,11 +96,11 @@ describe('Login', () => {
     const user = userEvent.setup();
     loginMock.mockRejectedValue(new Error('Invalid credentials'));
 
-    await user.type(screen.getByPlaceholderText('Enter username'), 'alice');
+    await user.type(screen.getByPlaceholderText('analyst@sentinel'), 'alice');
     await user.type(screen.getByPlaceholderText('Enter password'), 'wrong');
     await user.click(container.querySelector('.login-btn'));
 
-    expect(await screen.findByText('Invalid credentials')).toBeInTheDocument();
+    expect(await screen.findByText(/Invalid credentials/i)).toBeInTheDocument();
   });
 
   it('toggles password visibility', async () => {
