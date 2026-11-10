@@ -127,12 +127,9 @@ async def run_scan_task(
         # Show parsed API info and record transition
         task.message = f"API: {parsed_api['title']} v{parsed_api['version']}"
         task.progress = 18
-        task.transition_history.append({
-            "from": "parsing",
-            "to": "endpoints",
-            "at": time.time(),
-            "reason": "api_parsed"
-        })
+        task.transition_history.append(
+            {"from": "parsing", "to": "endpoints", "at": time.time(), "reason": "api_parsed"}
+        )
         await publish_progress(task)
         await asyncio.sleep(0.05)
 
@@ -143,12 +140,14 @@ async def run_scan_task(
             path = ep["path"]
             task.message = f"  [{method}] {path}"
             task.progress = 18 + int((i / max(len(endpoints), 1)) * 12)
-            task.transition_history.append({
-                "from": "endpoints",
-                "to": "checking",
-                "at": time.time(),
-                "reason": f"endpoint_discovered[{method}] {path}"
-            })
+            task.transition_history.append(
+                {
+                    "from": "endpoints",
+                    "to": "checking",
+                    "at": time.time(),
+                    "reason": f"endpoint_discovered[{method}] {path}",
+                }
+            )
             await publish_progress(task)
             await asyncio.sleep(0.03)
 
@@ -202,12 +201,9 @@ async def run_scan_task(
                 await publish_progress(task)
                 await asyncio.sleep(0.03)
 
-        task.transition_history.append({
-            "from": "checking",
-            "to": "risk",
-            "at": time.time(),
-            "reason": "owasp_checks_complete"
-        })
+        task.transition_history.append(
+            {"from": "checking", "to": "risk", "at": time.time(), "reason": "owasp_checks_complete"}
+        )
 
         finding_repo.bulk_add_from_scan(scan.id, findings)
 
@@ -217,12 +213,9 @@ async def run_scan_task(
         await asyncio.sleep(0.1)
 
         risk = calculate_risk_score(findings)
-        task.transition_history.append({
-            "from": "risk",
-            "to": "completed",
-            "at": time.time(),
-            "reason": "risk_calculated"
-        })
+        task.transition_history.append(
+            {"from": "risk", "to": "completed", "at": time.time(), "reason": "risk_calculated"}
+        )
         scan_repo.complete(scan, risk, task.transition_history)
         task.message = f"Risk Score: {risk['score']}/100 ({risk['level']})"
         task.progress = 80
