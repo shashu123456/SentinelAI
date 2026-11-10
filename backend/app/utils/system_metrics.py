@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import platform
+import threading
 import time
 
 try:
@@ -51,7 +52,7 @@ def get_cpu_info() -> dict[str, Any]:
     try:
         import psutil
 
-        cpu_percent = psutil.cpu_percent(interval=0.1)
+        cpu_percent = psutil.cpu_percent(interval=0.05)
         cpu_count = psutil.cpu_count()
         cpu_freq = psutil.cpu_freq()
         return {
@@ -133,6 +134,7 @@ def get_db_latency() -> dict[str, Any]:
     """Measure database query latency with a SELECT 1 probe."""
     try:
         from sqlalchemy import text
+
         from app.database.database import engine
 
         start = time.time()
@@ -202,16 +204,19 @@ def get_ai_status() -> dict[str, Any]:
     settings = get_settings()
 
     try:
-        import urllib.request
         import urllib.error
+        import urllib.request
+        from urllib.parse import urlsplit
 
-        # Try Ollama health endpoint
-        ollama_url = settings.OLLAMA_URL.rsplit("/", 1)[0]  # Remove /api/generate
-        health_url = ollama_url.replace("/api/generate", "").rstrip("/") + "/"
+        # Probe the Ollama origin. OLLAMA_URL points at a path (/api/generate),
+        # so string surgery on it previously produced http://host:port/api/. A
+        # short timeout keeps a down or slow Ollama from stalling the probe.
+        parsed = urlsplit(settings.OLLAMA_URL)
+        health_url = f"{parsed.scheme}://{parsed.netloc}/"
 
         start = time.time()
         req = urllib.request.Request(health_url, method="GET")
-        with urllib.request.urlopen(req, timeout=1):
+        with urllib.request.urlopen(req, timeout=0.5):
             latency_ms = round((time.time() - start) * 1000, 2)
             return {
                 "status": "healthy",
@@ -287,21 +292,59 @@ def get_worker_status() -> dict[str, Any]:
 
 
 _health_cache: dict[str, Any] = {"data": None, "ts": 0.0}
+_health_cache_lock = threading.Lock()
+_health_refreshing = False
 _HEALTH_CACHE_TTL = 10  # seconds — health endpoint called frequently
 
 
 def collect_all_health() -> dict[str, Any]:
-    """Collect all health checks into a single response.
+    """Return the most recent health snapshot, refreshing it out of band.
 
-    Results are cached for a short TTL to avoid hammering external checks
-    (AI engine, Redis) on every probe.
+    The probes touch the database, Redis and Ollama, and any of them can block
+    for seconds when a dependency is down, so they must not run on a request
+    thread: a stale snapshot is served immediately while one background thread
+    recomputes it. ``warm_health_cache`` fills the cache at startup so the very
+    first probe is already fast.
     """
-    import time as _time
+    global _health_refreshing
 
-    now = _time.time()
-    if _health_cache["data"] and (now - _health_cache["ts"]) < _HEALTH_CACHE_TTL:
-        return _health_cache["data"]
+    with _health_cache_lock:
+        snapshot = _health_cache["data"]
+        stale = snapshot is None or (time.time() - _health_cache["ts"]) >= _HEALTH_CACHE_TTL
+        start_background = stale and snapshot is not None and not _health_refreshing
+        if start_background:
+            _health_refreshing = True
 
+    if snapshot is None:
+        return _refresh_health()
+
+    if start_background:
+        threading.Thread(target=_refresh_health, name="health-refresh", daemon=True).start()
+
+    return snapshot
+
+
+def warm_health_cache() -> dict[str, Any]:
+    """Compute the health snapshot once so the first request is served from cache."""
+    return _refresh_health()
+
+
+def _refresh_health() -> dict[str, Any]:
+    """Recompute the snapshot and store it, releasing the refresh guard."""
+    global _health_refreshing
+    try:
+        result = _compute_health()
+        with _health_cache_lock:
+            _health_cache["data"] = result
+            _health_cache["ts"] = time.time()
+        return result
+    finally:
+        with _health_cache_lock:
+            _health_refreshing = False
+
+
+def _compute_health() -> dict[str, Any]:
+    """Run every health check in parallel and assemble the response."""
     # Run independent checks in parallel (they are all I/O-bound)
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -355,7 +398,7 @@ def collect_all_health() -> dict[str, Any]:
     result = {
         "status": overall,
         "version": env.get("sentinel_version", "1.0.0"),
-        "timestamp": _time.time(),
+        "timestamp": time.time(),
         "uptime_seconds": round(get_uptime(), 0),
         "uptime_human": get_uptime_human(),
         "checks": checks,
@@ -371,6 +414,4 @@ def collect_all_health() -> dict[str, Any]:
         },
     }
 
-    _health_cache["data"] = result
-    _health_cache["ts"] = _time.time()
     return result

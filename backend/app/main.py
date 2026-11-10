@@ -10,10 +10,10 @@ from app.api.errors import register_exception_handlers
 from app.api.middleware import envelope_middleware
 from app.api.routes import (
     admin,
+    ai_platform,
     api_keys,
     audit,
     auth,
-    ai_platform,
     enterprise,
     invitations,
     metrics,
@@ -31,7 +31,7 @@ from app.api.routes import (
 from app.api.v1 import v1_router
 from app.config import get_settings
 from app.database.database import init_db
-from app.utils.logger import logger, bind_request_context, clear_request_context
+from app.utils.logger import bind_request_context, clear_request_context, logger
 from app.utils.ratelimit import limiter
 
 settings = get_settings()
@@ -50,6 +50,15 @@ async def lifespan(app: FastAPI):
     # Log production readiness warnings
     for warning in settings.validate_production_readiness():
         logger.warning(warning)
+
+    # Warm the health snapshot so the first probe is served from cache instead of
+    # waiting on database/Redis/Ollama checks.
+    try:
+        from app.utils.system_metrics import warm_health_cache
+
+        warm_health_cache()
+    except Exception as e:
+        logger.warning(f"Health snapshot warmup failed: {e}")
 
     yield  # Application is running
 
