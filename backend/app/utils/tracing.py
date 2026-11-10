@@ -30,22 +30,19 @@ import contextvars
 import functools
 import time
 import uuid
-from contextlib import contextmanager
+from collections.abc import Callable, Generator
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
-from typing import Any, Generator
+from typing import Any
 
 from app.utils.logger import logger
 
 # ── Correlation context ──────────────────────────────────────────────
 
-_correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "correlation_id", default=""
-)
+_correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar("correlation_id", default="")
 _trace_id: contextvars.ContextVar[str] = contextvars.ContextVar("trace_id", default="")
 _span_id: contextvars.ContextVar[str] = contextvars.ContextVar("span_id", default="")
-_trace_sampled: contextvars.ContextVar[bool] = contextvars.ContextVar(
-    "trace_sampled", default=True
-)
+_trace_sampled: contextvars.ContextVar[bool] = contextvars.ContextVar("trace_sampled", default=True)
 
 
 def correlation_id() -> str:
@@ -137,11 +134,13 @@ class Span:
 
     def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         """Add a timed event to the span."""
-        self.events.append({
-            "name": name,
-            "timestamp": time.time(),
-            "attributes": attributes or {},
-        })
+        self.events.append(
+            {
+                "name": name,
+                "timestamp": time.time(),
+                "attributes": attributes or {},
+            }
+        )
 
     def set_status(self, status: str, message: str = "") -> None:
         """Set span status (OK, ERROR, UNSET)."""
@@ -214,10 +213,13 @@ def create_span(
         span.set_status("OK")
     except Exception as e:
         span.set_status("ERROR", str(e))
-        span.add_event("exception", {
-            "type": type(e).__name__,
-            "message": str(e),
-        })
+        span.add_event(
+            "exception",
+            {
+                "type": type(e).__name__,
+                "message": str(e),
+            },
+        )
         raise
     finally:
         span.finish()
@@ -272,10 +274,8 @@ def traced(
                 bound.apply_defaults()
                 for key, value in bound.arguments.items():
                     if key != "self" and not key.startswith("_"):
-                        try:
+                        with suppress(Exception):
                             span.set_attribute(f"arg.{key}", str(value)[:200])
-                        except Exception:
-                            pass
 
                 result = func(*args, **kwargs)
                 span.set_attribute("return_type", type(result).__name__)
@@ -362,21 +362,15 @@ def init_opentelemetry(
                 provider.add_span_processor(BatchSpanProcessor(exporter))
                 logger.info(f"OpenTelemetry exporter configured: {endpoint}")
             except ImportError:
-                logger.warning(
-                    "OTLP exporter not available; using console exporter"
-                )
+                logger.warning("OTLP exporter not available; using console exporter")
                 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
-                provider.add_span_processor(
-                    BatchSpanProcessor(ConsoleSpanExporter())
-                )
+                provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
 
         _otel_initialized = True
         logger.info("OpenTelemetry tracing initialized")
 
     except ImportError:
-        logger.info(
-            "OpenTelemetry not installed; using correlation-ID-only tracing"
-        )
+        logger.info("OpenTelemetry not installed; using correlation-ID-only tracing")
     except Exception as e:
         logger.warning(f"OpenTelemetry init failed: {e}")

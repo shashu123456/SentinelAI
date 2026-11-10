@@ -24,7 +24,8 @@ ignore = [
 
 [tool.mypy]
 python_version = "3.11"
-plugins = ["sqlalchemy.ext.mypy.plugin"]
+# sqlalchemy.ext.mypy.plugin was removed in SQLAlchemy 2.1; referencing it makes
+# mypy abort before checking anything.
 ignore_missing_imports = true
 warn_unused_configs = true
 warn_redundant_casts = true
