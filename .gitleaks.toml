@@ -1,7 +1,7 @@
 # Gitleaks configuration.
 #
-# The default ruleset stays in force everywhere. The allowlists below cover
-# values gitleaks reports that are not credentials:
+# The default ruleset stays in force everywhere (`useDefault = true`). The
+# allowlist below covers values gitleaks reports that are not credentials:
 #
 #   docs/API.md                     truncated examples ("eyJ...", "snt_a1b2...").
 #   backend/tests/test_sast.py      a fake key that the SAST scanner is asserted
@@ -9,17 +9,26 @@
 #   backend/tests/test_saas_platform.py
 #                                   a feature-flag name matched by the generic
 #                                   API key heuristic.
+#
+# The singular `[allowlist]` table is deliberate: it is understood by every
+# gitleaks 8.x release, including the one bundled with
+# gitleaks/gitleaks-action, while `[[allowlists]]` is only honoured from 8.25.
+
+title = "SentinelAI gitleaks config"
 
 [extend]
 useDefault = true
 
-[[allowlists]]
-description = "Truncated credential examples in API documentation"
-paths = ['''docs/API\.md''']
-
-[[allowlists]]
-description = "Deliberate fake secrets used as SAST and SaaS test fixtures"
+[allowlist]
+description = "Documentation examples and deliberate test fixtures"
 paths = [
+  '''docs/API\.md''',
   '''backend/tests/test_sast\.py''',
   '''backend/tests/test_saas_platform\.py''',
+]
+regexes = [
+  '''sk_live_abcdef1234567890''',
+  '''super_secret_123''',
+  '''eyJhbGciOiJIUzI1NiJ9''',
+  '''snt_a1b2c3d4e5f6''',
 ]

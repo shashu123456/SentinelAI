@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from typing import Generic, TypeVar
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 ModelT = TypeVar("ModelT")
@@ -82,9 +82,17 @@ class BaseRepository(Generic[ModelT]):
         page_size: int = 20,
         order_by=None,
     ) -> tuple[builtins.list[ModelT], int]:
-        """Return `(items, total)` for a page of results."""
+        """Return `(items, total)` for a page of results.
+
+        A deterministic order is always applied: without an `ORDER BY` the
+        database is free to return rows in any order, so `LIMIT/OFFSET`
+        pages could repeat or skip records. Callers that care about a
+        specific order (e.g. newest first) pass `order_by` explicitly.
+        """
         page = max(page, 1)
         page_size = max(min(page_size, 100), 1)
+        if order_by is None:
+            order_by = desc(self.model.__table__.primary_key.columns[0])
         total = self.count(*criteria)
         items = self.list(
             *criteria,
