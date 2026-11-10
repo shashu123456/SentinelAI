@@ -46,10 +46,24 @@ def _is_json(response: Response) -> bool:
     return "application/json" in response.headers.get("content-type", "")
 
 
+# Entity headers describe the body that was read, not the re-encoded one. Copying
+# them (content-length in particular) makes the server advertise a length that
+# does not match the new body, which aborts the response mid-flight.
+_ENTITY_HEADERS = {
+    "content-length",
+    "content-type",
+    "content-encoding",
+    "transfer-encoding",
+    "connection",
+}
+
+
 def _rebuild(response: Response, content: dict[str, Any], status_code: int) -> Response:
-    """Forward a response as a fresh JSONResponse preserving headers."""
+    """Forward a response as a fresh JSONResponse preserving end-to-end headers."""
     rebuilt = JSONResponse(content=content, status_code=status_code)
     for key, value in response.headers.items():
+        if key.lower() in _ENTITY_HEADERS:
+            continue
         rebuilt.headers[key] = value
     return rebuilt
 
