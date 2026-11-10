@@ -1,0 +1,203 @@
+.ai-mission-control {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+.mission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mission-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.mission-status {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.status-idle {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.status-running {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.status-completed {
+  background: #d1e7dd;
+  color: #059669;
+}
+
+.status-failed {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+.status-pending {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #3b82f6;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-percentage {
+  position: absolute;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Mission Steps */
+.mission-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 1rem 0;
+}
+
+.mission-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+}
+
+.mission-step:last-child {
+  border: none;
+}
+
+.step-dot {
+  flex: 0 0 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9ca3af;
+  margin-right: 0.25rem;
+}
+
+.step-label {
+  flex: 1;
+  color: #6b7280;
+}
+
+.step-status {
+  padding: 0.125rem 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-completed {
+  background: #d1e7dd;
+  color: #059669;
+}
+
+.status-running {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.status-pending {
+  background: #e5e7eb;
+  color: #6b7280;
+  opacity: 0.5;
+}
+
+/* AI Explainability */
+.mission-results {
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.results-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.results-confidence {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.results-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.result-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-section h4 {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.result-section p {
+  font-size: 0.875rem;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.result-section ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.result-section li {
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}

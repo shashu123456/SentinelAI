@@ -86,7 +86,7 @@ export default function Dashboard() {
             executionProgress={executionProgress}
           />
         </div>
-      )
+      )}
         {/* === HEADER === */}
         <div className="dash-hero">
           <div className="dash-hero-left">
@@ -329,7 +329,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </AiAnalysisProvider>
   );
 }
 
