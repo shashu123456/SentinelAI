@@ -31,9 +31,10 @@ Table below is run 42873263175.
 | Docker build | skipped | `needs: [backend-lint, backend-tests, frontend-build]`; skipped because the lint job failed |
 | Deployment smoke test | skipped | `needs: [docker-build]`; skipped because the Docker job was skipped |
 
-5 of 7 gated jobs are green. The Docker build and the compose smoke test never
-ran, so container startup is **not** verified by CI. The single red job is the
-`mypy` step; `ruff` and `black` pass on the same tree.
+Of the eight jobs in the workflow, five are green, two were skipped and one is
+red. The Docker build and the compose smoke test never ran, so container startup
+is **not** verified by CI. The single red job is the `mypy` step; `ruff` and
+`black` pass on the same tree.
 
 ## Local checks
 
