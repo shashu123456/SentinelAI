@@ -7,7 +7,7 @@ style, which behaves identically on SQLite and PostgreSQL.
 
 import builtins
 from datetime import UTC, datetime
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
 from fastapi import HTTPException, status
 from sqlalchemy import desc, func, select
@@ -92,7 +92,10 @@ class BaseRepository(Generic[ModelT]):
         page = max(page, 1)
         page_size = max(min(page_size, 100), 1)
         if order_by is None:
-            order_by = desc(self.model.__table__.primary_key.columns[0])
+            # `model` is declared as `type[ModelT]`, so the mapped table is only
+            # visible on the concrete model; `cast` states that for the checker.
+            table = cast(Any, self.model).__table__
+            order_by = desc(table.primary_key.columns[0])
         total = self.count(*criteria)
         items = self.list(
             *criteria,
