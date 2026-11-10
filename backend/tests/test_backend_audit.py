@@ -13,7 +13,6 @@ Covers:
 
 import pytest
 
-
 # ── Config Validation Tests ──────────────────────────────────────────────
 
 
@@ -23,7 +22,10 @@ class TestConfigValidation:
     def test_default_secret_key_warns(self):
         from app.config import Settings
 
-        s = Settings()
+        # Build from field defaults only: reading .env would pick up whatever
+        # SECRET_KEY the developer has configured locally.
+        default_secret = Settings.model_fields["SECRET_KEY"].default
+        s = Settings(_env_file=None, SECRET_KEY=default_secret)
         warnings = s.validate_production_readiness()
         assert any("SECRET_KEY" in w for w in warnings)
 
@@ -58,8 +60,9 @@ class TestConfigValidation:
     def test_validate_secret_key_method(self):
         from app.config import Settings
 
-        assert Settings().validate_secret_key() is False
-        assert Settings(SECRET_KEY="custom-key").validate_secret_key() is True
+        default_secret = Settings.model_fields["SECRET_KEY"].default
+        assert Settings(_env_file=None, SECRET_KEY=default_secret).validate_secret_key() is False
+        assert Settings(_env_file=None, SECRET_KEY="custom-key").validate_secret_key() is True
 
 
 # ── Enterprise Service CRUD Tests ─────────────────────────────────────────
@@ -212,8 +215,20 @@ class TestRiskEngine:
         from app.services.risk_engine import compute_risk_assessment
 
         findings = [
-            {"severity": "Critical", "cwe_id": "CWE-89", "owasp_category": "A03", "confidence": 95, "cvss_score": 9.8},
-            {"severity": "Critical", "cwe_id": "CWE-78", "owasp_category": "A03", "confidence": 90, "cvss_score": 9.0},
+            {
+                "severity": "Critical",
+                "cwe_id": "CWE-89",
+                "owasp_category": "A03",
+                "confidence": 95,
+                "cvss_score": 9.8,
+            },
+            {
+                "severity": "Critical",
+                "cwe_id": "CWE-78",
+                "owasp_category": "A03",
+                "confidence": 90,
+                "cvss_score": 9.0,
+            },
         ]
         assessment = compute_risk_assessment(findings)
         assert assessment.priority == "P1"
