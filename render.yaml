@@ -7,6 +7,7 @@ services:
     name: sentinelai-backend
     runtime: python
     plan: standard
+    branch: main
     buildCommand: pip install -r requirements.txt && python -m alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
     envVars:
