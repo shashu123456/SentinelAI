@@ -90,7 +90,8 @@ function HeroSection() {
       duration: 8 + Math.random() * 14,
       delay: Math.random() * 10,
       color: ['rgba(0,255,170,0.4)', 'rgba(0,212,255,0.3)', 'rgba(170,102,255,0.25)'][i % 3],
-    })).current;
+    }))
+  ).current;
 
   return (
     <section className="hero">
@@ -528,7 +529,7 @@ function Footer() {
           <div className="footer-col">
             <h4>Access</h4>
             <Link to="/login">Sign In</Link>
-            <Link to="/login">Create Account</Linked>
+            <Link to="/login">Create Account</Link>
           </div>
         </div>
       </div>

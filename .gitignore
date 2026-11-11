@@ -44,3 +44,6 @@ scan-*-report.*
 .cloud-attachments/
 .ruff_cache/
 .opencode/
+
+# Vite local-only env files (development machine overrides)
+.env.*.local

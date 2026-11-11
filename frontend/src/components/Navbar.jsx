@@ -84,7 +84,7 @@ const CORE_NAV_SECTIONS = [
       { path: '/security-events', label: 'Security Events', icon: ShieldAlert, coming: false },
     ],
   },
-};
+];
 
 // Sections marked as Coming Soon / Beta / Experimental per specification
 const HIDING_NAV_SECTIONS = [
@@ -216,7 +216,7 @@ export default function Navbar() {
                   >
                     {org.name}
                   </button>
-                ))
+                ))}
               </div>
             )}
           </div>
@@ -232,9 +232,9 @@ export default function Navbar() {
             </button>
             {projectDropdownOpen && (
               <div className="org-dropdown">
-                <button className="org-dropdown-item" onClick={() => { selectProject(null); setProjectDropdownOpen(false); }}></button>
-                All Projects
-              </button>
+                <button className="org-dropdown-item" onClick={() => { selectProject(null); setProjectDropdownOpen(false); }}>
+                  All Projects
+                </button>
               {projects.map(proj => (
                 <button
                   key={proj.id}
@@ -244,7 +244,8 @@ export default function Navbar() {
                   {proj.name}
                 </button>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -273,7 +274,7 @@ export default function Navbar() {
                     aria-current={isCurrentPath && !isComing ? 'page' : undefined}
                   >
                     <Icon size={16} /> {item.label}
-                    {isComing && <span className="sidebar-coming-badge">Coming Soon</span>
+                    {isComing && <span className="sidebar-coming-badge">Coming Soon</span>}
                   </Link>
                 );
               })}
