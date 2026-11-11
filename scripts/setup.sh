@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════
+# SentinelAI — one-command developer setup
+# ═══════════════════════════════════════════════════════════════════
+# Creates the backend virtualenv, installs dependencies, writes a local
+# .env with a real SECRET_KEY, applies migrations, and seeds demo data.
+#
+# Safe to re-run: every step is skipped when it is already done.
+#
+#   bash scripts/setup.sh                 # everything
+#   bash scripts/setup.sh --backend-only  # skip npm install
+#   bash scripts/setup.sh --skip-demo     # no demo data
+#   bash scripts/setup.sh --reset-db      # drop and recreate the database
+#   bash scripts/setup.sh --yes           # non-interactive (CI)
+# ═══════════════════════════════════════════════════════════════════
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BACKEND="$REPO_ROOT/backend"
+FRONTEND="$REPO_ROOT/frontend"
+VENV="$BACKEND/venv"
+
+BACKEND_ONLY=0
+FRONTEND_ONLY=0
+SKIP_DEMO=0
+RESET_DB=0
+ASSUME_YES=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --backend-only) BACKEND_ONLY=1 ;;
+    --frontend-only) FRONTEND_ONLY=1 ;;
+    --skip-demo) SKIP_DEMO=1 ;;
+    --reset-db) RESET_DB=1 ;;
+    --yes|-y) ASSUME_YES=1 ;;
+    -h|--help)
+      sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
+  esac
+done
+
+# ── Output helpers ──────────────────────────────────────────────────
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  BOLD=$(printf '\033[1m'); DIM=$(printf '\033[2m'); CYAN=$(printf '\033[36m')
+  GREEN=$(printf '\033[92m'); YELLOW=$(printf '\033[93m'); RED=$(printf '\033[91m')
+  RESET=$(printf '\033[0m')
+else
+  BOLD=""; DIM=""; CYAN=""; GREEN=""; YELLOW=""; RED=""; RESET=""
+fi
+
+START_TS=$(date +%s)
+STEP_START=$START_TS
+STEP_NAME=""
+
+step() { STEP_NAME="$1"; STEP_START=$(date +%s); printf "\n${CYAN}▸ %s${RESET}\n" "$1"; }
+step_done() {
+  local elapsed=$(( $(date +%s) - STEP_START ))
+  printf "  ${GREEN}✔${RESET} %s ${DIM}(%ss)${RESET}\n" "${1:-done}" "$elapsed"
+}
+info() { printf "  ${DIM}%s${RESET}\n" "$1"; }
+warn() { printf "  ${YELLOW}!${RESET} %s\n" "$1"; }
+fail() { printf "\n${RED}✖ %s${RESET}\n" "$1" >&2; exit 1; }
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || fail "$1 is required but not installed. $2"
+}
+
+printf "\n${BOLD}SentinelAI setup${RESET}\n${DIM}%s${RESET}\n" "$REPO_ROOT"
+
+# ── 1. Preflight ────────────────────────────────────────────────────
+step "Checking prerequisites"
+need git "Install Git from https://git-scm.com"
+
+PYTHON_BIN=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    version=$("$candidate" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo "0.0")
+    major=${version%%.*}; minor=${version##*.}
+    if [ "$major" -eq 3 ] && [ "$minor" -ge 11 ]; then PYTHON_BIN="$candidate"; break; fi
+  fi
+done
+[ -n "$PYTHON_BIN" ] || fail "Python 3.11+ is required. Install it from https://python.org"
+info "python: $($PYTHON_BIN --version 2>&1) ($PYTHON_BIN)"
+
+NPM_OK=0
+if command -v npm >/dev/null 2>&1; then
+  info "node:   $(node --version 2>/dev/null || echo unknown) · npm $(npm --version)"
+  NPM_OK=1
+elif [ "$BACKEND_ONLY" -eq 0 ] && [ "$FRONTEND_ONLY" -eq 0 ]; then
+  warn "npm not found — skipping frontend (install Node.js 18+ to run the UI)"
+fi
+step_done "prerequisites ok"
+
+# ── 2. Backend virtualenv ───────────────────────────────────────────
+if [ "$FRONTEND_ONLY" -eq 0 ]; then
+  step "Preparing Python environment"
+  if [ -x "$VENV/Scripts/python.exe" ]; then
+    PY="$VENV/Scripts/python.exe"
+    info "reusing existing venv"
+  elif [ -x "$VENV/bin/python" ]; then
+    PY="$VENV/bin/python"
+    info "reusing existing venv"
+  else
+    "$PYTHON_BIN" -m venv "$VENV" || fail "Could not create virtualenv at $VENV"
+    if [ -x "$VENV/Scripts/python.exe" ]; then PY="$VENV/Scripts/python.exe"; else PY="$VENV/bin/python"; fi
+    info "created $VENV"
+  fi
+
+  REQUIREMENTS="$BACKEND/requirements.txt"
+  [ -f "$BACKEND/requirements-dev.txt" ] && REQUIREMENTS="$BACKEND/requirements-dev.txt"
+
+  info "installing dependencies (first run takes a few minutes)"
+  if ! "$PY" -m pip install --quiet --disable-pip-version-check --upgrade pip >/dev/null 2>&1; then
+    warn "could not upgrade pip — continuing"
+  fi
+  if ! "$PY" -m pip install --quiet --disable-pip-version-check -r "$REQUIREMENTS"; then
+    fail "Dependency install failed. Re-run: cd backend && venv/Scripts/python -m pip install -r requirements-dev.txt"
+  fi
+  step_done "dependencies installed"
+fi
+
+# ── 3. Local .env ───────────────────────────────────────────────────
+if [ -f "$BACKEND/.env" ]; then
+  warn "backend/.env already exists — left untouched"
+else
+  step "Writing backend/.env"
+  SECRET=$("$PY" -c 'import secrets; print(secrets.token_urlsafe(48))')
+  cat > "$BACKEND/.env" <<EOF
+# Local development configuration — generated by scripts/setup.sh
+# Never commit this file.
+SENTINEL_ENV=development
+SENTINEL_VERSION=1.0.0
+SECRET_KEY=$SECRET
+DATABASE_URL=sqlite:///./sentinelai.db
+CORS_ORIGINS=["http://localhost:5173","http://localhost:3000","http://localhost:8080"]
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=mistral
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_COOKIE_SECURE=false
+RATE_LIMIT_PER_MINUTE=120
+EOF
+  step_done "backend/.env created with a generated SECRET_KEY"
+fi
+
+# ── 4. Database ─────────────────────────────────────────────────────
+if [ "$FRONTEND_ONLY" -eq 0 ]; then
+  if [ "$RESET_DB" -eq 1 ]; then
+    step "Resetting the local database"
+    rm -f "$BACKEND"/sentinelai.db "$BACKEND"/sentinelai.db-shm "$BACKEND"/sentinelai.db-wal
+    step_done "database removed"
+  fi
+
+  step "Applying database migrations"
+  if ! (cd "$BACKEND" && "$PY" -m alembic upgrade head >/dev/null 2>&1); then
+    warn "alembic unavailable — falling back to create_all"
+    (cd "$BACKEND" && "$PY" -c "from app.database.database import init_db; init_db()") \
+      || fail "Database initialization failed"
+  fi
+  step_done "schema up to date"
+fi
+
+# ── 5. Frontend ─────────────────────────────────────────────────────
+if [ "$FRONTEND_ONLY" -eq 1 ] || { [ "$BACKEND_ONLY" -eq 0 ] && [ "$NPM_OK" -eq 1 ]; }; then
+  step "Installing frontend dependencies"
+  if [ -d "$FRONTEND/node_modules" ] && [ -f "$FRONTEND/package-lock.json" ]; then
+    info "node_modules present — running incremental install"
+  fi
+  if [ -f "$FRONTEND/package-lock.json" ]; then
+    (cd "$FRONTEND" && npm install --no-fund --no-audit --loglevel=error) || fail "npm install failed"
+  else
+    (cd "$FRONTEND" && npm install --no-fund --no-audit --loglevel=error) || fail "npm install failed"
+  fi
+  step_done "frontend ready"
+fi
+
+# ── 6. Demo data ────────────────────────────────────────────────────
+if [ "$SKIP_DEMO" -eq 0 ] && [ "$FRONTEND_ONLY" -eq 0 ]; then
+  step "Seeding demo workspace"
+  if (cd "$REPO_ROOT" && "$PY" -m tools.sentinel_cli demo >/dev/null 2>&1); then
+    info "demo user demo/demo1234 with sample scans"
+    step_done "demo data ready"
+  else
+    warn "demo seeding skipped (run \`make seed\` later)"
+    step_done "skipped"
+  fi
+fi
+
+# ── 7. Git hooks (optional) ─────────────────────────────────────────
+if [ -d "$REPO_ROOT/.git" ] && [ "$FRONTEND_ONLY" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ]; then
+  step "Git hooks"
+  if "$PY" -m pre_commit --version >/dev/null 2>&1; then
+    info "install with: make hooks"
+    step_done "available"
+  else
+    warn "pre-commit not installed — run \`make install-backend\`"
+    step_done "skipped"
+  fi
+fi
+
+# ── Summary ─────────────────────────────────────────────────────────
+TOTAL=$(( $(date +%s) - START_TS ))
+printf "\n${GREEN}${BOLD}Setup complete in %s.${RESET}\n" "$(printf '%dm %02ds' $((TOTAL / 60)) $((TOTAL % 60)))"
+cat <<EOF
+
+  ${BOLD}Start developing${RESET}
+    make dev            backend http://localhost:8000 · frontend http://localhost:5173
+    make doctor         verify your environment at any time
+  ${DIM}no make? use:  bash scripts/tasks.sh dev   (same task names)${RESET}
+
+  ${BOLD}Try it without a server${RESET}
+    make scan           scan a bundled vulnerable spec
+    make cli ARGS="scan samples/secure_api.yaml"
+
+  ${BOLD}Log in to the demo workspace${RESET}
+    demo / demo1234
+
+  ${BOLD}Docs${RESET}
+    docs/DEVELOPER-ONBOARDING.md  15-minute tour
+    docs/CLI.md                   every CLI command
+    docs/DEVELOPER-GUIDE.md       deep reference
+
+EOF

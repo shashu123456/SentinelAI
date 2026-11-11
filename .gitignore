@@ -30,9 +30,17 @@ docker-compose.override.yml
 # Tool artifacts
 .freebuff/
 Downloads/
+.dev-logs/
+*.sarif
+sentinel-report.md
+sentinel-results.sarif
+scan-*-report.*
 
 # Test artifacts
 .coverage
 
 # Local env
 .env.local
+.cloud-attachments/
+.ruff_cache/
+.opencode/
