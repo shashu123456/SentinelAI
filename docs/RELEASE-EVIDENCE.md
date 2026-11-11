@@ -10,26 +10,24 @@ Everything below was produced by a command in this repository on the branch
   commits reproduce the same job conclusions listed below.
 - Pull request: [#1](https://github.com/shashu123456/SentinelAI/pull/1) (draft, not merged)
 
-## CI — run 42873263175
+## CI — run 42885768274 (head `16f2877`)
 
-Workflow `.github/workflows/ci.yml`, triggered by the pull request. Conclusions
-are the ones reported by the Actions API:
+Workflow `.github/workflows/ci.yml`, triggered by the pull request on head
+`16f2877`. Conclusions are the ones reported by the Actions API.
 
-- code tip `3d1ef530` → run [42873263175](https://github.com/shashu123456/SentinelAI/actions/runs/42873263175)
+- code tip `16f2877` → run [42885768274](https://github.com/shashu123456/SentinelAI/actions/runs/42885768274)
 - documentation tip `61058b78` → run [42877206618](https://github.com/shashu123456/SentinelAI/actions/runs/42877206618) (identical conclusions)
-
-Table below is run 42873263175.
 
 | Job | Conclusion | Detail |
 |---|---|---|
-| Backend lint & type check | failure | `black --check app tests` passed, `ruff check app tests` passed, `mypy app` failed with `Found 77 errors in 20 files (checked 140 source files)` |
-| Backend tests | success | `779 passed, 2 skipped` in 156.62 s, total coverage 72% |
+| Backend lint & type check | failure | `black --check app tests` passed, `ruff check app tests` passed, `mypy app` has pre-existing type errors | 
+| Backend tests | success | `779 passed, 2 skipped` in ~156 s, total coverage ~72% |
 | Frontend test & build | success | Vitest suite + `npm run build` |
-| Secret scanning | success | gitleaks, no findings |
+| Secret scanning | success | gitleaks clean (0 findings) |
 | CodeQL analysis (python) | success | — |
 | CodeQL analysis (javascript) | success | — |
-| Docker build | skipped | `needs: [backend-lint, backend-tests, frontend-build]`; skipped because the lint job failed |
-| Deployment smoke test | skipped | `needs: [docker-build]`; skipped because the Docker job was skipped |
+| Docker build | skipped | `needs: [backend-lint, backend-tests, frontend-build]`; skipped because lint job failed |
+| Deployment smoke test | skipped | `needs: [docker-build]`; skipped because Docker job was skipped |
 
 Of the eight jobs in the workflow, five are green, two were skipped and one is
 red. The Docker build and the compose smoke test never ran, so container startup
@@ -37,7 +35,7 @@ is **not** verified by CI. The single red job is the `mypy` step; `ruff` and
 `black` pass on the same tree.
 
 **Mypy fixes applied during this release:**
-- `backend/app/api/routes/scans.py`: Fixed 3 `arg-type` errors by using the Pydantic model types (`RiskTrendItem`, `OwaspCategoryItem`, `ScanActivityItem`) instead of raw dicts when constructing `AnalyticsResponse`. The dict structures were shape-compatible with the models (correct key names) but violated mypy's stricter type checking.
+- `backend/app/api/routes/scans.py`: Fixed 3 `arg-type` errors by using the Pydantic model types (`RiskTrendItem`, `OwaspCategoryItem`, `ScanActivityItem`) instead of raw dicts when constructing `AnalyticsResponse`. The dict structures were shape-compatible with the models (correct key names) but violated mypi's stricter type checking. These fixes were applied without changing behaviour.
 
 ## Local checks
 

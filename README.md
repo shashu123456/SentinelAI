@@ -157,7 +157,28 @@ Modern applications expose 90%+ of their surface area through APIs. SentinelAI i
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Local development (< 15 minutes)
+
+```bash
+git clone https://github.com/your-org/sentinelai.git
+cd sentinelai
+make setup     # venv, deps, .env, migrations, demo data
+make dev       # backend :8000 + frontend :5173
+```
+
+Then sign in with **demo / demo1234**. Run `make doctor` if anything looks off,
+and see [docs/DEVELOPER-ONBOARDING.md](docs/DEVELOPER-ONBOARDING.md) for the
+15-minute tour.
+
+No server needed to try the scanner:
+
+```bash
+make scan                                              # bundled vulnerable spec
+make cli ARGS="scan samples/secure_api.yaml --all"      # any spec
+make cli ARGS="scan openapi.yaml --format sarif -o results.sarif --fail-on high"
+```
+
+### Option 2: Docker
 
 ```bash
 git clone https://github.com/your-org/sentinelai.git
@@ -174,14 +195,14 @@ docker compose up --build
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3001 |
 
-### Option 2: Manual Setup
+### Option 3: Manual Setup
 
 ```bash
 # Backend
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m alembic upgrade head
 python -m uvicorn app.main:app --reload --port 8000
 
@@ -191,24 +212,24 @@ npm install
 npm run dev
 ```
 
-### Default Credentials
+### Demo Credentials (created by `make seed`)
 
 | Field | Value |
 |-------|-------|
-| Username | `admin` |
-| Password | `admin123` |
+| Username | `demo` |
+| Password | `demo1234` |
 | Backend | http://localhost:8000 |
 | Frontend | http://localhost:5173 |
 
 ### Verify
 
 ```bash
-# Health check
-curl http://localhost:8000/api/health
+make doctor                            # environment diagnostics
+curl http://localhost:8000/api/health  # health check
+./scripts/smoke-test.sh                # smoke test
 
-# Smoke test
-./scripts/smoke-test.sh
-```
+# CLI (local scan, no server required)
+make scan
 
 ---
 
@@ -354,7 +375,9 @@ See [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md) for platform-specific i
 | [Architecture](docs/ARCHITECTURE.md) | System architecture with Mermaid diagrams |
 | [Database](docs/DATABASE.md) | Schema reference, ER diagrams, migrations |
 | [API Reference](docs/API.md) | All 93 endpoints with examples |
+| [Developer Onboarding](docs/DEVELOPER-ONBOARDING.md) | Zero to running in 15 minutes |
 | [Developer Guide](docs/DEVELOPER-GUIDE.md) | Setup, coding standards, testing |
+| [CLI](docs/CLI.md) | `sentinel` commands: local scans, uploads, reports |
 | [Security](docs/SECURITY.md) | Threat model, OWASP compliance, hardening |
 | [Contributing](docs/CONTRIBUTING.md) | PR process, code review, branch strategy |
 | [Deployment Guide](docs/DEPLOYMENT-GUIDE.md) | Docker, cloud, Terraform instructions |

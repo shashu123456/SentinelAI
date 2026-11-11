@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SentinelAI · API Playground</title>
+    <style>
+      :root {
+        --bg: #0b0f14;
+        --panel: #111823;
+        --panel-2: #16202d;
+        --line: #1f2b3a;
+        --text: #e6edf6;
+        --muted: #8aa0b8;
+        --accent: #9ef01a;
+        --accent-dim: #6fae12;
+        --get: #4cc9f0;
+        --post: #9ef01a;
+        --put: #ffb703;
+        --patch: #c77dff;
+        --delete: #ff5d5d;
+        --ok: #4ade80;
+        --err: #ff6b6b;
+        --radius: 10px;
+        --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(1000px 600px at 85% -10%, #16283a 0%, transparent 60%),
+          var(--bg);
+        color: var(--text);
+        font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        min-height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(11, 15, 20, 0.85);
+        backdrop-filter: blur(8px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .brand .dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 12px var(--accent);
+      }
+
+      .brand small {
+        color: var(--muted);
+        font-weight: 400;
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 2px 6px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+      }
+
+      .conn {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+        flex-wrap: wrap;
+      }
+
+      input[type="text"], input[type="password"], textarea, select {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font: inherit;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        outline: none;
+        transition: border-color 120ms ease;
+      }
+
+      input:focus, textarea:focus, select:focus {
+        border-color: var(--accent-dim);
+      }
+
+      button {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font: inherit;
+        font-size: 12.5px;
+        cursor: pointer;
+        transition: transform 80ms ease, border-color 120ms ease, background 120ms ease;
+      }
+
+      button:hover { border-color: var(--accent-dim); }
+      button:active { transform: translateY(1px); }
+
+      button.primary {
+        background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dim) 100%);
+        color: #07120a;
+        border-color: transparent;
+        font-weight: 650;
+      }
+
+      button.ghost { background: transparent; }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) 1fr;
+        gap: 16px;
+        padding: 16px 20px 40px;
+        align-items: start;
+      }
+
+      @media (max-width: 900px) {
+        main { grid-template-columns: 1fr; }
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .panel > h2 {
+        margin: 0;
+        padding: 10px 14px;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .panel-body { padding: 12px 14px; }
+
+      #search { width: 100%; }
+
+      #endpoints {
+        max-height: 62vh;
+        overflow: auto;
+        padding: 6px;
+      }
+
+      .tag { margin: 6px 0 10px; }
+
+      .tag h3 {
+        margin: 0 0 6px 6px;
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .endpoint {
+        display: grid;
+        grid-template-columns: 58px 1fr;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+        text-align: left;
+        padding: 7px 8px;
+        border-radius: 7px;
+        border: 1px solid transparent;
+        background: transparent;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--text);
+      }
+
+      .endpoint:hover { background: var(--panel-2); }
+      .endpoint.active { background: var(--panel-2); border-color: var(--accent-dim); }
+
+      .method {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-align: center;
+        border-radius: 5px;
+        padding: 3px 0;
+        background: #0e1720;
+        border: 1px solid var(--line);
+      }
+
+      .method.get { color: var(--get); border-color: color-mix(in srgb, var(--get) 40%, var(--line)); }
+      .method.post { color: var(--post); border-color: color-mix(in srgb, var(--post) 40%, var(--line)); }
+      .method.put { color: var(--put); border-color: color-mix(in srgb, var(--put) 40%, var(--line)); }
+      .method.patch { color: var(--patch); border-color: color-mix(in srgb, var(--patch) 40%, var(--line)); }
+      .method.delete { color: var(--delete); border-color: color-mix(in srgb, var(--delete) 40%, var(--line)); }
+
+      .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      .stack { display: grid; gap: 14px; }
+
+      .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      .row > label { color: var(--muted); font-size: 12px; min-width: 72px; font-family: var(--mono); }
+      .row input, .row select { flex: 1; min-width: 140px; }
+
+      textarea { width: 100%; min-height: 160px; resize: vertical; line-height: 1.5; }
+
+      .params { display: grid; gap: 8px; }
+      .param { display: grid; grid-template-columns: 150px 1fr; gap: 8px; align-items: center; }
+      .param span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+      .param span b { color: var(--text); font-weight: 500; }
+      .param em { color: var(--delete); font-style: normal; font-size: 10px; }
+
+      .hint { color: var(--muted); font-size: 11.5px; }
+
+      .meta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+
+      .status { font-weight: 700; }
+      .status.ok { color: var(--ok); }
+      .status.err { color: var(--err); }
+
+      pre {
+        margin: 0;
+        padding: 14px;
+        background: #0a1119;
+        border-top: 1px solid var(--line);
+        overflow: auto;
+        max-height: 52vh;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+        tab-size: 2;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .k { color: #7dd3fc; }
+      .s { color: #a7f3d0; }
+      .n { color: #fcd34d; }
+      .b { color: #f0abfc; }
+      .nl { color: #64748b; }
+
+      .banner { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid var(--line); }
+      .banner.warn { background: #2a2110; color: #fcd34d; }
+      .banner.err { background: #2a1414; color: #ffb4b4; }
+      .banner.ok { background: #10251a; color: #a7f3d0; }
+
+      .kbd {
+        font-family: var(--mono);
+        font-size: 11px;
+        border: 1px solid var(--line);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        padding: 1px 5px;
+        color: var(--muted);
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--panel-2);
+        border: 1px solid var(--accent-dim);
+        color: var(--text);
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 160ms ease, transform 160ms ease;
+      }
+
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="dot"></span>
+        SentinelAI <small>api playground</small>
+      </div>
+
+      <div class="conn">
+        <input id="base" type="text" spellcheck="false" style="width: 220px" aria-label="API base URL" />
+        <input id="token" type="password" spellcheck="false" style="width: 230px"
+               placeholder="bearer token (optional)" aria-label="Bearer token" />
+        <button id="login-btn" class="ghost" title="Log in with demo/demo1234">Login demo</button>
+        <button id="reload" class="primary">Connect</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Endpoints <span id="count" class="hint"></span></h2>
+        <div class="panel-body">
+          <input id="search" type="text" placeholder="Filter endpoints…" aria-label="Filter endpoints" />
+        </div>
+        <div id="endpoints"></div>
+      </section>
+
+      <section class="stack">
+        <div class="panel">
+          <h2>
+            <span id="active-method" class="method get">GET</span>
+            <span id="active-path" style="font-family: var(--mono); text-transform: none">/</span>
+          </h2>
+
+          <div id="banner" class="banner warn" hidden></div>
+
+          <div class="panel-body stack">
+            <div id="params" class="params"></div>
+
+            <div>
+              <div class="row" style="margin-bottom: 6px">
+                <label for="body">Body</label>
+                <span id="body-hint" class="hint">JSON request body</span>
+                <button id="format-btn" class="ghost" style="margin-left: auto">Format</button>
+              </div>
+              <textarea id="body" spellcheck="false" placeholder="{ }"></textarea>
+            </div>
+
+            <div class="row">
+              <button id="send" class="primary">Send request</button>
+              <button id="copy-curl" class="ghost">Copy as cURL</button>
+              <span class="hint"><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>
+            Response
+            <span class="meta" style="margin-left: auto">
+              <span id="status" class="status"></span>
+              <span id="time"></span>
+              <span id="size"></span>
+            </span>
+          </h2>
+          <pre id="output" aria-live="polite">// Connect to the API to load its schema.
+</pre>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const store = {
+        get: (k, d = "") => localStorage.getItem(`sentinelai.playground.${k}`) ?? d,
+        set: (k, v) => localStorage.setItem(`sentinelai.playground.${k}`, v),
+      };
+
+      const state = {
+        base: store.get("base", location.origin.startsWith("http") && !location.port ? "http://localhost:8000" : "http://localhost:8000"),
+        token: store.get("token", ""),
+        spec: null,
+        endpoints: [],
+        active: null,
+      };
+
+      // Fallback list so the page is useful when the API is unreachable.
+      const FALLBACK = [
+        { method: "GET", path: "/api/v1/health", tag: "Health" },
+        { method: "POST", path: "/api/auth/login", tag: "Authentication" },
+        { method: "POST", path: "/api/auth/register", tag: "Authentication" },
+        { method: "GET", path: "/api/auth/me", tag: "Authentication" },
+        { method: "GET", path: "/api/scans/", tag: "Scans" },
+        { method: "GET", path: "/api/scans/dashboard", tag: "Scans" },
+        { method: "POST", path: "/api/scans/upload", tag: "Scans" },
+        { method: "GET", path: "/api/scans/{scan_id}", tag: "Scans" },
+        { method: "GET", path: "/api/scans/{scan_id}/report/json", tag: "Scans" },
+      ];
+
+      // ── Helpers ────────────────────────────────────────────────────
+      function toast(message) {
+        const el = $("toast");
+        el.textContent = message;
+        el.classList.add("show");
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.classList.remove("show"), 1800);
+      }
+
+      function banner(message, kind = "warn") {
+        const el = $("banner");
+        if (!message) { el.hidden = true; return; }
+        el.hidden = false;
+        el.className = `banner ${kind}`;
+        el.textContent = message;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      }
+
+      function highlight(json) {
+        const safe = escapeHtml(json);
+        return safe.replace(
+          /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+          (match) => {
+            let cls = "n";
+            if (/^"/.test(match)) cls = /:$/.test(match) ? "k" : "s";
+            else if (/true|false/.test(match)) cls = "b";
+            else if (/null/.test(match)) cls = "nl";
+            return `<span class="${cls}">${match}</span>`;
+          },
+        );
+      }
+
+      function slug(method, path) {
+        return `${method}:${path}`;
+      }
+
+      // ── Spec loading ───────────────────────────────────────────────
+      function resolve(ref, root) {
+        if (!ref || !ref.startsWith("#/")) return null;
+        return ref.slice(2).split("/").reduce((acc, key) => (acc ? acc[key] : null), root);
+      }
+
+      function toEndpointList(spec) {
+        const list = [];
+        const paths = spec.paths || {};
+        for (const [path, operations] of Object.entries(paths)) {
+          for (const [method, op] of Object.entries(operations)) {
+            if (!["get", "post", "put", "patch", "delete", "head"].includes(method)) continue;
+            list.push({
+              method: method.toUpperCase(),
+              path,
+              tag: (op.tags && op.tags[0]) || "General",
+              summary: op.summary || "",
+              operation: op,
+            });
+          }
+        }
+        return list.sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method));
+      }
+
+      async function connect() {
+        state.base = $("base").value.replace(/\/+$/, "");
+        store.set("base", state.base);
+        $("banner").hidden = true;
+
+        try {
+          const started = performance.now();
+          const response = await fetch(`${state.base}/openapi.json`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const spec = await response.json();
+          state.spec = spec;
+          state.endpoints = toEndpointList(spec);
+          toast(`Loaded ${state.endpoints.length} endpoints in ${Math.round(performance.now() - started)}ms`);
+          banner("", "ok");
+        } catch (error) {
+          state.spec = null;
+          state.endpoints = FALLBACK.map((e) => ({ ...e }));
+          banner(
+            `Could not load the schema from ${state.base}/openapi.json (${error.message}). ` +
+              `Showing a starter list. Start the API with \`make dev-backend\` and make sure ` +
+              `this page is served from http://localhost:8080 (see \`make playground\`).`,
+            "warn",
+          );
+        }
+
+        renderEndpoints();
+        if (state.endpoints.length) select(state.endpoints[0]);
+      }
+
+      // ── Rendering ──────────────────────────────────────────────────
+      function renderEndpoints() {
+        const filter = $("search").value.trim().toLowerCase();
+        const container = $("endpoints");
+        container.innerHTML = "";
+
+        const groups = new Map();
+        for (const endpoint of state.endpoints) {
+          const haystack = `${endpoint.method} ${endpoint.path} ${endpoint.tag} ${endpoint.summary || ""}`.toLowerCase();
+          if (filter && !haystack.includes(filter)) continue;
+          if (!groups.has(endpoint.tag)) groups.set(endpoint.tag, []);
+          groups.get(endpoint.tag).push(endpoint);
+        }
+
+        $("count").textContent = `${state.endpoints.length}`;
+
+        for (const [tag, endpoints] of groups) {
+          const section = document.createElement("div");
+          section.className = "tag";
+          const heading = document.createElement("h3");
+          heading.textContent = tag;
+          section.appendChild(heading);
+
+          for (const endpoint of endpoints) {
+            const button = document.createElement("button");
+            button.className = "endpoint";
+            button.dataset.key = slug(endpoint.method, endpoint.path);
+            button.innerHTML =
+              `<span class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</span>` +
+              `<span class="path" title="${escapeHtml(endpoint.summary || endpoint.path)}">${escapeHtml(endpoint.path)}</span>`;
+            button.addEventListener("click", () => select(endpoint));
+            section.appendChild(button);
+          }
+          container.appendChild(section);
+        }
+
+        if (!container.children.length) {
+          container.innerHTML = '<p class="hint" style="padding: 12px">No endpoints match.</p>';
+        }
+      }
+
+      function exampleFromSchema(schema, spec, depth = 0) {
+        if (!schema || depth > 4) return null;
+        if (schema.$ref) return exampleFromSchema(resolve(schema.$ref, spec), spec, depth + 1);
+        if (schema.example !== undefined) return schema.example;
+        if (schema.default !== undefined) return schema.default;
+        if (schema.enum) return schema.enum[0];
+
+        switch (schema.type) {
+          case "object": {
+            const out = {};
+            for (const [key, value] of Object.entries(schema.properties || {})) {
+              out[key] = exampleFromSchema(value, spec, depth + 1);
+            }
+            return out;
+          }
+          case "array":
+            return [exampleFromSchema(schema.items, spec, depth + 1)].filter((v) => v !== null);
+          case "integer":
+          case "number":
+            return 0;
+          case "boolean":
+            return false;
+          case "string":
+            return schema.format === "date-time" ? new Date().toISOString() : "";
+          default:
+            return null;
+        }
+      }
+
+      function select(endpoint) {
+        state.active = endpoint;
+        document.querySelectorAll(".endpoint").forEach((el) => {
+          el.classList.toggle("active", el.dataset.key === slug(endpoint.method, endpoint.path));
+        });
+
+        const methodEl = $("active-method");
+        methodEl.textContent = endpoint.method;
+        methodEl.className = `method ${endpoint.method.toLowerCase()}`;
+        $("active-path").textContent = endpoint.path;
+
+        // Path + query parameters
+        const paramsEl = $("params");
+        paramsEl.innerHTML = "";
+        const pathParams = [...endpoint.path.matchAll(/\{([^}]+)\}/g)].map((m) => m[1]);
+        const op = endpoint.operation || {};
+        const queryParams = (op.parameters || [])
+          .filter((p) => !p.$ref && p.in === "query")
+          .map((p) => p.name);
+
+        for (const name of pathParams) {
+          paramsEl.appendChild(paramRow(name, "", true, "path"));
+        }
+        for (const name of queryParams) {
+          paramsEl.appendChild(paramRow(name, "", false, "query"));
+        }
+        $("params").hidden = !paramsEl.children.length;
+
+        // Body
+        const bodyParameter = (op.parameters || []).find((p) => p && p.in === "body");
+        let bodySchema =
+          bodyParameter && bodyParameter.schema
+            ? bodyParameter.schema
+            : op.requestBody && op.requestBody.content
+              ? (op.requestBody.content["application/json"] || {}).schema
+              : null;
+
+        const supportsBody = ["POST", "PUT", "PATCH", "DELETE"].includes(endpoint.method);
+        const bodyArea = $("body");
+        const bodyWrapper = bodyArea.closest("div");
+
+        if (supportsBody) {
+          bodyWrapper.style.display = "";
+          const example = bodySchema ? exampleFromSchema(bodySchema, state.spec) : null;
+          if (endpoint.path === "/api/auth/login") {
+            bodyArea.value = JSON.stringify({ username: "demo", password: "demo1234" }, null, 2);
+          } else if (example && Object.keys(example).length) {
+            bodyArea.value = JSON.stringify(example, null, 2);
+          } else {
+            bodyArea.value = "";
+          }
+          $("body-hint").textContent = bodySchema ? "JSON request body (from schema)" : "JSON request body";
+        } else {
+          bodyWrapper.style.display = "none";
+        }
+
+        $("output").textContent = "// Ready. Press “Send request”.";
+        $("status").textContent = "";
+        $("time").textContent = "";
+        $("size").textContent = "";
+      }
+
+      function paramRow(name, value, required, location) {
+        const row = document.createElement("div");
+        row.className = "param";
+        const label = document.createElement("span");
+        label.innerHTML = `<b>${escapeHtml(name)}</b>${required ? " <em>*</em>" : ""} <span class="hint">${location}</span>`;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = value;
+        input.placeholder = location === "path" ? "value" : "optional";
+        input.dataset.param = name;
+        input.dataset.location = location;
+        row.append(label, input);
+        return row;
+      }
+
+      // ── Request execution ──────────────────────────────────────────
+      function buildRequest() {
+        const endpoint = state.active;
+        if (!endpoint) throw new Error("Pick an endpoint first.");
+
+        let path = endpoint.path;
+        const query = new URLSearchParams();
+
+        document.querySelectorAll("[data-param]").forEach((input) => {
+          const value = input.value.trim();
+          if (!value) return;
+          if (input.dataset.location === "path") {
+            path = path.replace(`{${input.dataset.param}}`, encodeURIComponent(value));
+          } else {
+            query.set(input.dataset.param, value);
+          }
+        });
+
+        const remaining = path.match(/\{[^}]+\}/);
+        if (remaining) throw new Error(`Missing path parameter ${remaining[0]}`);
+
+        const url = `${state.base}${path}${query.toString() ? `?${query}` : ""}`;
+        const headers = { Accept: "application/json" };
+        const token = $("token").value.trim();
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        const options = { method: endpoint.method, headers };
+        const bodyVisible = $("body").closest("div").style.display !== "none";
+        const rawBody = $("body").value.trim();
+        if (bodyVisible && rawBody && endpoint.method !== "GET") {
+          headers["Content-Type"] = "application/json";
+          options.body = rawBody;
+        }
+        return { url, options };
+      }
+
+      async function send() {
+        let request;
+        try {
+          request = buildRequest();
+        } catch (error) {
+          banner(error.message, "err");
+          return;
+        }
+
+        banner("");
+        $("output").textContent = "// sending…";
+        const started = performance.now();
+
+        try {
+          const response = await fetch(request.url, request.options);
+          const elapsed = Math.round(performance.now() - started);
+          const text = await response.text();
+
+          let pretty = text;
+          try {
+            pretty = JSON.stringify(JSON.parse(text), null, 2);
+          } catch { /* non-JSON response */ }
+
+          $("status").textContent = `${response.status} ${response.statusText}`;
+          $("status").className = `status ${response.ok ? "ok" : "err"}`;
+          $("time").textContent = `${elapsed}ms`;
+          $("size").textContent = `${(new Blob([text]).size / 1024).toFixed(1)} KB`;
+          $("output").innerHTML = highlight(pretty);
+
+          if (response.ok && /\/api\/auth\/login$/.test(request.url.split("?")[0])) {
+            try {
+              const data = JSON.parse(text);
+              const token = data.access_token || (data.data && data.data.access_token);
+              if (token) {
+                $("token").value = token;
+                store.set("token", token);
+                toast("Token captured from login response");
+              }
+            } catch { /* ignore */ }
+          }
+        } catch (error) {
+          const elapsed = Math.round(performance.now() - started);
+          $("status").textContent = "network error";
+          $("status").className = "status err";
+          $("time").textContent = `${elapsed}ms`;
+          $("output").textContent =
+            `${error.message}\n\nIs the API running at ${state.base}?\n` +
+            `Check CORS: the API must allow this page's origin.\n` +
+            `Local default allows http://localhost:8080.`;
+        }
+      }
+
+      function copyCurl() {
+        let request;
+        try {
+          request = buildRequest();
+        } catch (error) {
+          banner(error.message, "err");
+          return;
+        }
+        const parts = [`curl -X ${request.options.method} '${request.url}'`];
+        for (const [key, value] of Object.entries(request.options.headers)) {
+          parts.push(`  -H '${key}: ${value}'`);
+        }
+        if (request.options.body) parts.push(`  -d '${request.options.body.replace(/'/g, "'\\''")}'`);
+        const command = parts.join(" \\\n");
+
+        navigator.clipboard?.writeText(command).then(
+          () => toast("cURL copied"),
+          () => { $("output").textContent = command; },
+        );
+      }
+
+      async function loginDemo() {
+        $("base").value = state.base;
+        try {
+          const response = await fetch(`${state.base}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ username: "demo", password: "demo1234" }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+          const token = data.access_token || (data.data && data.data.access_token);
+          $("token").value = token;
+          store.set("token", token);
+          toast("Logged in as demo");
+        } catch (error) {
+          toast(`Login failed: ${error.message}`);
+        }
+      }
+
+      // ── Wiring ─────────────────────────────────────────────────────
+      $("base").value = state.base;
+      $("token").value = state.token;
+      $("token").addEventListener("input", (e) => {
+        state.token = e.target.value;
+        store.set("token", state.token);
+      });
+      $("reload").addEventListener("click", connect);
+      $("login-btn").addEventListener("click", loginDemo);
+      $("search").addEventListener("input", renderEndpoints);
+      $("send").addEventListener("click", send);
+      $("copy-curl").addEventListener("click", copyCurl);
+      $("format-btn").addEventListener("click", () => {
+        try {
+          $("body").value = JSON.stringify(JSON.parse($("body").value), null, 2);
+        } catch {
+          toast("Body is not valid JSON");
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+          event.preventDefault();
+          send();
+        }
+      });
+
+      connect();
+    </script>
+  </body>
+</html>

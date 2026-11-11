@@ -44,18 +44,27 @@
 
 ## Quick Start
 
-### One-Command Setup
+### One-Command Setup (recommended)
 
 ```bash
 git clone https://github.com/your-org/sentinelai.git
 cd sentinelai
+make setup     # venv + deps + .env + migrations + demo data
+make dev       # backend :8000 and frontend :5173
+```
 
+Sign in with `demo / demo1234`. `make doctor` diagnoses the environment,
+`make` lists every command, and [DEVELOPER-ONBOARDING.md](DEVELOPER-ONBOARDING.md)
+is the 15-minute guided tour. See [CLI.md](CLI.md) for the `sentinel` CLI.
+
+### Manual Setup
+
+```bash
 # Backend
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp ../.env.example .env
+pip install -r requirements-dev.txt
 python -m alembic upgrade head
 python -m uvicorn app.main:app --reload --port 8000
 
@@ -87,8 +96,8 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (requirements-dev.txt includes runtime + tooling)
+pip install -r requirements-dev.txt
 
 # Set up database
 cp .env.example .env  # Edit with your DB credentials
