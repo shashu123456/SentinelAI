@@ -1,27 +1,40 @@
 import { useState, useEffect } from 'react';
-import { Shield, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Target, BarChart3 } from 'lucide-react';
+import { Shield, TrendingUp, TrendingDown, AlertTriangle, Target, BarChart3, Building2 } from 'lucide-react';
 import { SkeletonCard } from '../components/Skeleton';
-
-const API = '/api';
+import { useOrg } from '../context/OrgContext';
+import { enterprise } from '../services/enterprise';
 
 export default function ExecutiveReport() {
+  const { currentOrg } = useOrg();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => { loadReport(); }, []);
-
-  const loadReport = async () => {
-    try {
-      const res = await fetch(`${API}/orgs/1/executive-report`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  useEffect(() => {
+    if (!currentOrg?.id) {
+      setLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    enterprise.executiveReport(currentOrg.id)
+      .then((data) => {
+        if (!cancelled) setReport(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-      const data = await res.json();
-      setReport(data);
-    } catch { /* ignore */ } finally { setLoading(false); }
-  };
+    return () => { cancelled = true; };
+  }, [currentOrg?.id]);
 
   if (loading) return <div className="page-content"><SkeletonCard lines={5} /></div>;
-  if (!report) return <div className="page-content"><div className="empty-state"><div className="empty-state-icon"><Shield size={24} /></div><div className="empty-state-title">No Data Available</div></div></div>;
+  if (error) return <div className="page-content"><div className="error-banner"><AlertTriangle size={14} /> {error}</div></div>;
+  if (!currentOrg?.id) return <div className="page-content"><div className="empty-state"><div className="empty-state-icon"><Building2 size={24} /></div><div className="empty-state-title">No Organization Selected</div><div className="empty-state-desc">Executive reporting is scoped to an organization.</div></div></div>;
+  if (!report) return <div className="page-content"><div className="empty-state"><div className="empty-state-icon"><Shield size={24} /></div><div className="empty-state-title">No Data Available</div><div className="empty-state-desc">Run a scan in {currentOrg.name} to generate an executive summary.</div></div></div>;
 
   const trendIcon = report.risk?.trend === 'improving' ? TrendingDown : report.risk?.trend === 'worsening' ? TrendingUp : Target;
   const trendColor = report.risk?.trend === 'improving' ? 'var(--accent-green)' : report.risk?.trend === 'worsening' ? 'var(--accent-red)' : 'var(--text-muted)';

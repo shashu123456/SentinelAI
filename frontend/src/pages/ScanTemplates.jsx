@@ -1,24 +1,36 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Settings, Copy, Trash2, Star } from 'lucide-react';
+import { FileText, Settings, Star, AlertTriangle, Building2, RefreshCw } from 'lucide-react';
 import { SkeletonTable } from '../components/Skeleton';
-
-const API = '/api';
+import { useOrg } from '../context/OrgContext';
+import { enterprise } from '../services/enterprise';
 
 export default function ScanTemplates() {
+  const { currentOrg } = useOrg();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => { loadTemplates(); }, []);
-
-  const loadTemplates = async () => {
-    try {
-      const res = await fetch(`${API}/orgs/1/templates`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  useEffect(() => {
+    if (!currentOrg?.id) {
+      setLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    enterprise.templates(currentOrg.id)
+      .then((data) => {
+        if (!cancelled) setTemplates(data?.items || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-      const data = await res.json();
-      setTemplates(data.items || []);
-    } catch { /* ignore */ } finally { setLoading(false); }
-  };
+    return () => { cancelled = true; };
+  }, [currentOrg?.id, reloadKey]);
 
   if (loading) return <div className="page-content"><SkeletonTable rows={3} cols={4} /></div>;
 
@@ -29,10 +41,26 @@ export default function ScanTemplates() {
           <h1 className="dash-hero-title">Scan Templates</h1>
           <p className="dash-hero-sub">Reusable scan configurations for consistent security analysis</p>
         </div>
-        <button className="btn-primary"><Plus size={14} /> New Template</button>
+        <button className="btn-outline btn-sm" onClick={() => setReloadKey((k) => k + 1)} disabled={!currentOrg?.id}>
+          <RefreshCw size={14} /> Refresh
+        </button>
       </div>
 
-      {templates.length === 0 ? (
+      {error && (
+        <div className="error-banner" style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {!error && !currentOrg?.id && (
+        <div className="empty-state">
+          <div className="empty-state-icon"><Building2 size={24} /></div>
+          <div className="empty-state-title">No Organization Selected</div>
+          <div className="empty-state-desc">Templates are scoped to an organization.</div>
+        </div>
+      )}
+
+      {!error && currentOrg?.id && templates.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon"><FileText size={24} /></div>
           <div className="empty-state-title">No Scan Templates</div>

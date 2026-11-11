@@ -1,26 +1,39 @@
 import { useState, useEffect } from 'react';
-import { Webhook, Plus, Trash2, CheckCircle, XCircle, TestTube, Bell, Globe, Mail, MessageSquare } from 'lucide-react';
+import { Webhook, AlertTriangle, Bell, Globe, Mail, MessageSquare, Building2, RefreshCw } from 'lucide-react';
 import { SkeletonTable } from '../components/Skeleton';
+import { useOrg } from '../context/OrgContext';
+import { enterprise } from '../services/enterprise';
 
-const API = '/api';
 const TYPE_ICONS = { slack: MessageSquare, teams: Globe, discord: MessageSquare, email: Mail, custom: Webhook };
 const TYPE_COLORS = { slack: 'var(--accent-green)', teams: 'var(--accent-blue)', discord: 'var(--accent-purple)', email: 'var(--accent-orange)', custom: 'var(--accent-cyan)' };
 
 export default function WebhooksPage() {
+  const { currentOrg } = useOrg();
   const [webhooks, setWebhooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => { loadWebhooks(); }, []);
-
-  const loadWebhooks = async () => {
-    try {
-      const res = await fetch(`${API}/orgs/1/webhooks`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  useEffect(() => {
+    if (!currentOrg?.id) {
+      setLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    enterprise.webhooks(currentOrg.id)
+      .then((data) => {
+        if (!cancelled) setWebhooks(data?.items || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-      const data = await res.json();
-      setWebhooks(data.items || []);
-    } catch { /* ignore */ } finally { setLoading(false); }
-  };
+    return () => { cancelled = true; };
+  }, [currentOrg?.id, reloadKey]);
 
   if (loading) return <div className="page-content"><SkeletonTable rows={3} cols={4} /></div>;
 
@@ -31,10 +44,26 @@ export default function WebhooksPage() {
           <h1 className="dash-hero-title">Webhooks</h1>
           <p className="dash-hero-sub">Send security notifications to Slack, Teams, Discord, Email, and more</p>
         </div>
-        <button className="btn-primary"><Plus size={14} /> Add Webhook</button>
+        <button className="btn-outline btn-sm" onClick={() => setReloadKey((k) => k + 1)} disabled={!currentOrg?.id}>
+          <RefreshCw size={14} /> Refresh
+        </button>
       </div>
 
-      {webhooks.length === 0 ? (
+      {error && (
+        <div className="error-banner" style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {!error && !currentOrg?.id && (
+        <div className="empty-state">
+          <div className="empty-state-icon"><Building2 size={24} /></div>
+          <div className="empty-state-title">No Organization Selected</div>
+          <div className="empty-state-desc">Webhooks are scoped to an organization.</div>
+        </div>
+      )}
+
+      {!error && currentOrg?.id && webhooks.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon"><Bell size={24} /></div>
           <div className="empty-state-title">No Webhooks Configured</div>

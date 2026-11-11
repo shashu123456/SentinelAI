@@ -22,8 +22,8 @@ export default function Login() {
     setLoading(true);
     try {
       const data = isRegister
-        ? await auth.register({ username, email, password })
-        : await auth.login({ username, password });
+        ? await auth.register({ username: username.trim(), email: email.trim().toLowerCase(), password })
+        : await auth.login({ username: username.trim(), password });
       login(data.access_token, data.user);
       navigate('/dashboard');
     } catch (err) {
@@ -75,20 +75,31 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
               <label>Username</label>
-              <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="analyst@sentinel" required minLength={3} />
+              <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="analyst" required minLength={3} autoComplete="username" />
             </div>
 
             {isRegister && (
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="analyst@company.io" required />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  required
+                  autoComplete="email"
+                  spellCheck={false}
+                />
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                  Use an address you can access — password recovery is sent there.
+                </span>
               </div>
             )}
 
             <div className="form-group">
               <label>Password</label>
               <div className="login-pw-wrap">
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" required minLength={6} />
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" required minLength={6} autoComplete={isRegister ? 'new-password' : 'current-password'} />
                 <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>

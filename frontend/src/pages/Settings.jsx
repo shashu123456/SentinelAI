@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { request } from '../services/api';
 import {
@@ -149,7 +150,7 @@ export default function Settings() {
             />
           )}
           {activeTab === 'profile' && <ProfileTab user={user} showToast={showToast} />}
-          {activeTab === 'api-keys' && <ApiKeysTab showToast={showToast} />}
+          {activeTab === 'api-keys' && <ApiKeysTab />}
         </div>
       </div>
     </div>
@@ -561,26 +562,24 @@ function ProfileTab({ user, showToast }) {
 }
 
 /* ── API Keys Tab ── */
-function ApiKeysTab({ showToast }) {
-  const [keys, setKeys] = useState([]);
-
+function ApiKeysTab() {
   return (
     <div className="settings-section">
       <div className="settings-section-header">
         <h2>API Keys</h2>
-        <button className="settings-btn primary" onClick={() => showToast('API key creation coming soon')}>
-          <Plus size={14} /> Generate Key
-        </button>
+        <Link to="/org/api-keys" className="settings-btn primary">
+          <Key size={14} /> Manage Keys
+        </Link>
       </div>
 
       <div className="settings-list">
-        {keys.length === 0 ? (
-          <div className="settings-empty">
-            <Key size={32} />
-            <p>No API keys</p>
-            <span>Generate an API key to access SentinelAI programmatically</span>
-          </div>
-        ) : null}
+        <div className="settings-empty">
+          <Key size={32} />
+          <p>API keys live in the organization workspace</p>
+          <span>
+            Create, view and revoke keys on the <Link to="/org/api-keys">API Keys page</Link>.
+          </span>
+        </div>
       </div>
 
       <div className="settings-api-info">

@@ -1,0 +1,5 @@
+# Development tooling — installed by `make setup` / `scripts/setup.sh`.
+# Runtime dependencies live in requirements.txt.
+-r requirements.txt
+
+pre-commit>=3.7.0,<4.0.0

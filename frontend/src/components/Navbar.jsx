@@ -82,7 +82,6 @@ const NAV_SECTIONS = [
 ];
 
 const FUTURE_MODULES = [
-  { label: 'Compliance', icon: Shield, coming: true },
   { label: 'Asset Inventory', icon: HardDrive, coming: true },
   { label: 'Integrations', icon: Globe, coming: true },
 ];

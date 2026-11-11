@@ -3,4 +3,6 @@ const WS_URL = (import.meta.env.VITE_WS_URL || API_URL).replace(/\/+$/, '');
 
 export const API_BASE = `${API_URL}/api`;
 
+export const API_ROOT = API_URL;
+
 export const WS_BASE = WS_URL.replace(/^http/, 'ws');

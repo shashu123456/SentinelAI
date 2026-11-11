@@ -1,0 +1,75 @@
+# Install once: `make hooks` (or `cd backend && python -m pre_commit install`).
+# Run manually:  `make hooks` / `pre-commit run --all-files`
+#
+# Hooks are intentionally fast: no test suite runs here. `make check` runs the
+# full local CI equivalent.
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+fail_fast: false
+
+repos:
+  # ── Hygiene ────────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.(md|svg)$
+      - id: end-of-file-fixer
+        exclude: \.(svg|lock)$
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: ^deploy/.*templates/
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+      - id: detect-private-key
+        exclude: ^docs/
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: \.(bat|cmd)$
+      - id: debug-statements
+        files: ^backend/.*\.py$
+
+  # ── Python formatting + linting (config lives in backend/pyproject.toml) ──
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^backend/.*\.py$
+      - id: ruff-format
+        files: ^backend/.*\.py$
+
+  # ── Project-specific guards (no network, always run) ───────────────
+  - repo: local
+    hooks:
+      - id: sentinel-secrets
+        name: sentinelai · secret scan
+        entry: bash scripts/check-secrets.sh --staged
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: backend-imports
+        name: sentinelai · backend imports
+        entry: bash scripts/check-imports.sh
+        language: system
+        pass_filenames: false
+        files: ^backend/app/.*\.py$
+        always_run: false
+
+      - id: frontend-tests-affected
+        name: sentinelai · frontend tests (changed components)
+        entry: bash scripts/test-affected.sh
+        language: system
+        pass_filenames: true
+        files: ^frontend/src/.*\.(jsx?|css)$
+
+      - id: conventional-commit
+        name: sentinelai · conventional commit message
+        entry: bash scripts/check-commit-msg.sh
+        language: system
+        stages: [commit-msg]
+        pass_filenames: false

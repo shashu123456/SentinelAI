@@ -1,24 +1,36 @@
 import { useState, useEffect } from 'react';
-import { ShieldAlert, Plus, Settings, Play, Pause, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Building2, RefreshCw } from 'lucide-react';
 import { SkeletonTable } from '../components/Skeleton';
-
-const API = '/api';
+import { useOrg } from '../context/OrgContext';
+import { enterprise } from '../services/enterprise';
 
 export default function PolicyEngine() {
+  const { currentOrg } = useOrg();
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => { loadPolicies(); }, []);
-
-  const loadPolicies = async () => {
-    try {
-      const res = await fetch(`${API}/orgs/1/policies`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+  useEffect(() => {
+    if (!currentOrg?.id) {
+      setLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    enterprise.policies(currentOrg.id)
+      .then((data) => {
+        if (!cancelled) setPolicies(data?.items || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-      const data = await res.json();
-      setPolicies(data.items || []);
-    } catch { /* ignore */ } finally { setLoading(false); }
-  };
+    return () => { cancelled = true; };
+  }, [currentOrg?.id, reloadKey]);
 
   if (loading) return <div className="page-content"><SkeletonTable rows={3} cols={4} /></div>;
 
@@ -34,10 +46,26 @@ export default function PolicyEngine() {
           <h1 className="dash-hero-title">Policy Engine</h1>
           <p className="dash-hero-sub">Define custom security policies and automated gates for your pipeline</p>
         </div>
-        <button className="btn-primary"><Plus size={14} /> New Policy</button>
+        <button className="btn-outline btn-sm" onClick={() => setReloadKey((k) => k + 1)} disabled={!currentOrg?.id}>
+          <RefreshCw size={14} /> Refresh
+        </button>
       </div>
 
-      {policies.length === 0 ? (
+      {error && (
+        <div className="error-banner" style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {!error && !currentOrg?.id && (
+        <div className="empty-state">
+          <div className="empty-state-icon"><Building2 size={24} /></div>
+          <div className="empty-state-title">No Organization Selected</div>
+          <div className="empty-state-desc">Policies are scoped to an organization.</div>
+        </div>
+      )}
+
+      {!error && currentOrg?.id && policies.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon"><ShieldAlert size={24} /></div>
           <div className="empty-state-title">No Custom Policies</div>

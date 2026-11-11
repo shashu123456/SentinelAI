@@ -1,52 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { testimonials as testimonialsApi } from '../services/api';
 import TiltCard from '../components/TiltCard';
 import {
-  Shield, Scan, Eye, Bot, FileCode, Package, Upload,
-  ArrowRight, ChevronDown, Zap, Lock, Activity,
+  Shield, Scan, Bot, FileCode, Package, Upload,
+  ArrowRight, ChevronDown, Zap, Activity,
   CheckCircle2, AlertTriangle, Target, Globe,
-  Github, Twitter, Linkedin, Mail, ArrowUpRight,
-  Layers, Database, Code, Terminal, Cpu, Fingerprint,
+  ArrowUpRight, Layers, Database, Terminal, Cpu, Fingerprint,
   Sun, Moon
 } from 'lucide-react';
 import './Landing.css';
-
-// ─── Animated Counter ───────────────────────────────────────────────
-function AnimatedCounter({ end, duration = 2000, suffix = '', prefix = '' }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const [started, setStarted] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setStarted(true); },
-      { threshold: 0.3 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!started) return;
-    let startTime = null;
-    const step = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * end));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [started, end, duration]);
-
-  return (
-    <span ref={ref} className="counter-value">
-      {prefix}{count.toLocaleString()}{suffix}
-    </span>
-  );
-}
 
 // ─── Fade In on Scroll ──────────────────────────────────────────────
 function FadeIn({ children, delay = 0, className = '' }) {
@@ -97,7 +61,7 @@ function LandingNav() {
         <div className="landing-nav-links">
           <a href="#features" className="landing-nav-link">Features</a>
           <a href="#how-it-works" className="landing-nav-link">How It Works</a>
-          <a href="#testimonials" className="landing-nav-link">Trusted By</a>
+          <a href="#stats" className="landing-nav-link">Coverage</a>
         </div>
 
         <div className="landing-nav-actions">
@@ -194,15 +158,13 @@ function HeroSection() {
 
         <FadeIn delay={400}>
           <div className="hero-trust">
-            <div className="hero-trust-avatars">
-              {['S', 'A', 'M', 'K', 'J'].map((letter, i) => (
-                <div key={i} className="hero-trust-avatar" style={{ zIndex: 5 - i }}>
-                  {letter}
-                </div>
+            <div className="hero-trust-engines">
+              {['OWASP API Top 10', 'SAST', 'Dependency CVE', 'AI Copilot'].map((name) => (
+                <span key={name} className="hero-trust-chip">{name}</span>
               ))}
             </div>
             <div className="hero-trust-text">
-              <strong>2,400+</strong> security scans completed
+              One platform, <strong>four engines</strong>
             </div>
           </div>
         </FadeIn>
@@ -238,6 +200,10 @@ function HeroSection() {
               <span className="blip-label">API8 — Config</span>
             </div>
             <div className="radar-stats">
+              <div className="radar-stat">
+                <span className="radar-stat-lbl">SAMPLE SCAN</span>
+              </div>
+              <div className="radar-stat-divider" />
               <div className="radar-stat">
                 <span className="radar-stat-val">47</span>
                 <span className="radar-stat-lbl">Endpoints</span>
@@ -431,19 +397,19 @@ function StatsSection() {
         <FadeIn>
           <div className="section-badge">
             <Database size={12} />
-            <span>PLATFORM SCALE</span>
+            <span>PLATFORM COVERAGE</span>
           </div>
           <h2 className="section-title">
-            Built for<br />
-            <span className="gradient-text">enterprise scale</span>
+            Built to cover<br />
+            <span className="gradient-text">every layer</span>
           </h2>
         </FadeIn>
 
         <div className="stats-grid">
-          <FadeIn delay={0}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><Scan size={24} /></div><AnimatedCounter end={2400} suffix="+" /><div className="stat-label">Scans Completed</div><div className="stat-sub">Across all platforms</div></div></TiltCard></FadeIn>
-          <FadeIn delay={100}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><AlertTriangle size={24} /></div><AnimatedCounter end={15000} suffix="+" /><div className="stat-label">Vulnerabilities Found</div><div className="stat-sub">And counting</div></div></TiltCard></FadeIn>
-          <FadeIn delay={200}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><CheckCircle2 size={24} /></div><AnimatedCounter end={98} suffix="%" /><div className="stat-label">Detection Accuracy</div><div className="stat-sub">Low false positive rate</div></div></TiltCard></FadeIn>
-          <FadeIn delay={300}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><Globe size={24} /></div><AnimatedCounter end={40} suffix="+" /><div className="stat-label">Security Rules</div><div className="stat-sub">OWASP + CWE mapped</div></div></TiltCard></FadeIn>
+          <FadeIn delay={0}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><Scan size={24} /></div><div className="stat-label">OWASP API Top 10</div><div className="stat-sub">Endpoint-by-endpoint coverage</div></div></TiltCard></FadeIn>
+          <FadeIn delay={100}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><AlertTriangle size={24} /></div><div className="stat-label">SAST Rules</div><div className="stat-sub">CWE-mapped, multi-language</div></div></TiltCard></FadeIn>
+          <FadeIn delay={200}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><CheckCircle2 size={24} /></div><div className="stat-label">CVE Intelligence</div><div className="stat-sub">Python, JavaScript, Java</div></div></TiltCard></FadeIn>
+          <FadeIn delay={300}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><Globe size={24} /></div><div className="stat-label">PDF + JSON Reports</div><div className="stat-sub">Executive and technical views</div></div></TiltCard></FadeIn>
         </div>
       </div>
     </section>
@@ -543,12 +509,6 @@ function Footer() {
           <p className="footer-tagline">
             AI-Powered Application Security Intelligence Platform
           </p>
-          <div className="footer-social">
-            <a href="#" className="footer-social-link"><Github size={16} /></a>
-            <a href="#" className="footer-social-link"><Twitter size={16} /></a>
-            <a href="#" className="footer-social-link"><Linkedin size={16} /></a>
-            <a href="#" className="footer-social-link"><Mail size={16} /></a>
-          </div>
         </div>
 
         <div className="footer-links">
@@ -556,29 +516,20 @@ function Footer() {
             <h4>Product</h4>
             <a href="#features">Features</a>
             <a href="#how-it-works">How It Works</a>
-            <a href="#stats">Platform</a>
+            <a href="#stats">Coverage</a>
             <Link to="/login">Get Started</Link>
           </div>
           <div className="footer-col">
-            <h4>Security</h4>
-            <a href="#">API Scanner</a>
-            <a href="#">SAST Analysis</a>
-            <a href="#">Dependency Scan</a>
-            <a href="#">AI Copilot</a>
+            <h4>Capabilities</h4>
+            <a href="#features">API Scanner</a>
+            <a href="#features">SAST Analysis</a>
+            <a href="#features">Dependency Scan</a>
+            <a href="#features">AI Copilot</a>
           </div>
           <div className="footer-col">
-            <h4>Resources</h4>
-            <a href="#">Documentation</a>
-            <a href="#">API Reference</a>
-            <a href="#">OWASP Guide</a>
-            <a href="#">Blog</a>
-          </div>
-          <div className="footer-col">
-            <h4>Company</h4>
-            <a href="#">About</a>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Contact</a>
+            <h4>Access</h4>
+            <Link to="/login">Sign In</Link>
+            <Link to="/login">Create Account</Link>
           </div>
         </div>
       </div>

@@ -33,7 +33,7 @@ export default function ApiKeys() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const scopes = form.scapes ? form.scopes.split(',').map(s => s.trim()).filter(Boolean) : null;
+      const scopes = form.scopes ? form.scopes.split(',').map(s => s.trim()).filter(Boolean) : null;
       const data = await apiKeys.create(currentOrg.id, {
         name: form.name,
         scopes,

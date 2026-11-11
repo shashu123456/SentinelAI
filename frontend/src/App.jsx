@@ -18,6 +18,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const NewScan = lazy(() => import('./pages/NewScan'));
 const ScanResult = lazy(() => import('./pages/ScanResult'));
+const ExecutionDetails = lazy(() => import('./pages/ExecutionDetails'));
 const ScanLive = lazy(() => import('./pages/ScanLive'));
 const SASTScan = lazy(() => import('./pages/SASTScan'));
 const DepScan = lazy(() => import('./pages/DepScan'));

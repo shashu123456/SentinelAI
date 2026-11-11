@@ -399,26 +399,22 @@
   gap: 14px;
 }
 
-.hero-trust-avatars {
+.hero-trust-engines {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.hero-trust-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(0,255,170,0.1);
-  border: 2px solid var(--bg-page);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hero-trust-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,170,0.18);
+  background: rgba(0,255,170,0.05);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--accent-cyan);
-  margin-left: -8px;
 }
-
-.hero-trust-avatar:first-child { margin-left: 0; }
 
 .hero-trust-text {
   font-size: 13px;
@@ -1261,9 +1257,10 @@
   box-shadow: 0 0 30px rgba(0,153,102,0.12);
 }
 
-[data-theme="light"] .hero-trust-avatar {
-  background: rgba(0,153,102,0.1);
-  border-color: #f8f9fc;
+[data-theme="light"] .hero-trust-chip {
+  background: rgba(0,153,102,0.07);
+  border-color: rgba(0,153,102,0.2);
+  color: #00805a;
 }
 
 [data-theme="light"] .hero-dashboard-preview {

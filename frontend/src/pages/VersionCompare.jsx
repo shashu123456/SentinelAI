@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GitCompare, ArrowRight, TrendingUp, TrendingDown, Minus, Plus, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { SkeletonCard } from '../components/Skeleton';
-
-const API = '/api';
+import { enterprise } from '../services/enterprise';
 
 export default function VersionCompare() {
   const [comparison, setComparison] = useState(null);
@@ -16,13 +15,8 @@ export default function VersionCompare() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API}/scans/compare`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ scan_id_1: parseInt(scanId1), scan_id_2: parseInt(scanId2) }),
-      });
-      if (!res.ok) throw new Error('Scans not found');
-      setComparison(await res.json());
+      const data = await enterprise.compare(scanId1, scanId2);
+      setComparison(data);
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   };
 
