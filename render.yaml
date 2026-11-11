@@ -21,11 +21,6 @@ services:
         fromDatabase:
           name: sentinelai-db-v2
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: sentinelai-redis-v2
-          type: redis
-          property: connectionString
       - key: SENTINEL_ENV
         value: production
       - key: CORS_ORIGINS
@@ -36,12 +31,6 @@ services:
         value: "true"
     healthCheckPath: /api/v1/ready
     autoDeploy: true
-
-  # ── Redis ──────────────────────────────────────────────────
-  - type: redis
-    name: sentinelai-redis-v2
-    plan: free
-    ipAllowList: []
 
 # ── PostgreSQL (managed) ──────────────────────────────────────
 # fromDatabase requires an entry here; the previous `type: pserv` block was a
