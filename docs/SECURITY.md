@@ -454,7 +454,7 @@ form-action 'self';
 |----------|-------|--------|---------|
 | `POST /api/auth/login` | 10 | 15 min | Progressive |
 | `POST /api/auth/register` | 5 | 1 hour | Account |
-| `POST /api/auth/password-reset` | 3 | 1 hour | Email |
+| `POST /api/auth/forgot-password` | 3 | 1 hour | Email |
 | `POST /api/copilot/chat` | 30 | 1 minute | User |
 | `POST /api/scans/upload` | 10 | 5 minutes | User |
 | All other endpoints | 100 | 1 minute | IP |

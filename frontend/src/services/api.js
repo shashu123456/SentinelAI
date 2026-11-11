@@ -71,6 +71,12 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: 'Request failed' }));
+    if (response.status === 404 && (!err.detail || err.detail === 'Not Found')) {
+      throw new Error(
+        'This feature is not available on the connected backend. ' +
+        'The server you are talking to is older than this frontend — deploy the current backend.',
+      );
+    }
     throw new Error(err.detail || 'Request failed');
   }
 

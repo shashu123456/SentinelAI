@@ -25,7 +25,13 @@ async function rootRequest(path, options = {}) {
       throw new Error(detail || 'You do not have permission to view this organization.');
     }
     if (res.status === 404) {
-      throw new Error(detail || 'Not found.');
+      if (!detail || detail === 'Not Found') {
+        throw new Error(
+          'This feature is not available on the connected backend. ' +
+          'The server you are talking to is older than this frontend — deploy the current backend.',
+        );
+      }
+      throw new Error(detail);
     }
     throw new Error(detail || `Request failed (${res.status})`);
   }

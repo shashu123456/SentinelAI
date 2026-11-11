@@ -220,7 +220,7 @@ All v1 endpoints return responses wrapped in a standard envelope:
 |----------|-------|--------|
 | `POST /api/auth/login` | 10 | 15 minutes |
 | `POST /api/auth/register` | 5 | 1 hour |
-| `POST /api/auth/password-reset` | 3 | 1 hour |
+| `POST /api/auth/forgot-password` | 3 | 1 hour |
 | All other endpoints | 100 | 1 minute |
 
 ### Headers
@@ -246,8 +246,8 @@ Retry-After: 30
 | POST | `/api/auth/logout-all` | Yes | Logout from all devices |
 | POST | `/api/auth/refresh` | Yes (cookie) | Refresh access token |
 | GET | `/api/auth/me` | Yes | Get current user profile |
-| POST | `/api/auth/password-reset-request` | No | Request password reset email |
-| POST | `/api/auth/password-reset` | No | Reset password with token |
+| POST | `/api/auth/forgot-password` | No | Request password reset token (never returned in response) |
+| POST | `/api/auth/reset-password` | No | Reset password with token |
 
 #### POST /api/auth/register
 

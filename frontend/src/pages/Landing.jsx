@@ -242,7 +242,7 @@ const FEATURES = [
   {
     icon: FileCode,
     title: 'Static Analysis (SAST)',
-    description: '40+ security rules across Python, JavaScript, and Java. Detects SQL injection, XSS, hardcoded secrets, command injection, and unsafe deserialization.',
+    description: '48 security rules across Python, JavaScript, and Java. Detects SQL injection, XSS, hardcoded secrets, command injection, and unsafe deserialization.',
     color: '#aa66ff',
     tag: 'Code Analysis',
   },

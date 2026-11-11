@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API_BASE } from '../config';
+import { API_BASE, API_ROOT } from '../config';
 import {
   Activity, Database, Server, Shield, RefreshCw,
   CheckCircle2, XCircle, AlertTriangle, Cpu, HardDrive,
@@ -72,17 +72,24 @@ export default function SystemHealth() {
     try {
       const token = localStorage.getItem('sentinelai_token');
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const backendBase = API_BASE.replace('/api', '');
 
-      // Fetch v1 health endpoint
-      const resp = await fetch(`${backendBase}/api/v1/health`, { headers });
-      if (resp.ok) {
-        const health = await resp.json();
-        setData(health);
+      // Full diagnostics. Note: this endpoint answers 207 (degraded) and 503
+      // (unhealthy) with a valid body, so parse the payload regardless of status.
+      const full = await fetch(`${API_ROOT}/api/v1/health`, { headers });
+      if (full.status !== 404) {
+        setData(await full.json());
       } else {
-        // Fallback to legacy endpoint
-        const fallback = await fetch(`${backendBase}/health/detailed`, { headers }).then(r => r.json());
-        setData(fallback);
+        // Older deployments only expose the lightweight /api/health probe.
+        const basic = await fetch(`${API_BASE}/health`, { headers });
+        if (!basic.ok) throw new Error(`health ${basic.status}`);
+        const payload = await basic.json();
+        setData({
+          status: payload.status || 'healthy',
+          checks: {},
+          details: {},
+          version: payload.version,
+          basic_only: true,
+        });
       }
       setLastChecked(new Date());
     } catch {
@@ -148,6 +155,20 @@ export default function SystemHealth() {
         </div>
       </div>
 
+      {/* Basic-only deployment notice */}
+      {data?.basic_only && (
+        <div className="sh-banner degraded">
+          <AlertTriangle size={18} />
+          <div className="sh-banner-text">
+            <span className="sh-banner-status">Limited diagnostics</span>
+            <span className="sh-banner-desc">
+              This deployment only exposes the basic health probe (/api/health).
+              Deploy the current backend to see per-service metrics.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Resource Metrics */}
       <div className="sh-metrics-row">
         <div className="sh-metric-card">
@@ -188,9 +209,9 @@ export default function SystemHealth() {
       <div className="sh-grid">
         <ServiceCard
           icon={Server} iconClass="server" name="Backend API" description="FastAPI + Uvicorn"
-          status={checks.database === 'healthy' ? 'healthy' : 'unhealthy'}
+          status={status === 'unreachable' ? 'unreachable' : status}
           details={[
-            { label: 'Status', value: checks.database || 'unknown', error: checks.database !== 'healthy' },
+            { label: 'Status', value: status, error: status !== 'healthy' },
             { label: 'Version', value: data?.version || '—' },
             { label: 'Uptime', value: data?.uptime_human || '—' },
           ]}
@@ -227,11 +248,12 @@ export default function SystemHealth() {
 
         <ServiceCard
           icon={Shield} iconClass="scanner" name="Scanner Engine" description="API + SAST + Deps"
-          status="healthy"
+          status={details.scanner?.status || 'unknown'}
           details={[
-            { label: 'API Scanner', value: 'Active' },
-            { label: 'SAST Engine', value: 'Active' },
-            { label: 'Dep Scanner', value: 'Active' },
+            { label: 'Status', value: details.scanner?.status || 'Not reported' },
+            { label: 'API Scanner', value: details.scanner?.api ?? '—' },
+            { label: 'SAST Engine', value: details.scanner?.sast ?? '—' },
+            { label: 'Dep Scanner', value: details.scanner?.deps ?? '—' },
           ]}
         />
 
