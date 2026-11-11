@@ -47,3 +47,11 @@ scan-*-report.*
 
 # Vite local-only env files (development machine overrides)
 .env.*.local
+
+# Local credential drop folder (never commit)
+.secrets/
+.tmp-api/
+
+.vercel
+.env*
+backend/.vercel/

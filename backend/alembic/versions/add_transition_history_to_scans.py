@@ -18,7 +18,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column('scans', sa.Column('transition_history', sa.JSON(), nullable=True, server_default='[]'))
+    op.add_column('scans', sa.Column('transition_history', sa.JSON(), nullable=True, server_default=sa.text("'[]'")))
 
 
 def downgrade() -> None:

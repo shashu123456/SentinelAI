@@ -54,7 +54,7 @@ async function request(path, options = {}) {
 
   let response = await doFetch();
 
-  if (response.status === 401 && path !== '/auth/refresh') {
+  if (response.status === 401 && path !== '/auth/refresh' && localStorage.getItem('sentinelai_token')) {
     try {
       await refreshSession();
       response = await doFetch();

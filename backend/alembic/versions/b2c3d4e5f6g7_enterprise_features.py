@@ -21,7 +21,7 @@ def upgrade() -> None:
         sa.Column("organization_id", sa.Integer(), sa.ForeignKey("organizations.id"), nullable=False),
         sa.Column("project_id", sa.Integer(), sa.ForeignKey("projects.id"), nullable=True),
         sa.Column("created_by", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("template_id", sa.Integer(), sa.ForeignKey("scan_templates.id"), nullable=True),
+        sa.Column("template_id", sa.Integer(), nullable=True),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("frequency", sa.String(20), nullable=False, server_default="weekly"),
@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column("timezone", sa.String(50), nullable=False, server_default="UTC"),
         sa.Column("scan_type", sa.String(30), nullable=False, server_default="api"),
         sa.Column("scan_config", sa.JSON(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("last_run_at", sa.DateTime(), nullable=True),
         sa.Column("last_scan_id", sa.Integer(), nullable=True),
         sa.Column("next_run_at", sa.DateTime(), nullable=True),
@@ -55,16 +55,25 @@ def upgrade() -> None:
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("scan_type", sa.String(30), nullable=False),
-        sa.Column("config", sa.JSON(), nullable=False, server_default="{}"),
+        sa.Column("config", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
         sa.Column("compliance_frameworks", sa.JSON(), nullable=True),
-        sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("0")),
-        sa.Column("is_shared", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column("is_shared", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("use_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.UniqueConstraint("organization_id", "name", name="uq_scan_template_name_org"),
     )
     op.create_index("ix_scan_templates_org_id", "scan_templates", ["organization_id"])
+
+    # FK added after scan_templates exists (Postgres enforces creation order)
+    op.create_foreign_key(
+        "fk_scheduled_scans_template_id",
+        "scheduled_scans",
+        "scan_templates",
+        ["template_id"],
+        ["id"],
+    )
 
     # Policies
     op.create_table(
@@ -77,9 +86,9 @@ def upgrade() -> None:
         sa.Column("policy_type", sa.String(30), nullable=False, server_default="finding_gate"),
         sa.Column("rules", sa.JSON(), nullable=False),
         sa.Column("severity", sa.String(20), nullable=False, server_default="high"),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
-        sa.Column("enforce_on_scans", sa.Boolean(), nullable=False, server_default=sa.text("0")),
-        sa.Column("notify_on_violation", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column("enforce_on_scans", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column("notify_on_violation", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("evaluation_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("violation_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("last_evaluated_at", sa.DateTime(), nullable=True),
@@ -100,7 +109,7 @@ def upgrade() -> None:
         sa.Column("url", sa.String(2000), nullable=True),
         sa.Column("config", sa.JSON(), nullable=True),
         sa.Column("events", sa.JSON(), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("secret", sa.String(200), nullable=True),
         sa.Column("delivery_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("failure_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
@@ -121,7 +130,7 @@ def upgrade() -> None:
         sa.Column("version", sa.String(20), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("category", sa.String(50), nullable=False),
-        sa.Column("controls", sa.JSON(), nullable=False, server_default="[]"),
+        sa.Column("controls", sa.JSON(), nullable=False, server_default=sa.text("'[]'")),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_compliance_frameworks_slug", "compliance_frameworks", ["slug"])
@@ -137,7 +146,7 @@ def upgrade() -> None:
         sa.Column("controls_failed", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("controls_na", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("controls_total", sa.Integer(), nullable=False, server_default=sa.text("0")),
-        sa.Column("control_status", sa.JSON(), nullable=False, server_default="{}"),
+        sa.Column("control_status", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
         sa.Column("last_assessed_at", sa.DateTime(), nullable=True),
         sa.Column("next_assessment_at", sa.DateTime(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),

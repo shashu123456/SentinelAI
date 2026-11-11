@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { organizations } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const OrgContext = createContext(null);
 
@@ -9,6 +10,7 @@ export function OrgProvider({ children }) {
   const [orgs, setOrgs] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   // Load user's organizations
   const loadOrgs = useCallback(async () => {
@@ -56,8 +58,12 @@ export function OrgProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    loadOrgs();
-  }, [loadOrgs]);
+    if (user) {
+      loadOrgs();
+    } else {
+      setOrgs([]);
+    }
+  }, [user, loadOrgs]);
 
   useEffect(() => {
     if (currentOrg) {

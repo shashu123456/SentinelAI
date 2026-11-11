@@ -23,7 +23,7 @@ def upgrade() -> None:
         sa.Column("author_role", sa.String(100), nullable=False),
         sa.Column("author_company", sa.String(100), nullable=False),
         sa.Column("avatar_letter", sa.String(1), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("display_order", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
