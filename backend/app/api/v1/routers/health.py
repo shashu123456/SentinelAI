@@ -4,14 +4,17 @@ Endpoints:
     GET /api/v1/health   — Full health check with all component details
     GET /api/v1/ready    — Readiness probe (can the service accept traffic?)
     GET /api/v1/live     — Liveness probe (is the process alive?)
+    GET /api/v1/version  — Version info (commit SHA, env, build)
 
 Design:
     - /live must NEVER fail (only fails if the process is truly dead)
     - /ready fails if critical dependencies are down (DB, etc.)
     - /health returns full diagnostic information
+    - /version exposes deployment metadata for diagnostics and CI/CD
 """
 
 import time
+import os
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -69,4 +72,21 @@ def liveness_check():
         "status": "alive",
         "uptime_seconds": round(get_uptime(), 0),
         "timestamp": time.time(),
+    }
+
+
+@router.get("/version")
+def version_info():
+    """Deployment version and commit info.
+
+    Returns environment, build commit SHA, and SENTINEL_ENV.
+    Used by health checks and CI/CD to verify deploy drift.
+    """
+    commit = os.getenv("RENDER_GIT_COMMIT", "dev")
+    env = os.getenv("SENTINEL_ENV", "dev")
+    build = commit if commit != "dev" else "dev"
+    return {
+        "commit": commit,
+        "env": env,
+        "build": build[:7] if len(build) >= 7 else build,
     }
