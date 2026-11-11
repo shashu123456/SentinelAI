@@ -90,8 +90,7 @@ function HeroSection() {
       duration: 8 + Math.random() * 14,
       delay: Math.random() * 10,
       color: ['rgba(0,255,170,0.4)', 'rgba(0,212,255,0.3)', 'rgba(170,102,255,0.25)'][i % 3],
-    }))
-  ).current;
+    })).current;
 
   return (
     <section className="hero">
@@ -130,7 +129,7 @@ function HeroSection() {
 
         <FadeIn delay={100}>
           <h1 className="hero-title">
-            Detect. Analyze.<br />
+            Detect. Analyze.
             <span className="gradient-text">Remediate.</span>
           </h1>
         </FadeIn>
@@ -139,7 +138,7 @@ function HeroSection() {
           <p className="hero-subtitle">
             The complete application security platform that identifies vulnerabilities
             across your API surface, source code, and dependencies — then explains
-            exactly how to fix them using AI.
+            exactly how to fix them using Automated Security Analysis.
           </p>
         </FadeIn>
 
@@ -159,7 +158,7 @@ function HeroSection() {
         <FadeIn delay={400}>
           <div className="hero-trust">
             <div className="hero-trust-engines">
-              {['OWASP API Top 10', 'SAST', 'Dependency CVE', 'AI Copilot'].map((name) => (
+              {['OWASP API Top 10', 'SAST', 'Dependency CVE', 'Automated Analysis'].map((name) => (
                 <span key={name} className="hero-trust-chip">{name}</span>
               ))}
             </div>
@@ -168,63 +167,63 @@ function HeroSection() {
             </div>
           </div>
         </FadeIn>
-      </div>
 
-      <div className="hero-visual">
-        <FadeIn delay={500}>
-          <div className="hero-radar">
-            <div className="radar-rings">
-              <div className="radar-ring ring-1" />
-              <div className="radar-ring ring-2" />
-              <div className="radar-ring ring-3" />
-              <div className="radar-ring ring-4" />
-            </div>
-            <div className="radar-sweep" />
-            <div className="radar-center">
-              <Shield size={24} />
-            </div>
-            <div className="radar-blip blip-1">
-              <div className="blip-dot critical" />
-              <span className="blip-label">API1 — BOLA</span>
-            </div>
-            <div className="radar-blip blip-2">
-              <div className="blip-dot high" />
-              <span className="blip-label">API2 — Auth</span>
-            </div>
-            <div className="radar-blip blip-3">
-              <div className="blip-dot medium" />
-              <span className="blip-label">API7 — SSRF</span>
-            </div>
-            <div className="radar-blip blip-4">
-              <div className="blip-dot low" />
-              <span className="blip-label">API8 — Config</span>
-            </div>
-            <div className="radar-stats">
-              <div className="radar-stat">
-                <span className="radar-stat-lbl">SAMPLE SCAN</span>
+        <div className="hero-visual">
+          <FadeIn delay={500}>
+            <div className="hero-radar">
+              <div className="radar-rings">
+                <div className="radar-ring ring-1" />
+                <div className="radar-ring ring-2" />
+                <div className="radar-ring ring-3" />
+                <div className="radar-ring ring-4" />
               </div>
-              <div className="radar-stat-divider" />
-              <div className="radar-stat">
-                <span className="radar-stat-val">47</span>
-                <span className="radar-stat-lbl">Endpoints</span>
+              <div className="radar-sweep" />
+              <div className="radar-center">
+                <Shield size={24} />
               </div>
-              <div className="radar-stat-divider" />
-              <div className="radar-stat">
-                <span className="radar-stat-val">12</span>
-                <span className="radar-stat-lbl">Findings</span>
+              <div className="radar-blip blip-1">
+                <div className="blip-dot critical" />
+                <span className="blip-label">API1 — BOLA</span>
               </div>
-              <div className="radar-stat-divider" />
-              <div className="radar-stat">
-                <span className="radar-stat-val danger">72</span>
-                <span className="radar-stat-lbl">Risk Score</span>
+              <div className="radar-blip blip-2">
+                <div className="blip-dot high" />
+                <span className="blip-label">API2 — Auth</span>
+              </div>
+              <div className="radar-blip blip-3">
+                <div className="blip-dot medium" />
+                <span className="blip-label">API7 — SSRF</span>
+              </div>
+              <div className="radar-blip blip-4">
+                <div className="blip-dot low" />
+                <span className="blip-label">API8 — Config</span>
+              </div>
+              <div className="radar-stats">
+                <div className="radar-stat">
+                  <span className="radar-stat-lbl">SAMPLE SCAN</span>
+                </div>
+                <div className="radar-stat-divider" />
+                <div className="radar-stat">
+                  <span className="radar-stat-val">47</span>
+                  <span className="radar-stat-lbl">Endpoints</span>
+                </div>
+                <div className="radar-stat-divider" />
+                <div className="radar-stat">
+                  <span className="radar-stat-val">12</span>
+                  <span className="radar-stat-lbl">Findings</span>
+                </div>
+                <div className="radar-stat-divider" />
+                <div className="radar-stat">
+                  <span className="radar-stat-val danger">72</span>
+                  <span className="radar-stat-lbl">Risk Score</span>
+                </div>
               </div>
             </div>
-          </div>
-        </FadeIn>
-      </div>
+          </FadeIn>
+        </div>
 
-      <div className="hero-scroll-indicator">
-        <ChevronDown size={20} />
+        <div className="hero-scroll-indicator">
+          <ChevronDown size={20} />
+        </div>
       </div>
     </section>
   );
@@ -235,7 +234,7 @@ const FEATURES = [
   {
     icon: Scan,
     title: 'API Security Scanner',
-    description: 'Complete OpenAPI/Swagger analysis with OWASP Top 10 coverage. Discovers endpoints, validates schemas, and detects broken authentication, SSRF, and mass assignment.',
+    description: 'Complete OpenAPI/Swagger analysis with OWASP Top 10 coverage. Detects broken authentication, SSRF, mass assignment, and injection vulnerabilities.',
     color: '#00ffaa',
     tag: 'Core Engine',
   },
@@ -256,7 +255,7 @@ const FEATURES = [
   {
     icon: Bot,
     title: 'AI Security Copilot',
-    description: 'Ask natural language questions about your security posture. Get vulnerability explanations, remediation code, and threat analysis powered by AI.',
+    description: 'Ask natural language questions about your security posture. Get vulnerability context and analysis. (Automated when LLM is available, otherwise uses rule-based intelligence.)',
     color: '#00d4ff',
     tag: 'Intelligence',
   },
@@ -286,7 +285,7 @@ function FeaturesSection() {
             <span>PLATFORM CAPABILITIES</span>
           </div>
           <h2 className="section-title">
-            Everything you need to<br />
+            Everything you need to
             <span className="gradient-text">secure your applications</span>
           </h2>
           <p className="section-subtitle">
@@ -332,8 +331,8 @@ const STEPS = [
   {
     step: '02',
     icon: Cpu,
-    title: 'AI-Powered Analysis',
-    description: 'Our engines scan for OWASP Top 10 vulnerabilities, static code issues, and known CVEs. AI analyzes context and generates explanations.',
+    title: 'Security Analysis',
+    description: 'Our engines scan for OWASP Top 10 vulnerabilities, static code issues, and known CVEs. Automated analysis runs immediately; AI explanations available when LLM is configured.',
     color: '#00d4ff',
   },
   {
@@ -347,7 +346,7 @@ const STEPS = [
     step: '04',
     icon: CheckCircle2,
     title: 'Fix & Remediate',
-    description: 'Get AI-generated fix recommendations, secure code examples, and remediation guidance. Track progress until all issues are resolved.',
+    description: 'Get remediation guidance, secure code examples, and track progress until all issues are resolved.',
     color: '#10b981',
   },
 ];
@@ -362,7 +361,7 @@ function HowItWorksSection() {
             <span>HOW IT WORKS</span>
           </div>
           <h2 className="section-title">
-            From upload to remediation<br />
+            From upload to remediation
             <span className="gradient-text">in four steps</span>
           </h2>
         </FadeIn>
@@ -400,7 +399,7 @@ function StatsSection() {
             <span>PLATFORM COVERAGE</span>
           </div>
           <h2 className="section-title">
-            Built to cover<br />
+            Built to cover
             <span className="gradient-text">every layer</span>
           </h2>
         </FadeIn>
@@ -439,7 +438,7 @@ function TestimonialsSection() {
             <span>TRUSTED BY TEAMS</span>
           </div>
           <h2 className="section-title">
-            Security teams<br />
+            Security teams
             <span className="gradient-text">trust SentinelAI</span>
           </h2>
         </FadeIn>
@@ -474,7 +473,7 @@ function CTASection() {
           <div className="cta-card">
             <div className="cta-glow" />
             <h2 className="cta-title">
-              Ready to secure your<br />
+              Ready to secure your
               <span className="gradient-text">applications?</span>
             </h2>
             <p className="cta-subtitle">
@@ -529,7 +528,7 @@ function Footer() {
           <div className="footer-col">
             <h4>Access</h4>
             <Link to="/login">Sign In</Link>
-            <Link to="/login">Create Account</Link>
+            <Link to="/login">Create Account</Linked>
           </div>
         </div>
       </div>
