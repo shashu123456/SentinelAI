@@ -459,6 +459,13 @@ Push to GitHub
 - ✅ Performance optimization (connection pooling, caching, query monitoring)
 - ✅ 289+ tests, all passing
 
+### Known Limits (Hobby / Serverless)
+
+| Limit | Description |
+|-------|-------------|
+| **Hobby function timeout** | Vercel Hobby tier imposes a maximum function execution time (typically ~seconds per invocation). Long-running scans may be cut off and should use `/api/scans/upload/async` for background processing. |
+| **No persistent task state** | Tasks and scan progress do not survive serverless invocations. Each deployment starts fresh; task state is lost between requests. Use durable storage (D1/R2) for persistent state if needed. |
+
 ### v1.5 — Planned
 
 - [ ] TypeScript migration for frontend
