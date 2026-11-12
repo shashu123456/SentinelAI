@@ -10,7 +10,6 @@ export default function NewScan() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
-  const [scanMode, setScanMode] = useState('live');
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -67,13 +66,8 @@ export default function NewScan() {
     setError('');
 
     try {
-      if (scanMode === 'live') {
-        const result = await scans.uploadAsync(file, apiName, true);
-        navigate(`/live/${result.task_id}`);
-      } else {
-        const result = await scans.upload(file, apiName);
-        navigate(`/scan/${result.id}`);
-      }
+      const result = await scans.upload(file, apiName);
+      navigate(`/scan/${result.id}`);
     } catch (err) {
       setError(err.message || 'Scan failed');
     } finally {
@@ -141,41 +135,6 @@ export default function NewScan() {
             />
           </div>
 
-          <div className="scan-mode-toggle">
-            <label className="mode-option">
-              <input
-                type="radio"
-                name="scanMode"
-                value="live"
-                checked={scanMode === 'live'}
-                onChange={() => setScanMode('live')}
-              />
-              <div className="mode-card">
-                <Terminal size={18} />
-                <div>
-                  <strong>Live Scan</strong>
-                  <span>Real-time terminal view with progress tracking</span>
-                </div>
-              </div>
-            </label>
-            <label className="mode-option">
-              <input
-                type="radio"
-                name="scanMode"
-                value="instant"
-                checked={scanMode === 'instant'}
-                onChange={() => setScanMode('instant')}
-              />
-              <div className="mode-card">
-                <Shield size={18} />
-                <div>
-                  <strong>Instant Scan</strong>
-                  <span>Quick scan with immediate results</span>
-                </div>
-              </div>
-            </label>
-          </div>
-
           {error && (
             <div className="error-msg">
               <AlertCircle size={16} />
@@ -202,12 +161,12 @@ export default function NewScan() {
             {uploading ? (
               <>
                 <Loader2 size={16} className="spin" />
-                {scanMode === 'live' ? 'Starting live scan...' : 'Scanning...'}
+                {'Scanning...'}
               </>
             ) : (
               <>
-                {scanMode === 'live' ? <Terminal size={16} /> : <Shield size={16} />}
-                {scanMode === 'live' ? 'Start Live Scan' : 'Start Instant Scan'}
+                <Shield size={16} />
+                {'Start Instant Scan'}
               </>
             )}
           </button>
