@@ -8,7 +8,7 @@ os.environ['SESSION_STORE_DB'] = os.path.join(os.getcwd(), "sessions_test.db")
 from app.core.execution.session_store import SessionStore
 
 # Test create and get
-store = SessionStore()  # Will use env var or default
+store = SessionStore(os.environ['SESSION_STORE_DB'])
 
 # Create session
 session = store.create_session(
