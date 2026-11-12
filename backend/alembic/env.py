@@ -42,7 +42,8 @@ def run_migrations_online() -> None:
     from sqlalchemy import create_engine
 
     url = _database_url()
-    connect_args = {"check_same_thread": False} if "sqlite" in url else {}
+    is_sqlite = "sqlite" in url
+    connect_args = {"check_same_thread": False} if is_sqlite else {}
     engine = create_engine(url, connect_args=connect_args)
 
     with engine.connect() as connection:
@@ -50,6 +51,8 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            # SQLite cannot ALTER constraints in place; batch mode recreates tables.
+            render_as_batch=is_sqlite,
         )
 
         with context.begin_transaction():

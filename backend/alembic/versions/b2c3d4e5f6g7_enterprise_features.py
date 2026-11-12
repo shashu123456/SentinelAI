@@ -67,13 +67,14 @@ def upgrade() -> None:
     op.create_index("ix_scan_templates_org_id", "scan_templates", ["organization_id"])
 
     # FK added after scan_templates exists (Postgres enforces creation order)
-    op.create_foreign_key(
-        "fk_scheduled_scans_template_id",
-        "scheduled_scans",
-        "scan_templates",
-        ["template_id"],
-        ["id"],
-    )
+    # Batch mode keeps this portable: SQLite cannot ALTER constraints in place.
+    with op.batch_alter_table("scheduled_scans", recreate="always") as batch_op:
+        batch_op.create_foreign_key(
+            "fk_scheduled_scans_template_id",
+            "scan_templates",
+            ["template_id"],
+            ["id"],
+        )
 
     # Policies
     op.create_table(

@@ -58,13 +58,13 @@ def upgrade() -> None:
     )
 
     # Add project_id to scans table
-    with op.batch_alter_table("scans") as batch_op:
+    with op.batch_alter_table("scans", recreate="always") as batch_op:
         batch_op.add_column(sa.Column("project_id", sa.Integer(), nullable=True))
         batch_op.create_foreign_key("fk_scans_project", "projects", ["project_id"], ["id"])
 
 
 def downgrade() -> None:
-    with op.batch_alter_table("scans") as batch_op:
+    with op.batch_alter_table("scans", recreate="always") as batch_op:
         batch_op.drop_constraint("fk_scans_project", type_="foreignkey")
         batch_op.drop_column("project_id")
 
