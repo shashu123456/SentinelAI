@@ -2,6 +2,7 @@
 .tmp-api/
 frontend/
 backend/venv/
+backend/pyproject.toml
 **/__pycache__/
 **/*.pyc
 *.db
