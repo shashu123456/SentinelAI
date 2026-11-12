@@ -55,3 +55,4 @@ scan-*-report.*
 .vercel
 .env*
 backend/.vercel/
+.neon
