@@ -22,6 +22,25 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, TypeVar
 
+try:  # PyYAML is a declared dependency; fall back to the minimal parser if absent
+    import yaml as _yaml
+    _YAML_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _yaml = None
+    _YAML_AVAILABLE = False
+
+
+def _parse_yaml_document(content: str) -> dict[str, Any]:
+    """Parse YAML into a mapping, preferring PyYAML when it is installed."""
+    if _YAML_AVAILABLE:
+        try:
+            parsed = _yaml.safe_load(content)
+        except Exception:  # noqa: BLE001 - fall back to the minimal parser
+            parsed = None
+        if isinstance(parsed, dict):
+            return parsed
+    return _parse_simple_yaml(content)
+
 T = TypeVar("T", bound="WorkflowDefinition")
 
 
@@ -416,7 +435,7 @@ def detect_schema_version(data: dict[str, Any]) -> str:
         Schema version string
     """
     if not isinstance(data, dict):
-        return str(WorkflowSchema.V1.value)
+        return str(WorkflowSchema.V1_0.value)
 
     # Check for known schema markers
     if "schemaVersion" in data:
@@ -427,10 +446,10 @@ def detect_schema_version(data: dict[str, Any]) -> str:
         # Check if groups have mode property
         for group in data["groups"]:
             if isinstance(group, dict) and "mode" in group:
-                return str(WorkflowSchema.V2.value)
-        return str(WorkflowSchema.V1.value)
+                return str(WorkflowSchema.V2_0.value)
+        return str(WorkflowSchema.V1_0.value)
 
-    return str(WorkflowSchema.V1.value)
+    return str(WorkflowSchema.V1_0.value)
 
 
 def _parse_simple_yaml(content: str) -> dict[str, Any]:
@@ -726,6 +745,61 @@ def _serialize_to_yaml(data: dict[str, Any], indent: int = 0) -> str:
             lines.append(f"{spaces}{key}: {value}")
 
     return "\n".join(lines)
+
+
+def load_workflow(filepath: str | Path) -> WorkflowDefinition:
+    """Load a workflow definition from a file (YAML or JSON).
+
+    Args:
+        filepath: Path to the workflow file
+
+    Returns:
+        WorkflowDefinition instance
+
+    Raises:
+        FileNotFoundError: If the file does not exist
+        ValueError: If the file format is unsupported or validation fails
+    """
+    filepath = Path(filepath)
+
+    if not filepath.exists():
+        raise FileNotFoundError(f"Workflow file not found: {filepath}")
+
+    suffix = filepath.suffix.lower()
+
+    if suffix in (".yaml", ".yml"):
+        with open(filepath, encoding="utf-8") as f:
+            content = f.read()
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            data = _parse_yaml_document(content)
+    elif suffix == ".json":
+        with open(filepath, encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        with open(filepath, encoding="utf-8") as f:
+            content = f.read()
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            data = _parse_yaml_document(content)
+
+    # YAML parses unquoted versions such as 1.0 as floats; coerce them to strings.
+    if "version" in data and not isinstance(data["version"], str):
+        data["version"] = str(data["version"])
+    metadata = data.get("metadata")
+    if isinstance(metadata, dict) and "version" in metadata and not isinstance(metadata["version"], str):
+        metadata["version"] = str(metadata["version"])
+
+    schema_version = detect_schema_version(data)
+    definition = WorkflowDefinition.from_dict(data)
+    definition.schema_version = schema_version
+
+    if not definition.validate():
+        raise ValueError(f"Workflow validation failed for {filepath}")
+
+    return definition
 
 
 def save_workflow(definition: WorkflowDefinition, filepath: str | Path) -> None:
