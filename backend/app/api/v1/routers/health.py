@@ -82,7 +82,13 @@ def version_info():
     Returns environment, build commit SHA, and SENTINEL_ENV.
     Used by health checks and CI/CD to verify deploy drift.
     """
-    commit = os.getenv("RENDER_GIT_COMMIT", "dev")
+    # Providers expose the deployed revision under different names.
+    commit = (
+        os.getenv("RENDER_GIT_COMMIT")
+        or os.getenv("VERCEL_GIT_COMMIT_SHA")
+        or os.getenv("COMMIT_SHA")
+        or "dev"
+    )
     env = os.getenv("SENTINEL_ENV", "dev")
     build = commit if commit != "dev" else "dev"
     return {

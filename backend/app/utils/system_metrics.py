@@ -378,22 +378,21 @@ def _compute_health() -> dict[str, Any]:
     disk = results.get("disk", {})
     env = results.get("environment", {})
 
-    # Determine overall status
+    # Determine overall status — only the database check matters.
+    # Redis/not_configured, ai_engine/unavailable, workers do NOT lower the status.
+    db_status = db.get("status", "unknown")
+    if db_status == "healthy":
+        overall = "healthy"
+    elif db_status == "degraded":
+        overall = "degraded"
+    else:
+        overall = "unhealthy"
     checks = {
-        "database": db.get("status", "unknown"),
+        "database": db_status,
         "redis": redis_st.get("status", "unknown"),
         "ai_engine": ai.get("status", "unknown"),
         "workers": worker.get("status", "unknown"),
     }
-
-    if all(v == "healthy" for v in checks.values()):
-        overall = "healthy"
-    elif all(
-        v in ("healthy", "not_configured", "unavailable", "not_installed") for v in checks.values()
-    ):
-        overall = "degraded"
-    else:
-        overall = "unhealthy"
 
     result = {
         "status": overall,
