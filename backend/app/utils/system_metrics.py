@@ -8,12 +8,13 @@ Thread-safe and non-blocking: all expensive checks have timeouts.
 """
 
 from __future__ import annotations
-from sqlalchemy.pool import QueuePool
 
 import os
 import platform
 import threading
 import time
+
+from sqlalchemy.pool import QueuePool
 
 try:
     import resource
