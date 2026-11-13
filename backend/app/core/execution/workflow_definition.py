@@ -21,7 +21,7 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 try:  # PyYAML is a declared dependency; fall back to the minimal parser if absent
     import yaml as _yaml
