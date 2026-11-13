@@ -600,18 +600,18 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
 
                 # Type coercion for mode
                 if value.lower() == "true":
-                    value = True
+                    value = True  # type: ignore[assignment]
                 elif value.lower() == "false":
-                    value = False
+                    value = False  # type: ignore[assignment]
                 elif value.isdigit():
-                    value = int(value)
+                    value = int(value)  # type: ignore[assignment]
                 else:
                     with contextlib.suppress(ValueError):
-                        value = float(value)
+                        value = float(value)  # type: ignore[assignment]
 
                 if key == "mode":
                     try:
-                        current_group["mode"] = ExecutionMode(value)
+                        current_group["mode"] = ExecutionMode(cast(str, value))
                     except ValueError:
                         current_group["mode"] = value
                 else:
@@ -1027,7 +1027,7 @@ SCHEMA_VERSION_MAP = {
 
 def _get_agent_names_from_definition(wf: WorkflowDefinition) -> set:
     """Get all agent names from a workflow definition (from agents dict and groups)."""
-    names = set()
+    names: set[str] = set()
     names.update(wf.agents.keys())
     for group in wf.groups:
         for agent in group.agents:

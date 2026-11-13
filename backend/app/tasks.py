@@ -24,6 +24,7 @@ class ScanTask:
     progress: int = 0
     message: str = "Queued"
     scan_id: int | None = None
+    user_id: int | None = None
     result: dict[str, Any] | None = None
     error: str | None = None
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
@@ -314,7 +315,7 @@ def create_scan_task(
     enable_ai: bool = True,
 ) -> str:
     task_id = str(uuid.uuid4())
-    task = ScanTask(task_id=task_id, status="queued")
+    task = ScanTask(task_id=task_id, status="queued", user_id=user_id)
     _tasks[task_id] = task
 
     asyncio.create_task(

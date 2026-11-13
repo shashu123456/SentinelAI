@@ -236,7 +236,7 @@ class ScanSession:
         self.status = ExecutionState.COMPLETED
         self.completed_at = time.time()
         self.updated_at = time.time()
-        self.duration = self.completed_at - self.started_at
+        self.duration = self.completed_at - self.started_at  # type: ignore[operator]
         self.agent_result = result
         self.files_scanned = result.metrics.get("files_scanned", 0) if result.metrics else 0
         # Use findings_count from metrics if available, otherwise fall back to len(findings)
@@ -263,7 +263,7 @@ class ScanSession:
         self.status = ExecutionState.FAILED
         self.completed_at = time.time()
         self.updated_at = time.time()
-        self.duration = self.completed_at - self.started_at
+        self.duration = self.completed_at - self.started_at  # type: ignore[operator]
         self.error = error
         self.transition_history.append(
             {
@@ -280,7 +280,7 @@ class ScanSession:
         self.status = ExecutionState.CANCELLED
         self.completed_at = time.time()
         self.updated_at = time.time()
-        self.duration = self.completed_at - self.started_at
+        self.duration = self.completed_at - self.started_at  # type: ignore[operator]
         self.error = reason
         self.transition_history.append(
             {
@@ -296,7 +296,7 @@ class ScanSession:
         self.status = ExecutionState.TIMEOUT
         self.completed_at = time.time()
         self.updated_at = time.time()
-        self.duration = self.completed_at - self.started_at
+        self.duration = self.completed_at - self.started_at  # type: ignore[operator]
         self.error = "Execution exceeded configured timeout"
         self.transition_history.append(
             {

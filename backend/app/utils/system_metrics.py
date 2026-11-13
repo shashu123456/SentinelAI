@@ -149,8 +149,6 @@ def get_db_latency() -> dict[str, Any]:
             pool_info = {
                 "pool_size": pool.size(),
                 "checked_out": pool.checkedout(),
-                "overflow": pool.overflow(),
-                "checkedin": pool.checkedin(),
             }
 
         return {
