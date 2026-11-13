@@ -1,4 +1,5 @@
 """Pytest: assert scanner can validate committed OpenAPI specs."""
+
 import json
 from pathlib import Path
 

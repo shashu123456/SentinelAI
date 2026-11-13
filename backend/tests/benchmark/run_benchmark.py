@@ -3,6 +3,7 @@
 Prints a table of detection rate, false positives, and elapsed time per spec.
 Asserts overall detection >= 0.80 (80% of expected findings are found).
 """
+
 import json
 import time
 import subprocess
@@ -13,6 +14,7 @@ BASELINE = Path(__file__).parent.parent / "app" / "api" / "v1" / "routers" / "sc
 
 SPECS_DIR = Path(__file__).parent
 EXPECTED = Path(__file__).parent.parent / ".." if False else Path("/dev/null")  # placeholder
+
 
 def load_expected():
     """Load expected findings per spec."""
