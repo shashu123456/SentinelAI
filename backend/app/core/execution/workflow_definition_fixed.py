@@ -16,6 +16,7 @@ Responsibilities:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -141,10 +142,8 @@ class WorkflowRetryPolicy:
     def from_dict(cls, data: dict[str, Any]) -> WorkflowRetryPolicy:
         exceptions = []
         for exc_name in data.get("exceptions", []):
-            try:
+            with contextlib.suppress(Exception):
                 exceptions.append(getattr(__builtins__, exc_name))
-            except Exception:
-                pass
         return cls(
             attempts=data.get("attempts", 3),
             delay=data.get("delay", 1.0),
@@ -332,16 +331,15 @@ class WorkflowDefinition:
         if not self.groups:
             errors.append("At least one execution group is required")
         else:
-            for i, group in enumerate(self.groups):
+            for _i, group in enumerate(self.groups):
                 if not group.agents:
                     errors.append(f"Group '{group.name}' must have at least one agent")
 
                 if group.mode not in ExecutionMode:
                     errors.append(f"Group '{group.name}' has invalid mode: {group.mode}")
 
-                if group.condition:
-                    if not isinstance(group.condition, dict):
-                        errors.append(f"Group '{group.name}' condition must be a dictionary")
+                if group.condition and not isinstance(group.condition, dict):
+                    errors.append(f"Group '{group.name}' condition must be a dictionary")
 
             if not any(g.agents for g in self.groups):
                 errors.append("At least one group must have agents defined")
@@ -477,7 +475,6 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
     # States: ROOT, UNDER_METADATA, UNDER_GROUPS, UNDER_GROUP, UNDER_AGENTS
     state = "ROOT"
     current_group: int | None = None
-    current_agent: int | None = None
     for line in lines:
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
@@ -496,20 +493,18 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
         if stripped.startswith("- "):
             value = stripped[2:].strip()
 
-            if state == "UNDER_GROUPS" and level == 1:
+            if state == "UNDER_GROUPS" and level == 1 and ":" in value:
                 # List item under groups: - name: group1
-                if ":" in value:
-                    gkey, _, gvalue = value.partition(":")
-                    gkey = gkey.strip()
-                    gvalue = gvalue.strip()
+                gkey, _, gvalue = value.partition(":")
+                gkey = gkey.strip()
+                gvalue = gvalue.strip()
 
-                    if "groups" not in result:
-                        result["groups"] = []
+                if "groups" not in result:
+                    result["groups"] = []
 
-                    group_dict = {gkey: gvalue}
-                    result["groups"].append(group_dict)
-                    current_group = len(result["groups"]) - 1
-                    current_agent = None
+                group_dict = {gkey: gvalue}
+                result["groups"].append(group_dict)
+                current_group = len(result["groups"]) - 1
 
             continue
 
@@ -527,28 +522,25 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
             elif val.isdigit():
                 val = int(val)
             else:
-                try:
+                with contextlib.suppress(ValueError):
                     val = float(val)
-                except ValueError:
-                    pass
 
             if current_group is not None:
                 result["groups"][current_group][key] = val
 
             # Handle agent items at level 2 under agents key: - name: agent1
-            if current_group is not None and key == "agents":
-                if stripped.startswith("- "):
-                    agent_value = stripped[2:].strip()
-                    if ":" in agent_value:
-                        akey, _, aval = agent_value.partition(":")
-                        akey = akey.strip()
-                        aval = aval.strip()
+            if current_group is not None and key == "agents" and stripped.startswith("- "):
+                agent_value = stripped[2:].strip()
+                if ":" in agent_value:
+                    akey, _, aval = agent_value.partition(":")
+                    akey = akey.strip()
+                    aval = aval.strip()
 
-                        if "agents" not in result["groups"][current_group]:
-                            result["groups"][current_group]["agents"] = []
+                    if "agents" not in result["groups"][current_group]:
+                        result["groups"][current_group]["agents"] = []
 
-                        agent_dict = {akey: aval}
-                        result["groups"][current_group]["agents"].append(agent_dict)
+                    agent_dict = {akey: aval}
+                    result["groups"][current_group]["agents"].append(agent_dict)
 
         # Handle key: value
         if ":" in stripped:
@@ -570,10 +562,9 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
             elif value.isdigit():
                 value = int(value)
             else:
-                try:
+                with contextlib.suppress(ValueError):
                     value = float(value)
-                except ValueError:
-                    pass  # Keep as string
+                # Keep as string
 
             if state == "ROOT":
                 # Root-level key-value
@@ -615,7 +606,6 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
                     group_dict = {gkey: gvalue}
                     result["groups"].append(group_dict)
                     current_group = len(result["groups"]) - 1
-                    current_agent = None
 
                 elif level == 2 and current_group is not None:
                     # Group properties: mode: sequential, agents: ...
@@ -632,10 +622,8 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
                         elif pval.isdigit():
                             pval = int(pval)
                         else:
-                            try:
+                            with contextlib.suppress(ValueError):
                                 pval = float(pval)
-                            except ValueError:
-                                pass
 
                         if pkey == "mode":
                             result["groups"][current_group]["mode"] = ExecutionMode(pval)
@@ -657,7 +645,7 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
 
                     agent_dict = {akey: aval}
                     result["groups"][current_group]["agents"].append(agent_dict)
-                    current_agent = len(result["groups"][current_group]["agents"]) - 1
+                    len(result["groups"][current_group]["agents"]) - 1
 
     return result
 
@@ -682,7 +670,7 @@ def _serialize_to_yaml(data: dict[str, Any], indent: int = 0) -> str:
                     lines.append(_serialize_to_yaml(item, indent + 2))
                 elif isinstance(item, bool):
                     lines.append(f'{spaces}  - {"true" if item else "false"}')
-                elif isinstance(item, (int, float)):
+                elif isinstance(item, int | float):
                     lines.append(f"{spaces}  - {item}")
                 elif isinstance(item, str):
                     # Only quote strings that need it (contain special chars)
@@ -721,7 +709,7 @@ def _serialize_to_yaml(data: dict[str, Any], indent: int = 0) -> str:
                     lines.append(f"{spaces}  - {item}")
         elif isinstance(value, bool):
             lines.append(f"{spaces}{key}: {'true' if value else 'false'}")
-        elif isinstance(value, (int, float)):
+        elif isinstance(value, int | float):
             # Don't quote numbers
             if isinstance(value, float) and value == int(value) and abs(value) < 1e15:
                 lines.append(f"{spaces}{key}: {int(value)}")

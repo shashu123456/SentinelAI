@@ -330,7 +330,7 @@ class TestSASTSecurityAgent:
 
             # Compare findings - the agent should find the same vulnerabilities
             # as the standalone engine (same rules, same patterns)
-            agent_findings = result_findings = agent_result.findings
+            agent_findings = agent_result.findings
 
             # Both should find at least the same categories of issues
             # SQL injection should be detected by both

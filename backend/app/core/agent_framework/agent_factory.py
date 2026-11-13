@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.agent_framework.agent_registry import get_registry
 from app.core.agent_framework.base_agent import BaseAgent
+
+if TYPE_CHECKING:
+    from app.core.agent_framework.agent_registry import AgentRegistry
+
 from app.core.agent_framework.shared_models import (
     AgentMetadata,
 )

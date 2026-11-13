@@ -8,6 +8,8 @@ and utility functionality.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.core.agent_framework.base_agent import BaseAgent, create_agent
@@ -15,6 +17,7 @@ from app.core.agent_framework.shared_models import (
     AgentContext,
     AgentEvent,
     AgentHealth,
+    AgentHealthInfo,
     AgentMetadata,
     AgentResult,
     AgentStatus,
@@ -244,7 +247,7 @@ class TestConcreteAgent(BaseAgentTests):
         agent = self.ConcreteAgent(metadata=metadata)
 
         # Test callback registration
-        captured_events: List[AgentEvent] = []
+        captured_events: list[AgentEvent] = []
 
         def event_callback(event: AgentEvent) -> None:
             captured_events.append(event)

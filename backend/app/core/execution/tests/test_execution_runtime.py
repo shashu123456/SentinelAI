@@ -8,6 +8,7 @@ Tests cover:
 - RuntimeSnapshot production
 """
 
+import contextlib
 import os
 import tempfile
 from typing import Any
@@ -35,10 +36,8 @@ _TEST_DB_PATH = os.path.join(tempfile.gettempdir(), f"sentinelai_test_session_{o
 def _reset_test_db():
     """Reset the test database between tests."""
     if os.path.exists(_TEST_DB_PATH):
-        try:
+        with contextlib.suppress(PermissionError):
             os.remove(_TEST_DB_PATH)
-        except PermissionError:
-            pass
 
 
 def _get_store():
@@ -82,10 +81,8 @@ def _reset_session_store_db():
     _reset_test_db()
     yield
     # Best-effort cleanup; may fail on Windows if another test holds a connection
-    try:
+    with contextlib.suppress(Exception):
         _reset_test_db()
-    except Exception:
-        pass
 
 
 # ── ExecutionState Tests ───────────────────────────────────────────────────
@@ -410,7 +407,7 @@ def test_execution_runtime_session_lifecycle():
     """Test ExecutionRuntime full session lifecycle."""
     runtime = ExecutionRuntime()
     agent = TestAgent()
-    context = _make_context()
+    _make_context()
 
     # Execute full session
     snapshot = runtime.execute_session(agent, "/tmp/test", session_id=None)
@@ -455,7 +452,7 @@ def test_execution_runtime_cancel_session():
     exec_state, result = runtime.execute_agent(agent, context)
 
     # Cancel session using the session ID from execution
-    result = runtime.cancel_session(exec_state.session_id)
+    runtime.cancel_session(exec_state.session_id)
     # Note: This test verifies cancel_session doesn't crash
 
 

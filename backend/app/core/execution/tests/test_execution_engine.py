@@ -150,7 +150,7 @@ def test_execution_engine_cancel():
     """Test execution cancellation."""
     engine = ExecutionEngine()
     agent = TestAgent()
-    context = _make_context(agent_id=agent.metadata.id)
+    _make_context(agent_id=agent.metadata.id)
 
     # Cancellation is cooperative; just verify it doesn't crash
     # and the method handles the call gracefully

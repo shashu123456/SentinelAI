@@ -8,6 +8,8 @@ and factory integration with the registry.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.core.agent_framework.agent_factory import (
@@ -359,7 +361,7 @@ class TestFactoryAgentLifecycleIntegration:
 
         factory.register_agent_type("test", TestAgentClass)
 
-        agent = factory.create_agent(
+        factory.create_agent(
             agent_type="test",
             agent_id="lifecycle-001",
             display_name="Lifecycle Test",

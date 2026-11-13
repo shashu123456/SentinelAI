@@ -15,6 +15,7 @@ Responsibilities:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -409,24 +410,24 @@ class ExecutionEngine:
         results: list[ExecutionResult] = []
 
         for i, (agent, ctx) in enumerate(agents):
-            if config.cancel_on_first_failure and i > 0:
-                # Check if previous result was a failure
-                if results and results[i - 1].status in (
-                    ExecutionStatus.FAILED,
-                    ExecutionStatus.TIMEOUT,
-                ):
-                    # Execute a no-op cancelled result for remaining
-                    results.append(
-                        ExecutionResult(
-                            agent_id=agent.metadata.id,
-                            status=ExecutionStatus.CANCELLED,
-                            error="Cancelled due to prior failure",
-                            duration=0.0,
-                            progress=0,
-                            transition_history=[],
-                        )
+            if (
+                config.cancel_on_first_failure
+                and i > 0
+                and results
+                and results[i - 1].status in (ExecutionStatus.FAILED, ExecutionStatus.TIMEOUT)
+            ):
+                # Execute a no-op cancelled result for remaining
+                results.append(
+                    ExecutionResult(
+                        agent_id=agent.metadata.id,
+                        status=ExecutionStatus.CANCELLED,
+                        error="Cancelled due to prior failure",
+                        duration=0.0,
+                        progress=0,
+                        transition_history=[],
                     )
-                    continue
+                )
+                continue
 
             result = self.execute(agent, ctx, config)
             results.append(result)
@@ -486,7 +487,5 @@ class ExecutionEngine:
 
     def __del__(self) -> None:
         """Cleanup thread pool on destruction."""
-        try:
+        with contextlib.suppress(Exception):
             self._executor.shutdown(wait=False)
-        except Exception:
-            pass

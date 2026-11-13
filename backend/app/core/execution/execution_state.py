@@ -168,7 +168,7 @@ class ExecutionStateMetadata:
     def from_dict(cls, data: dict[str, Any]) -> ExecutionStateMetadata:
         """Create from dictionary deserialization."""
         state = ExecutionState(data.get("status", "initialized"))
-        metadata = cls(
+        cls(
             session_id=data.get("session_id", ""),
             agent_id=data.get("agent_id", ""),
             target_path=data.get("target_path"),
@@ -334,7 +334,7 @@ class ScanSession:
     def from_dict(cls, data: dict[str, Any]) -> ScanSession:
         """Create from dictionary deserialization."""
 
-        status = ExecutionState(data.get("status", "initialized"))
+        ExecutionState(data.get("status", "initialized"))
         session = cls(
             session_id=data.get("session_id", ""),
             agent_id=data.get("agent_id", ""),

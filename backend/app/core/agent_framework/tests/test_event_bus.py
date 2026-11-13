@@ -8,6 +8,8 @@ event publishing, and history tracking.
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.core.agent_framework.event_bus import (
     EventBus,
     create_event_bus,

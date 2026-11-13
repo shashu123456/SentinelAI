@@ -91,7 +91,7 @@ class PluginLoader:
 
                 # Walk the package directory for plugin submodules
                 if package_path.exists():
-                    for importer, modname, ispkg in pkgutil.iter_modules(
+                    for _importer, modname, _ispkg in pkgutil.iter_modules(
                         [package_path], prefix=f"{package_name}."
                     ):
                         discovered.append(
@@ -105,7 +105,7 @@ class PluginLoader:
                         try:
                             package_path = Path(search_dir) / package_name
                             if package_path.is_dir():
-                                for importer, modname, ispkg in pkgutil.iter_modules(
+                                for _importer, modname, _ispkg in pkgutil.iter_modules(
                                     [package_path], prefix=f"{package_name}."
                                 ):
                                     discovered.append(
@@ -177,13 +177,15 @@ class PluginLoader:
             # Version checking
             if required_version:
                 agent_version = getattr(agent, "metadata", None)
-                if agent_version and agent_version.version:
-                    if not self._version_meets_requirement(agent_version.version, required_version):
-                        raise PluginDependencyError(
-                            f"Agent version {agent_version.version} does not meet "
-                            f"requirement {required_version}"
-                        )
-
+                if (
+                    agent_version
+                    and agent_version.version
+                    and not self._version_meets_requirement(agent_version.version, required_version)
+                ):
+                    raise PluginDependencyError(
+                        f"Agent version {agent_version.version} does not meet "
+                        f"requirement {required_version}"
+                    )
             # Capability checking
             if required_capabilities:
                 agent_capabilities = getattr(agent, "capabilities", []) or []
@@ -203,12 +205,12 @@ class PluginLoader:
         except Exception as exc:
             # Re-raise specific exceptions, wrap others
             if isinstance(
-                exc, (PluginDiscoveryError, PluginValidationError, PluginDependencyError)
+                exc, PluginDiscoveryError | PluginValidationError | PluginDependencyError
             ):
                 raise
             raise PluginValidationError(
                 f"Failed to load plugin {module_name} from {package_name}: {exc}"
-            )
+            ) from exc
 
     def _version_meets_requirement(self, version: str, requirement: str) -> bool:
         """Check if a version meets a requirement.
@@ -333,7 +335,7 @@ def load_plugins_from_dir(
     discovered = loader.discover_plugins(search_dirs=[directory])
 
     loaded: list[BaseAgent] = []
-    for package_name, module_name, file_path in discovered:
+    for package_name, module_name, _file_path in discovered:
         try:
             agent = loader.load_plugin(package_name, module_name)
             loaded.append(agent)
@@ -363,7 +365,7 @@ def auto_discover_plugins(
     discovered = loader.discover_plugins(package_names, search_dirs)
 
     loaded: list[BaseAgent] = []
-    for package_name, module_name, file_path in discovered:
+    for package_name, module_name, _file_path in discovered:
         try:
             agent = loader.load_plugin(package_name, module_name)
             loaded.append(agent)

@@ -20,11 +20,11 @@ from app.schemas.schemas import (
     AnalyticsResponse,
     DashboardStats,
     FindingResponse,
+    OwaspCategoryItem,
     RiskTrendItem,
     ScanActivityItem,
     ScanDetailResponse,
     ScanResponse,
-    OwaspCategoryItem,
 )
 from app.services.audit_service import record_report_export, record_scan_event
 from app.services.scan_service import build_report_data, execute_scan

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import threading
 from collections.abc import Callable
 from typing import Any, Generic, TypeVar
@@ -92,11 +93,9 @@ class EventBus(Generic[PayloadT]):
 
         # Notify subscribers outside the lock to avoid deadlocks
         for callback in subscribers:
-            try:
+            # Swallow callback errors to avoid breaking the publishing agent
+            with contextlib.suppress(Exception):
                 callback(event)
-            except Exception:
-                # Swallow callback errors to avoid breaking the publishing agent
-                pass
 
     def publish_raw(
         self, event_type: EventType, payload: dict[str, Any], source: str | None = None

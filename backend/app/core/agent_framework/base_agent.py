@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import time
 from typing import Any
 
@@ -223,18 +224,6 @@ class BaseAgent(abc.ABC):
         """
         raise NotImplementedError("Subclasses must implement health_check()")
 
-    @abc.abstractmethod
-    def cleanup(self) -> None:
-        """Clean up agent resources.
-
-        Release resources, close connections, and perform any necessary
-        cleanup. This is called when the agent is being shut down.
-
-        Raises:
-            AgentCleanupError: If cleanup fails.
-        """
-        raise NotImplementedError("Subclasses must implement cleanup()")
-
     # ------------------------------------------------------------------ #
     # Lifecycle Orchestrator
     # ------------------------------------------------------------------ #
@@ -351,11 +340,9 @@ class BaseAgent(abc.ABC):
         """
         event = AgentEvent(event_type=event_type, agent_id=self.metadata.id, payload=payload)
         for callback in self._event_callbacks.get(event_type, []):
-            try:
+            # Swallow callback errors to avoid breaking the agent
+            with contextlib.suppress(Exception):
                 callback(event)
-            except Exception:
-                # Swallow callback errors to avoid breaking the agent
-                pass
 
     # ------------------------------------------------------------------ #
     # Utility Methods

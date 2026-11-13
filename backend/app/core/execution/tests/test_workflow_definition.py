@@ -466,10 +466,7 @@ class TestDetectSchemaVersion:
         for version, expected_major in tests:
             # We test the detect function logic
             match = re.match(r"^(\d+)", version)
-            if match:
-                result = match.group(1)
-            else:
-                result = "1"
+            result = match.group(1) if match else "1"
             assert result == expected_major
 
 

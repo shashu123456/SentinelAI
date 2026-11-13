@@ -16,6 +16,7 @@ Responsibilities:
 
 from __future__ import annotations
 
+import contextlib
 import json
 from dataclasses import dataclass, field
 from enum import Enum
@@ -161,10 +162,8 @@ class WorkflowRetryPolicy:
     def from_dict(cls, data: dict[str, Any]) -> WorkflowRetryPolicy:
         exceptions = []
         for exc_name in data.get("exceptions", []):
-            try:
+            with contextlib.suppress(Exception):
                 exceptions.append(getattr(__builtins__, exc_name))
-            except Exception:
-                pass
         return cls(
             attempts=data.get("attempts", 3),
             delay=data.get("delay", 1.0),
@@ -355,16 +354,15 @@ class WorkflowDefinition:
         if not self.groups:
             errors.append("At least one execution group is required")
         else:
-            for i, group in enumerate(self.groups):
+            for _i, group in enumerate(self.groups):
                 if not group.agents:
                     errors.append(f"Group '{group.name}' must have at least one agent")
 
                 if group.mode not in ExecutionMode:
                     errors.append(f"Group '{group.name}' has invalid mode: {group.mode}")
 
-                if group.condition:
-                    if not isinstance(group.condition, dict):
-                        errors.append(f"Group '{group.name}' condition must be a dictionary")
+                if group.condition and not isinstance(group.condition, dict):
+                    errors.append(f"Group '{group.name}' condition must be a dictionary")
 
             if not any(g.agents for g in self.groups):
                 errors.append("At least one group must have agents defined")
@@ -475,7 +473,7 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
 
     lines = content.split("\n")
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         # Calculate indentation BEFORE stripping - key to fixing indentation detection
         stripped_line = line.lstrip()
         indent = len(line) - len(stripped_line)  # Original indent count
@@ -541,10 +539,12 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
                         if current_group is not None:
                             current_group[key] = val
                     # If key is not name/mode/agents/other, it's an agent property
-                    if current_group is not None and key not in ("name", "mode", "agents"):
-                        # Apply to current group if not in agents subsection
-                        if not in_agents_subsection and current_group is not None:
-                            current_group[key] = val
+                    if (
+                        current_group is not None
+                        and key not in ("name", "mode", "agents")
+                        and not in_agents_subsection
+                    ):
+                        current_group[key] = val
                 else:
                     # Top-level list item (not under groups)
                     if key == "name":
@@ -606,10 +606,8 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
                 elif value.isdigit():
                     value = int(value)
                 else:
-                    try:
+                    with contextlib.suppress(ValueError):
                         value = float(value)
-                    except ValueError:
-                        pass
 
                 if key == "mode":
                     try:
@@ -667,7 +665,7 @@ def _serialize_to_yaml(data: dict[str, Any], indent: int = 0) -> str:
                     lines.append(_serialize_to_yaml(item, indent + 2))
                 elif isinstance(item, bool):
                     lines.append(f'{spaces}  - {"true" if item else "false"}')
-                elif isinstance(item, (int, float)):
+                elif isinstance(item, int | float):
                     lines.append(f"{spaces}  - {item}")
                 elif isinstance(item, str):
                     # Only quote strings that need it (contain special chars)
@@ -706,7 +704,7 @@ def _serialize_to_yaml(data: dict[str, Any], indent: int = 0) -> str:
                     lines.append(f"{spaces}  - {item}")
         elif isinstance(value, bool):
             lines.append(f"{spaces}{key}: {'true' if value else 'false'}")
-        elif isinstance(value, (int, float)):
+        elif isinstance(value, int | float):
             # Don't quote numbers
             if isinstance(value, float) and value == int(value) and abs(value) < 1e15:
                 lines.append(f"{spaces}{key}: {int(value)}")

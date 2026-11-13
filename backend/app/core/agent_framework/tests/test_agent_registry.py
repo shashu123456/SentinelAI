@@ -8,6 +8,8 @@ and scope management.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.core.agent_framework.agent_registry import (

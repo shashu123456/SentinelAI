@@ -25,9 +25,13 @@ Depends on:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from app.core.execution.execution_engine import ExecutionEngine, ExecutionResult, ExecutionStatus
 from app.core.execution.execution_state import ExecutionState
+
+if TYPE_CHECKING:
+    from app.core.execution.workflow_definition import WorkflowDefinition
 from app.core.execution.execution_state_registry import ExecutionStateRegistry
 from app.core.execution.runtime_metrics import RuntimeMetrics, RuntimeMetricsSnapshot
 

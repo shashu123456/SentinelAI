@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -85,9 +86,9 @@ class AgentLifecycleManager:
         self.agent: BaseAgent = agent
         self._state: LifecycleState = LifecycleState.PENDING
         self._start_time: float | None = None
-        self._transitions: List[LifecycleTransition] = []
+        self._transitions: list[LifecycleTransition] = []
         self._metrics: LifecycleMetrics = LifecycleMetrics()
-        self._event_callbacks: dict[EventType, List[Any]] = {}
+        self._event_callbacks: dict[EventType, list[Any]] = {}
 
         # Register default event callbacks
         self.register_event_callback(EventType.AGENT_HEALTH_CHANGED, self._on_health_changed)
@@ -294,13 +295,11 @@ class AgentLifecycleManager:
             },
         )()
         for callback in self._event_callbacks.get(event_type, []):
-            try:
+            # Swallow callback errors to avoid breaking the lifecycle
+            with contextlib.suppress(Exception):
                 callback(event)
-            except Exception:
-                # Swallow callback errors to avoid breaking the lifecycle
-                pass
 
-    def get_transition_history(self) -> List[LifecycleTransition]:
+    def get_transition_history(self) -> list[LifecycleTransition]:
         """Get the lifecycle transition history.
 
         Returns:

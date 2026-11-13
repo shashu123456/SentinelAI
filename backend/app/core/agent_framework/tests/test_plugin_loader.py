@@ -8,7 +8,9 @@ dependency checking, and lifecycle management.
 
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -138,7 +140,7 @@ class TestPluginCapabilityChecking:
 
     def test_capability_check_pass(self) -> None:
         """Test that a plugin with required capability passes."""
-        loader = PluginLoader()
+        PluginLoader()
 
         # Create a mock agent with required capabilities
         from app.core.agent_framework.base_agent import BaseAgent
@@ -181,7 +183,7 @@ class TestPluginCapabilityChecking:
 
     def test_capability_check_missing(self) -> None:
         """Test that missing capabilities raise PluginDependencyError."""
-        loader = PluginLoader()
+        PluginLoader()
 
         # Create a mock agent without required capabilities
         from app.core.agent_framework.base_agent import BaseAgent
@@ -248,7 +250,7 @@ class TestPluginRegistration:
                 # Check it was registered with plugin scope
                 from app.core.agent_framework.agent_registry import get_registry
 
-                registry = get_registry()
+                get_registry()
                 # The registry should have the agent registered
                 # (exact behavior depends on plugin implementation)
         except Exception:
@@ -280,23 +282,19 @@ class TestPluginListing:
         """Test listing loaded plugins."""
         loader = PluginLoader()
 
-        try:
-            agents = loader.list_loaded_plugins()
+        # Plugin loading may fail in test environment
+        with contextlib.suppress(Exception):
+            loader.list_loaded_plugins()
             # May be empty if no plugins loaded successfully
-        except Exception:
-            # Plugin loading may fail in test environment
-            pass
 
     def test_list_plugin_metadata(self) -> None:
         """Test listing plugin metadata."""
         loader = PluginLoader()
 
-        try:
-            metadata_list = loader.list_plugin_metadata()
+        # Plugin loading may fail in test environment
+        with contextlib.suppress(Exception):
+            loader.list_plugin_metadata()
             # May be empty if no plugins loaded successfully
-        except Exception:
-            # Plugin loading may fail in test environment
-            pass
 
 
 class TestPluginHealthChecking:
@@ -363,12 +361,10 @@ class TestPluginValidationAll:
         """Test validating all loaded plugins."""
         loader = PluginLoader()
 
-        try:
-            results = loader.validate_all_loaded_plugins()
+        # Plugin loading may fail in test environment
+        with contextlib.suppress(Exception):
+            loader.validate_all_loaded_plugins()
             # Results may be empty if no plugins loaded
-        except Exception:
-            # Plugin loading may fail in test environment
-            pass
 
 
 class TestConvenienceFunctions:
@@ -379,21 +375,17 @@ class TestConvenienceFunctions:
         # Use the agent_framework directory
         directory = "app/core/agent_framework"
         if Path(directory).exists():
-            try:
-                loaded = load_plugins_from_dir(directory)
+            # May fail if directory structure doesn't match expectations
+            with contextlib.suppress(Exception):
+                load_plugins_from_dir(directory)
                 # May return empty list if no standard plugins found
-            except Exception:
-                # May fail if directory structure doesn't match expectations
-                pass
         else:
             # Directory may not exist in all environments
             pass
 
     def test_auto_discover_plugins(self) -> None:
         """Test auto-discovering plugins."""
-        try:
-            loaded = auto_discover_plugins()
+        # May fail in test environment
+        with contextlib.suppress(Exception):
+            auto_discover_plugins()
             # May return empty list if no plugins found
-        except Exception:
-            # May fail in test environment
-            pass

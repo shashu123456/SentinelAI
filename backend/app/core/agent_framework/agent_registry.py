@@ -3,6 +3,10 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.agent_framework.base_agent import BaseAgent
 
 from app.core.agent_framework.shared_models import (
     AgentMetadata,

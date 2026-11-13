@@ -13,8 +13,8 @@ Design:
     - /version exposes deployment metadata for diagnostics and CI/CD
 """
 
-import time
 import os
+import time
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
