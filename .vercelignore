@@ -2,8 +2,6 @@
 .tmp-api/
 frontend/
 backend/venv/
-backend/pyproject.toml
-pyproject.toml
 **/__pycache__/
 **/*.pyc
 *.db
@@ -15,4 +13,3 @@ tools/
 scripts/
 deploy/
 .pytest_cache/
-**/pyproject.toml
