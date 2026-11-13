@@ -611,7 +611,7 @@ def _parse_simple_yaml(content: str) -> dict[str, Any]:
 
                 if key == "mode":
                     try:
-                        current_group["mode"] = ExecutionMode(cast(str, value))
+                        current_group["mode"] = ExecutionMode(value)
                     except ValueError:
                         current_group["mode"] = value
                 else:

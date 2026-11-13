@@ -8,6 +8,7 @@ Thread-safe and non-blocking: all expensive checks have timeouts.
 """
 
 from __future__ import annotations
+from sqlalchemy.pool import QueuePool
 
 import os
 import platform
@@ -145,10 +146,12 @@ def get_db_latency() -> dict[str, Any]:
         # Get pool status if available
         pool = engine.pool
         pool_info = {}
-        if hasattr(pool, "size"):
+        if isinstance(pool, QueuePool):
             pool_info = {
                 "pool_size": pool.size(),
                 "checked_out": pool.checkedout(),
+                "overflow": pool.overflow(),
+                "checkedin": pool.checkedin(),
             }
 
         return {

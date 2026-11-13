@@ -167,7 +167,7 @@ class ExecutionStateMetadata:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ExecutionStateMetadata:
         """Create from dictionary deserialization."""
-        state = ExecutionState(data.get("status", "initialized"))
+        state: ExecutionState = ExecutionState(data.get("status", "initialized"))
         cls(
             session_id=data.get("session_id", ""),
             agent_id=data.get("agent_id", ""),
