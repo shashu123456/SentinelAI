@@ -1,0 +1,24 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Auth Gaps API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/protected": {
+      "get": {
+        "operationId": "getProtected",
+        "summary": "Protected endpoint",
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

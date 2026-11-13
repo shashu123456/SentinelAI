@@ -1,0 +1,5 @@
+{
+  "clean.json": [],
+  "weak-headers.json": ["header_missing_x_content_type_options", "header_missing_x_frame_options"],
+  "auth-gaps.json": ["missing_bearer_token", "insecure_auth_scheme"]
+}
