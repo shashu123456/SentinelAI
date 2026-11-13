@@ -5,9 +5,9 @@ Asserts overall detection >= 0.80 (80% of expected findings are found).
 """
 
 import json
-import time
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 BASELINE = Path(__file__).parent.parent / "app" / "api" / "v1" / "routers" / "scans.py"
