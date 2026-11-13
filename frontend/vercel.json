@@ -1,39 +1,11 @@
 {
   "framework": "vite",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/dashboard",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/new-scan",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/scan/:id",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/live/:taskId",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/sast",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/deps",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/copilot",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/login",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
