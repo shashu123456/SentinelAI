@@ -3,6 +3,7 @@
 frontend/
 backend/venv/
 backend/pyproject.toml
+pyproject.toml
 **/__pycache__/
 **/*.pyc
 *.db
