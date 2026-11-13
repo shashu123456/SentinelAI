@@ -1,6 +1,5 @@
 .secrets/
 .tmp-api/
-frontend/
 backend/venv/
 **/__pycache__/
 **/*.pyc
