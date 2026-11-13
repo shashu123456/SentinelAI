@@ -24,6 +24,7 @@ from typing import Any, TypeVar
 
 try:  # PyYAML is a declared dependency; fall back to the minimal parser if absent
     import yaml as _yaml
+
     _YAML_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _yaml = None
@@ -40,6 +41,7 @@ def _parse_yaml_document(content: str) -> dict[str, Any]:
         if isinstance(parsed, dict):
             return parsed
     return _parse_simple_yaml(content)
+
 
 T = TypeVar("T", bound="WorkflowDefinition")
 
@@ -789,7 +791,11 @@ def load_workflow(filepath: str | Path) -> WorkflowDefinition:
     if "version" in data and not isinstance(data["version"], str):
         data["version"] = str(data["version"])
     metadata = data.get("metadata")
-    if isinstance(metadata, dict) and "version" in metadata and not isinstance(metadata["version"], str):
+    if (
+        isinstance(metadata, dict)
+        and "version" in metadata
+        and not isinstance(metadata["version"], str)
+    ):
         metadata["version"] = str(metadata["version"])
 
     schema_version = detect_schema_version(data)
