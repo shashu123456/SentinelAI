@@ -12,11 +12,15 @@
 
 ### First Scan
 
-1. Click **API Scanner** in the sidebar
-2. Drag and drop your OpenAPI/Swagger spec (`.yaml` or `.json`)
-3. Choose **Live Scan** for real-time progress or **Instant Scan** for quick results
-4. Click **Start Scan**
-5. Review findings when the scan completes
+1. Open **New Scan** — one upload box serves all three scanners
+2. Drag and drop a file: an OpenAPI spec (`.yaml`, `.json`), a dependency manifest
+   (`requirements.txt`, `package.json`, `pom.xml`) or source code / a project `.zip`
+3. The scanner is picked from the file name; use the three buttons above the box to
+   override it if the file is ambiguous (a `.zip` defaults to the code scanner)
+4. Click the scan button and review the findings when the scan completes
+
+Archives are capped at 200 files of 2 MB each; when that limit truncates the scan
+the result is marked **partial**.
 
 ---
 
@@ -82,8 +86,8 @@ Your risk score (0-100) is calculated using:
 
 ### How to Use
 
-1. Click **SAST Analysis** in the sidebar
-2. Upload a source code file or drag and drop
+1. Open **New Scan** and keep the **Source Code** scanner selected
+2. Upload a source file or a `.zip` of a project
 3. View line-level findings with exact code locations
 
 ### Understanding Findings
@@ -177,9 +181,9 @@ The dashboard shows:
 
 The dashboard provides quick access cards to:
 
-- **New Scan** — Upload an API spec
-- **SAST Scan** — Analyze source code
-- **Dependency Scan** — Check packages
+- **New Scan** — One upload box for specs, manifests and source code
+- **SAST Scan** — Opens the same box with the code scanner selected
+- **Dependency Scan** — Opens the same box with the dependency scanner selected
 - **AI Copilot** — Ask security questions
 
 ---
@@ -239,7 +243,7 @@ View and manage your account information under the **Profile** tab.
 | `⌘K` / `Ctrl+K` | Open command palette |
 | `G` then `D` | Go to Dashboard |
 | `G` then `N` | Go to New Scan |
-| `G` then `S` | Go to SAST Scanner |
+| `G` then `S` | Go to New Scan (code scanner) |
 | `G` then `V` | Go to Vulnerabilities |
 | `G` then `C` | Go to AI Copilot |
 | `G` then `R` | Go to Reports |

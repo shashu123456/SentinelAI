@@ -6,7 +6,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- One upload box, three scanners. `POST /api/scans/upload` now takes a `kind`
+  (`spec`, `deps` or `code`, default `spec`) and runs the matching engine:
+  OpenAPI analysis, dependency scanning, or SAST. All three kinds persist into
+  the same `scans` / `findings` tables, each finding tagged with its `source`,
+  so the scan detail view and the JSON/PDF reports show which scanner produced
+  what (`kind`, `counts_by_source`).
+- Uploaded archives are validated before extraction: absolute paths, `..`
+  components and symlink entries are rejected, along with archives over 10 000
+  entries, over a 100:1 compression ratio, or holding an entry above 2 MB. At
+  most 200 files of 2 MB are scanned and the response reports `partial: true`
+  when those caps truncate the work.
+- Dependency and SAST findings are normalised into the persistence shape
+  (`app/services/finding_normalizer.py`): severity is mapped onto the database
+  vocabulary, 0-1 confidences become 0-100 integers, missing
+  description/impact/remediation are generated, and duplicates collapse by
+  (source, package or file, rule, line).
+- The web app's New Scan page is the single upload box for all three scanners:
+  it detects the scanner from the file name, allows an explicit override, and
+  the old `/sast` and `/deps` routes now preselect that kind on the same page.
+
 ### Removed
+
+- Removed the separate SAST and dependency upload pages (`SASTScan.jsx`,
+  `DepScan.jsx`); both routes redirect into the unified upload box with the
+  matching kind preselected.
 
 - Removed the unwired `ExecutionRuntime` draft
   (`backend/app/core/execution/execution_runtime.py`): it called three engine

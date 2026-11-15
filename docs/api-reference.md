@@ -173,26 +173,40 @@ Get current user profile.
 
 ### POST /api/scans/upload
 
-Synchronous API security scan.
+Synchronous scan. One endpoint, three scanners: `kind` selects the engine.
 
 **Request:** `multipart/form-data`
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| file | File | Yes | OpenAPI/Swagger spec (.json, .yaml, .yml) |
-| api_name | string | No | API name (auto-detected if omitted) |
+| file | File | Yes | See the accepted uploads per kind below |
+| kind | string | No | `spec` (default), `deps` or `code` |
+| api_name | string | No | API name for `kind=spec` (auto-detected if omitted) |
+
+| kind | Engine | Accepted uploads |
+|------|--------|------------------|
+| `spec` | OWASP API scanner | `.json`, `.yaml`, `.yml` |
+| `deps` | Dependency scanner | `.txt`, `.json`, `.xml`, `.in`, `.lock`, `.zip` |
+| `code` | SAST engine | `.py`, `.js`, `.jsx`, `.ts`, `.tsx`, `.java`, `.go`, `.rb`, `.php`, `.zip` |
+
+A wrong extension for the kind, an unknown kind, or an unsafe/invalid archive
+answers `422`; an upload above the size limit answers `413`.
 
 **Response (200):**
 ```json
 {
   "id": 1,
   "api_name": "Pet Store API",
+  "api_title": "Pet Store API",
   "total_endpoints": 15,
   "total_vulnerabilities": 8,
   "risk_score": 72,
   "risk_level": "High",
   "status": "completed",
-  "findings": [...],
-  "ai_analysis": { ... }
+  "kind": "spec",
+  "partial": false,
+  "counts_by_source": { "spec": 8 },
+  "created_at": "2026-01-01T00:00:00Z",
+  "completed_at": "2026-01-01T00:00:15Z"
 }
 ```
 

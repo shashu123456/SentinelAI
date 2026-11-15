@@ -310,7 +310,7 @@ Retry-After: 30
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/scans/upload` | Yes | Upload OpenAPI spec and scan |
+| POST | `/api/scans/upload` | Yes | Upload a spec, dependency manifest or source archive; `kind` selects the scanner |
 | GET | `/api/scans` | Yes | List all scans |
 | GET | `/api/scans/{id}` | Yes | Get scan details |
 | GET | `/api/scans/{id}/findings` | Yes | Get scan findings |
@@ -332,34 +332,67 @@ Retry-After: 30
 
 #### POST /api/scans/upload
 
+One endpoint, three scanners. `kind` picks the engine; it defaults to `spec`.
+
+| `kind` | Engine | Accepted uploads |
+|--------|--------|------------------|
+| `spec` | OWASP API scanner | `.json`, `.yaml`, `.yml` OpenAPI/Swagger documents |
+| `deps` | Dependency scanner | `.txt`, `.json`, `.xml`, `.in`, `.lock`, `.zip` of manifests |
+| `code` | SAST engine | `.py .js .jsx .ts .tsx .java .go .rb .php`, or a `.zip` of sources |
+
+Archive uploads are validated before anything is written: absolute paths,
+`..` components and symlinks are rejected, as are archives over 10 000 entries,
+over a 100:1 compression ratio, or containing an entry above 2 MB. At most 200
+files of 2 MB each are scanned; when those caps truncate the work the response
+sets `partial: true`. Rejections answer `422` with `archive rejected: ...`;
+an upload above the size limit answers `413`.
+
 ```bash
-# Upload OpenAPI spec (YAML or JSON)
+# API spec — the api_name is taken from the document when omitted
 curl -X POST http://localhost:8000/api/scans/upload \
   -H "Authorization: Bearer eyJ..." \
   -H "X-CSRF-Token: <token>" \
+  -F "kind=spec" \
   -F "file=@openapi.yaml" \
   -F "api_name=My API"
+
+# Dependency manifest
+curl -X POST http://localhost:8000/api/scans/upload \
+  -H "Authorization: Bearer eyJ..." \
+  -F "kind=deps" \
+  -F "file=@requirements.txt"
+
+# Source archive
+curl -X POST http://localhost:8000/api/scans/upload \
+  -H "Authorization: Bearer eyJ..." \
+  -F "kind=code" \
+  -F "file=@project.zip"
 ```
 
 ```json
-// Response (201)
+// Response (200)
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "api_name": "My API",
-    "api_title": "My API",
-    "total_endpoints": 42,
-    "total_vulnerabilities": 8,
-    "risk_score": 45,
-    "risk_level": "medium",
-    "status": "completed",
-    "created_at": "2024-01-01T00:00:00Z",
-    "completed_at": "2024-01-01T00:00:15Z"
-  },
-  "message": "Scan completed: 42 endpoints, 8 vulnerabilities found"
+  "id": 1,
+  "api_name": "requirements.txt",
+  "api_title": null,
+  "api_version": null,
+  "total_endpoints": 0,
+  "total_vulnerabilities": 3,
+  "risk_score": 45,
+  "risk_level": "medium",
+  "status": "completed",
+  "kind": "deps",
+  "partial": false,
+  "counts_by_source": { "deps": 3 },
+  "organization_id": null,
+  "project_id": null,
+  "created_at": "2026-01-01T00:00:00Z",
+  "completed_at": "2026-01-01T00:00:15Z"
 }
 ```
+
+Every finding carries its origin in `source` (`spec`, `deps` or `code`), and the
+JSON/PDF reports include `kind` and `counts_by_source`.
 
 #### GET /api/scans (Paginated)
 

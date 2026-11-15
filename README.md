@@ -10,7 +10,7 @@ A production-ready AI-powered API security scanner that detects OWASP API vulner
 ## Try it
 
 1. **Register** — open the app and create an account
-2. **New scan** — provide an OpenAPI spec URL or upload a spec file
+2. **New scan** — one upload box: drop an OpenAPI spec, a dependency manifest, or source code / a project zip and the matching scanner runs
 3. **Report** — view detected findings with severity, CWEs, and remediation hints
 
 Live API: https://sentinelai-api.vercel.app  
@@ -34,7 +34,7 @@ Live Web: https://sentinelai-web.vercel.app
 ```mermaid
 graph TD
   subgraph "Frontend (Vite + React)"
-    UI -->|OpenAPI spec| API
+    UI -->|spec / deps / code| API
   end
   subgraph "Backend (FastAPI)"
     API -->|Scan orchestration| Engine
