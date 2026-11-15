@@ -15,15 +15,15 @@ def analyze_vulnerabilities(findings: list[dict], api_info: dict) -> dict | None
     findings_summary = _format_findings_for_prompt(findings)
     api_context = (
         f"API: {api_info.get('title', 'Unknown')} v{api_info.get('version', '?')}\n"
-        f"Total endpoints: {api_info.get('total_endpoints', 0)}"
+        f"Total endpoints: {api_info.get('total_endpoints', 0)}\n"
     )
 
-    prompt = f"""You are a senior security analyst. Analyze the following API security scan results and provide a comprehensive security assessment.
+    prompt = """You are a senior security analyst. Analyze the following API security scan results and provide a comprehensive security assessment.
 
-{api_context}
+""" + api_context + """
 
 Detected Vulnerabilities:
-{findings_summary}
+""" + findings_summary + """
 
 Provide your analysis as a JSON object with exactly these keys:
 - executive_summary: A 2-3 sentence overview for C-level executives
@@ -125,14 +125,16 @@ def _extract_json_object(text: str) -> str | None:
 
 
 def _format_findings_for_prompt(findings: list[dict]) -> str:
+    """Trimmed version - only includes essential fields to reduce memory usage."""
+    if not findings:
+        return ""
+
     lines = []
     for i, f in enumerate(findings, 1):
-        lines.append(
-            f"{i}. [{f.get('severity', 'Unknown')}] {f.get('vulnerability_name', 'Unknown')}\n"
-            f"   Category: {f.get('owasp_category', 'N/A')}\n"
-            f"   Description: {f.get('description', 'N/A')}\n"
-            f"   Impact: {f.get('impact', 'N/A')}\n"
-        )
+        severity = f.get("severity", "Unknown")
+        vuln_name = f.get("vulnerability_name", "Unknown")
+        # Only include severity and vuln name - drop description to save memory
+        lines.append(f"{i}. [{severity}] {vuln_name}")
     return "\n".join(lines)
 
 
@@ -149,8 +151,7 @@ def _generate_fallback_analysis(findings: list[dict], api_info: dict) -> dict:
         "technical_explanation": (
             f"The automated scan analyzed {api_info.get('total_endpoints', 0)} endpoints "
             f"and detected issues spanning OWASP API Security Top 10 categories: "
-            f"{', '.join(sorted(categories))}. "
-            + " ".join(f.get("description", "") for f in critical_high[:3])
+            f"{', '.join(sorted(categories))}."
         ),
         "business_impact": (
             f"With {len(critical_high)} critical/high severity findings, "

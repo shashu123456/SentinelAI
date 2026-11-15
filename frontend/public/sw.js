@@ -1,88 +1,133 @@
-/* SentinelAI Service Worker — PWA offline support */
+/* SentinelAI Service Worker — PWA offline support (v2)
+ *
+ * Why v2: the previous worker served "/" and "/index.html" cache-first under a
+ * cache name that never changed, so after every deploy the cached HTML kept
+ * pointing at chunk hashes that no longer existed. Vercel then answered those
+ * missing chunks with index.html (text/html), and the browser refused to run a
+ * module script with the wrong MIME type — a blank page.
+ *
+ * Rules now:
+ *   - navigations  -> network-first (always pick up a new deploy), HTML cache fallback offline
+ *   - /api/        -> network-first (never cached)
+ *   - /assets/     -> cache-first (hashed/immutable), but never cache HTML responses
+ *   - everything else -> stale-while-revalidate, HTML never cached
+ */
 
-const CACHE_NAME = 'sentinelai-v1';
-const STATIC_CACHE = 'sentinelai-static-v1';
-const API_CACHE = 'sentinelai-api-v1';
+const VERSION = 'v2';
+const HTML_CACHE = `sentinelai-html-${VERSION}`;
+const STATIC_CACHE = `sentinelai-static-${VERSION}`;
 
-// Static assets to pre-cache on install
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-];
+const isHtml = (res) => (res.headers.get('content-type') || '').includes('text/html');
 
-// Install: pre-cache critical assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+    caches
+      .open(HTML_CACHE)
+      .then((cache) => cache.add(new Request('/index.html', { cache: 'reload' })))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
   );
 });
 
-// Activate: clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== STATIC_CACHE && key !== API_CACHE && key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => !key.endsWith(VERSION)).map((key) => caches.delete(key))),
       )
-    ).then(() => self.clients.claim())
+      .then(() => self.clients.claim()),
   );
 });
 
-// Fetch: network-first for API, cache-first for static
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
-
-  // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Skip chrome-extension and other non-http
+  const url = new URL(request.url);
   if (!url.protocol.startsWith('http')) return;
+  // Never intercept third-party requests.
+  if (url.origin !== self.location.origin) return;
 
-  // API requests: network-first with cache fallback
+  // ── API: network-first, no caching ──────────────────────────────
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          // Cache successful GET responses
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(API_CACHE).then(cache => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request))
+      fetch(request).catch(
+        () =>
+          new Response(
+            JSON.stringify({
+              success: false,
+              error: { code: 'offline', message: 'You appear to be offline.' },
+            }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } },
+          ),
+      ),
     );
     return;
   }
 
-  // Static assets: cache-first with network fallback
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(response => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(STATIC_CACHE).then(cache => cache.put(request, clone));
+  // ── Navigations: network-first so a new deploy is picked up ─────
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request);
+          if (fresh && fresh.ok && isHtml(fresh)) {
+            const cache = await caches.open(HTML_CACHE);
+            cache.put('/index.html', fresh.clone());
+          }
+          return fresh;
+        } catch {
+          const cached = await caches.match('/index.html');
+          return (
+            cached ||
+            new Response('You are offline.', {
+              status: 503,
+              headers: { 'Content-Type': 'text/plain' },
+            })
+          );
         }
-        return response;
-      });
-    }).catch(() => {
-      // Return offline page for navigation requests
-      if (request.mode === 'navigate') {
-        return caches.match('/index.html');
-      }
-      return new Response('Offline', { status: 503 });
-    })
+      })(),
+    );
+    return;
+  }
+
+  // ── Hashed build assets: cache-first, HTML never cached ─────────
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      (async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        const res = await fetch(request);
+        if (res.ok && !isHtml(res)) {
+          const cache = await caches.open(STATIC_CACHE);
+          cache.put(request, res.clone());
+        }
+        return res;
+      })(),
+    );
+    return;
+  }
+
+  // ── Other static files: stale-while-revalidate ──────────────────
+  event.respondWith(
+    (async () => {
+      const cached = await caches.match(request);
+      const network = fetch(request)
+        .then((res) => {
+          if (res.ok && !isHtml(res)) {
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, res.clone()));
+          }
+          return res;
+        })
+        .catch(() => null);
+
+      return cached || (await network) || new Response('Offline', { status: 503 });
+    })(),
   );
 });
 
-// Push notifications
+// ── Push notifications ────────────────────────────────────────────
 self.addEventListener('push', (event) => {
   const data = event.data?.json() || {
     title: 'SentinelAI Alert',
@@ -100,16 +145,12 @@ self.addEventListener('push', (event) => {
         { action: 'view', title: 'View' },
         { action: 'dismiss', title: 'Dismiss' },
       ],
-    })
+    }),
   );
 });
 
-// Notification click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   if (event.action === 'dismiss') return;
-
-  event.waitUntil(
-    self.clients.openWindow(event.notification.data || '/dashboard')
-  );
+  event.waitUntil(self.clients.openWindow(event.notification.data || '/dashboard'));
 });

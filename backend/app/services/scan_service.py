@@ -31,6 +31,19 @@ from app.services.risk_engine import compute_risk_assessment
 from app.utils.logger import logger
 
 
+def _trim_findings_for_ai(findings: list[dict]) -> list[dict]:
+    """Trim findings to essential fields only, reducing memory footprint for AI model."""
+    trimmed = []
+    for f in findings:
+        trimmed.append({
+            "vulnerability_name": f.get("vulnerability_name"),
+            "severity": f.get("severity"),
+            "owasp_category": f.get("owasp_category"),
+            "cwe_id": f.get("cwe_id"),
+        })
+    return trimmed
+
+
 def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
     """Execute a synchronous scan and persist all results.
 
@@ -61,13 +74,15 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
         scan.total_endpoints = parsed_api["total_endpoints"]
 
         findings = run_owasp_scan(parsed_api)
-        finding_repo.bulk_add_from_scan(scan.id, findings)
+        # Trim findings before persisting and sending to AI to reduce memory
+        findings_trimmed = _trim_findings_for_ai(findings)
+        finding_repo.bulk_add_from_scan(scan.id, findings_trimmed)
 
-        risk = calculate_risk_score(findings)
+        risk = calculate_risk_score(findings_trimmed)
 
         # Enhanced risk assessment
         try:
-            assessment = compute_risk_assessment(findings)
+            assessment = compute_risk_assessment(findings_trimmed)
             risk["security_grade"] = assessment.security_grade
             risk["confidence_score"] = assessment.confidence_score
             risk["priority"] = assessment.priority
@@ -80,9 +95,9 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
 
         scan_repo.complete(scan, risk, scan.transition_history)
 
-        # AI analysis (best-effort, non-blocking)
+        # AI analysis (best-effort, non-blocking) - use trimmed findings
         try:
-            ai_result = analyze_vulnerabilities(findings, parsed_api)
+            ai_result = analyze_vulnerabilities(findings_trimmed, parsed_api)
             if ai_result:
                 db.add(
                     AIAnalysis(
