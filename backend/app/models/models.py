@@ -334,6 +334,10 @@ class Scan(Base):
     risk_score: Mapped[int] = mapped_column(Integer, default=0)
     risk_level: Mapped[str] = mapped_column(String(20), default="Unknown")
     status: Mapped[str] = mapped_column(String(20), default="pending")
+    # Which engine produced this scan: spec (OpenAPI), deps (manifests), code (SAST).
+    kind: Mapped[str] = mapped_column(
+        String(10), default="spec", server_default="spec", nullable=False, index=True
+    )
     source_spec: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -375,6 +379,10 @@ class Finding(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     scan_id: Mapped[int] = mapped_column(Integer, ForeignKey("scans.id"), nullable=False)
+    # Which engine produced this finding: spec | deps | code.
+    source: Mapped[str] = mapped_column(
+        String(10), default="spec", server_default="spec", nullable=False, index=True
+    )
     vulnerability_name: Mapped[str] = mapped_column(String(200), nullable=False)
     owasp_category: Mapped[str] = mapped_column(String(50), nullable=False)
     cwe_id: Mapped[str | None] = mapped_column(String(20), nullable=True)

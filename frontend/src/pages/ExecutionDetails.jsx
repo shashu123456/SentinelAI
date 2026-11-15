@@ -22,6 +22,12 @@ function getRiskLevel(score) {
   return 'Clean';
 }
 
+const KIND_LABELS = {
+  spec: 'API Spec',
+  deps: 'Dependencies',
+  code: 'Source Code',
+};
+
 function getBadgeClass(status) {
   if (status === 'running' || status === 'queued') return 'running';
   if (status === 'completed') return 'completed';
@@ -110,6 +116,7 @@ export default function ExecutionDetails() {
 
       <div className="status-bar">
         <span className={`status-badge ${getBadgeClass(scanData.status)}`}>{scanData.status}</span>
+        {scanData.kind && <span className="scan-id">{KIND_LABELS[scanData.kind] || scanData.kind} scanner</span>}
         {scanData.created_at && (
           <span className="scan-id">
             <Clock size={12} /> {new Date(scanData.created_at).toLocaleString()}

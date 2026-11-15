@@ -52,6 +52,24 @@ def stamp_head() -> None:
         logger.warning("Alembic stamp skipped: %s", exc)
 
 
+def recorded_revision(engine) -> str | None:
+    """Return the revision stored in ``alembic_version``, or None if untracked.
+
+    A non-None value means Alembic owns this schema, so pending revisions must
+    be *applied*. Stamping in that case would silently skip new migrations.
+    """
+    from sqlalchemy import inspect, text
+
+    if "alembic_version" not in inspect(engine).get_table_names():
+        return None
+    try:
+        with engine.connect() as connection:
+            row = connection.execute(text("SELECT version_num FROM alembic_version")).first()
+    except Exception:  # pragma: no cover - unreadable version table
+        return None
+    return row[0] if row else None
+
+
 def baseline_tables_exist(engine, metadata) -> bool:
     """True when every application table already exists in the target schema."""
     inspector = inspect(engine)

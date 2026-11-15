@@ -151,9 +151,11 @@ export const scans = {
   list: () => request('/scans/'),
   get: (id) => request(`/scans/${id}`),
   dashboard: () => request('/scans/dashboard'),
-  upload: (file, apiName) => {
+  // kind selects the engine: 'spec' (OpenAPI), 'deps' (manifests) or 'code' (SAST).
+  upload: (file, apiName, kind = 'spec') => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('kind', kind);
     if (apiName) formData.append('api_name', apiName);
     return request('/scans/upload', { method: 'POST', body: formData });
   },

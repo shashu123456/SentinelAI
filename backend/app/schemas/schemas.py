@@ -70,6 +70,7 @@ from app.schemas.scan import (
     ScanDetailResponse,
     ScanListParams,
     ScanResponse,
+    UnifiedScanResponse,
 )
 
 # Resolve circular forward references

@@ -8,8 +8,6 @@ const ROUTE_NAMES = {
   'new-scan': { label: 'New Scan' },
   scan: { label: 'Scan Results' },
   live: { label: 'Live Scan' },
-  sast: { label: 'SAST Analysis' },
-  deps: { label: 'Dependencies' },
   copilot: { label: 'AI Copilot' },
   vulnerabilities: { label: 'Vulnerabilities' },
   reports: { label: 'Reports' },

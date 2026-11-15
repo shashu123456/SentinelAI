@@ -7,6 +7,7 @@ from app.schemas.constants import FINDING_SORT_FIELDS, SEVERITIES, parse_sort_fi
 
 class FindingResponse(BaseModel):
     id: int
+    source: str = "spec"
     vulnerability_name: str
     owasp_category: str
     cwe_id: str | None = None

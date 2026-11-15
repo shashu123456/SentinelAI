@@ -207,7 +207,7 @@ export default function Dashboard() {
               </div>
               <ChevronRight size={14} className="dash-action-arrow" />
             </Link>
-            <Link to="/sast" className="dash-action-card">
+            <Link to="/new-scan?kind=code" className="dash-action-card">
               <div className="dash-action-icon purple"><Eye size={20} /></div>
               <div className="dash-action-text">
                 <span className="dash-action-name">SAST Analysis</span>
@@ -215,7 +215,7 @@ export default function Dashboard() {
               </div>
               <ChevronRight size={14} className="dash-action-arrow" />
             </Link>
-            <Link to="/deps" className="dash-action-card">
+            <Link to="/new-scan?kind=deps" className="dash-action-card">
               <div className="dash-action-icon orange"><Package size={20} /></div>
               <div className="dash-action-text">
                 <span className="dash-action-name">Dependency Scan</span>
@@ -256,7 +256,7 @@ export default function Dashboard() {
                   </div>
                   <Upload size={14} className="dash-onboard-arrow" />
                 </Link>
-                <Link to="/sast" className="dash-onboard-step">
+                <Link to="/new-scan?kind=code" className="dash-onboard-step">
                   <div className="dash-onboard-num">2</div>
                   <div className="dash-onboard-text">
                     <span className="dash-onboard-title">Run SAST Analysis</span>
@@ -264,7 +264,7 @@ export default function Dashboard() {
                   </div>
                   <FileCode size={14} className="dash-onboard-arrow" />
                 </Link>
-                <Link to="/deps" className="dash-onboard-step">
+                <Link to="/new-scan?kind=deps" className="dash-onboard-step">
                   <div className="dash-onboard-num">3</div>
                   <div className="dash-onboard-text">
                     <span className="dash-onboard-title">Scan Dependencies</span>

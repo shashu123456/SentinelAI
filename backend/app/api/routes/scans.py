@@ -3,7 +3,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
 import yaml
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -25,12 +25,20 @@ from app.schemas.schemas import (
     ScanActivityItem,
     ScanDetailResponse,
     ScanResponse,
+    UnifiedScanResponse,
 )
 from app.services.audit_service import record_report_export, record_scan_event
 from app.services.scan_service import build_report_data, execute_scan
+from app.services.unified_scan import (
+    UploadRejected,
+    execute_unified_scan,
+    validate_filename,
+    validate_kind,
+)
 from app.tasks import create_scan_task, get_task
 from app.utils.cache import cache
 from app.utils.logger import logger
+from app.utils.ratelimit import limiter
 from app.utils.security import get_current_user
 
 settings = get_settings()
@@ -91,16 +99,43 @@ def _get_owned_scan(db: Session, scan_id: int, user_id: int):
     return scan
 
 
-@router.post("/upload", response_model=ScanResponse)
+@router.post("/upload", response_model=UnifiedScanResponse)
+@limiter.limit("10/minute")
 async def upload_and_scan(
+    request: Request,
     file: UploadFile = File(...),
+    kind: str = Form("spec"),
     api_name: str = Form(""),
     organization_id: int | None = Form(None),
     project_id: int | None = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    api_name, spec = _read_and_validate_spec(file, api_name)
+    """Upload one file and scan it with one of three engines.
+
+    ``kind`` selects the scanner: ``spec`` (OpenAPI), ``deps`` (dependency
+    manifests) or ``code`` (source files / zip). Every kind persists findings in
+    the same shape, each tagged with its ``source``.
+    """
+    try:
+        kind = validate_kind(kind)
+        validate_filename(kind, file.filename)
+    except UploadRejected as rejected:
+        raise HTTPException(
+            status_code=rejected.status_code, detail=rejected.detail
+        ) from None
+
+    raw = await file.read()
+    if len(raw) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Max: {settings.MAX_UPLOAD_SIZE_MB}MB",
+        )
+
+    if kind == "spec":
+        # Unchanged spec validation: reuse the existing parser on the same bytes.
+        file.file.seek(0)
+        api_name, spec = _read_and_validate_spec(file, api_name)
 
     # Validate org/project membership if provided
     if organization_id is not None:
@@ -119,14 +154,25 @@ async def upload_and_scan(
         if organization_id is None:
             organization_id = project.organization_id
 
+    partial = False
     try:
-        scan = execute_scan(db, current_user.id, api_name, spec)
+        if kind == "spec":
+            scan = execute_scan(db, current_user.id, api_name, spec)
+            scan.kind = "spec"
+        else:
+            scan, partial = execute_unified_scan(
+                db, current_user.id, kind, file.filename or f"upload.{kind}", raw
+            )
         # Associate with organization/project if provided
         if organization_id is not None:
             scan.organization_id = organization_id
         if project_id is not None:
             scan.project_id = project_id
         db.commit()
+    except UploadRejected as rejected:
+        raise HTTPException(
+            status_code=rejected.status_code, detail=rejected.detail
+        ) from None
     except Exception as e:
         logger.error(f"Scan execution failed: {e}")
         raise HTTPException(status_code=500, detail="Scan execution failed") from None
@@ -138,7 +184,18 @@ async def upload_and_scan(
         cache.invalidate_prefix(f"org_dashboard:{organization_id}")
         cache.invalidate_prefix(f"org_analytics:{organization_id}")
 
-    return scan
+    counts = dict(
+        db.execute(
+            select(Finding.source, func.count(Finding.id))
+            .where(Finding.scan_id == scan.id)
+            .group_by(Finding.source)
+        ).all()
+    )
+    response = UnifiedScanResponse.model_validate(scan)
+    response.kind = scan.kind
+    response.partial = partial
+    response.counts_by_source = {str(k): int(v) for k, v in counts.items()}
+    return response
 
 
 @router.post("/upload/async")

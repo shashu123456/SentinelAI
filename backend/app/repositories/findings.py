@@ -30,6 +30,7 @@ class FindingRepository(BaseRepository[Finding]):
         """Build a Finding ORM instance from a scanner finding dict."""
         return Finding(
             scan_id=scan_id,
+            source=data.get("source", "spec"),
             vulnerability_name=data["vulnerability_name"],
             owasp_category=data["owasp_category"],
             cwe_id=data.get("cwe_id"),

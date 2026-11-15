@@ -33,12 +33,21 @@ class ScanResponse(BaseModel):
     risk_score: int
     risk_level: str
     status: str
+    kind: str = "spec"
     organization_id: int | None = None
     project_id: int | None = None
     created_at: datetime
     completed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class UnifiedScanResponse(ScanResponse):
+    """Upload response: which engine ran, whether work was truncated, and how
+    many findings each source contributed."""
+
+    partial: bool = False
+    counts_by_source: dict[str, int] = {}
 
 
 class ScanDetailResponse(ScanResponse):

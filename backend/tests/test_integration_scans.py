@@ -54,12 +54,15 @@ class TestUploadAndScan:
         assert resp.json()["api_title"] == "YAML API"
 
     def test_upload_invalid_file_type(self, client, auth_headers):
+        # Contract change in Phase 3: a wrong extension for the chosen kind is a
+        # validation error (422) that names the allowed list, not a bare 400.
         resp = client.post(
             "/api/scans/upload",
             files={"file": ("notes.txt", "hello world", "text/plain")},
             headers=auth_headers,
         )
-        assert resp.status_code == 400
+        assert resp.status_code == 422
+        assert ".yaml" in resp.json()["detail"]
 
     def test_upload_invalid_json(self, client, auth_headers):
         resp = client.post(

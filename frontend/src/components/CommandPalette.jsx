@@ -16,9 +16,9 @@ const COMMAND_SECTIONS = [
     label: 'Navigation',
     items: [
       { id: 'nav-dashboard', label: 'Mission Control', description: 'Executive security overview', icon: LayoutDashboard, path: '/dashboard', keywords: ['home', 'overview', 'main'] },
-      { id: 'nav-new-scan', label: 'New API Scan', description: 'Upload OpenAPI spec for analysis', icon: Upload, path: '/new-scan', keywords: ['scan', 'upload', 'openapi', 'swagger'] },
-      { id: 'nav-sast', label: 'SAST Analysis', description: 'Static application security testing', icon: FileCode, path: '/sast', keywords: ['static', 'code', 'analysis'] },
-      { id: 'nav-deps', label: 'Dependency Scanner', description: 'Scan for vulnerable dependencies', icon: Package, path: '/deps', keywords: ['dependencies', 'packages', 'cve'] },
+      { id: 'nav-new-scan', label: 'New Scan', description: 'One upload box for spec, dependencies or code', icon: Upload, path: '/new-scan', keywords: ['scan', 'upload', 'openapi', 'swagger'] },
+      { id: 'nav-sast', label: 'Code Scan (SAST)', description: 'Static application security testing', icon: FileCode, path: '/new-scan?kind=code', keywords: ['static', 'code', 'analysis', 'sast'] },
+      { id: 'nav-deps', label: 'Dependency Scan', description: 'Scan manifests for vulnerable dependencies', icon: Package, path: '/new-scan?kind=deps', keywords: ['dependencies', 'packages', 'cve', 'manifest'] },
       { id: 'nav-copilot', label: 'AI Security Copilot', description: 'Ask security questions with AI', icon: Bot, path: '/copilot', keywords: ['ai', 'chat', 'assistant'] },
       { id: 'nav-vulns', label: 'Vulnerability Explorer', description: 'Browse and manage all findings', icon: AlertTriangle, path: '/vulnerabilities', keywords: ['vulns', 'findings', 'issues'] },
       { id: 'nav-reports', label: 'Report Center', description: 'Generate and download reports', icon: FileText, path: '/reports', keywords: ['pdf', 'export'] },

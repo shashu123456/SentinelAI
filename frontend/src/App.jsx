@@ -20,8 +20,6 @@ const NewScan = lazy(() => import('./pages/NewScan'));
 const ScanResult = lazy(() => import('./pages/ScanResult'));
 const ExecutionDetails = lazy(() => import('./pages/ExecutionDetails'));
 const ScanLive = lazy(() => import('./pages/ScanLive'));
-const SASTScan = lazy(() => import('./pages/SASTScan'));
-const DepScan = lazy(() => import('./pages/DepScan'));
 const Copilot = lazy(() => import('./pages/Copilot'));
 const VulnerabilityExplorer = lazy(() => import('./pages/VulnerabilityExplorer'));
 const AuditCenter = lazy(() => import('./pages/AuditCenter'));
@@ -109,8 +107,9 @@ function App() {
                       <Route path="/new-scan" element={<NewScan />} />
                       <Route path="/scan/:id" element={<ExecutionDetails />} />
                       <Route path="/live/:taskId" element={<ScanLive />} />
-                      <Route path="/sast" element={<SASTScan />} />
-                      <Route path="/deps" element={<DepScan />} />
+                      {/* One upload box: the old per-scanner pages now preselect a kind. */}
+                      <Route path="/sast" element={<Navigate to="/new-scan?kind=code" replace />} />
+                      <Route path="/deps" element={<Navigate to="/new-scan?kind=deps" replace />} />
                       <Route path="/copilot" element={<Copilot />} />
                       <Route path="/vulnerabilities" element={<VulnerabilityExplorer />} />
                       <Route path="/audit" element={<AuditCenter />} />

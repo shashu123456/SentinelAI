@@ -10,7 +10,7 @@ const SHORTCUTS = [
   { keys: ['Esc'], description: 'Close modals / panels', category: 'Navigation' },
   { keys: ['G', 'D'], description: 'Go to Dashboard', category: 'Go to...' },
   { keys: ['G', 'N'], description: 'Go to New Scan', category: 'Go to...' },
-  { keys: ['G', 'S'], description: 'Go to SAST', category: 'Go to...' },
+  { keys: ['G', 'S'], description: 'Go to Code Scan', category: 'Go to...' },
   { keys: ['G', 'V'], description: 'Go to Vulnerabilities', category: 'Go to...' },
   { keys: ['G', 'C'], description: 'Go to AI Copilot', category: 'Go to...' },
   { keys: ['G', 'R'], description: 'Go to Reports', category: 'Go to...' },
@@ -21,7 +21,7 @@ const SHORTCUTS = [
 const GO_ROUTES = {
   D: '/dashboard',
   N: '/new-scan',
-  S: '/sast',
+  S: '/new-scan?kind=code',
   V: '/vulnerabilities',
   C: '/copilot',
   R: '/reports',

@@ -89,6 +89,22 @@
 }
 
 .scan-mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.scan-mode-toggle.three { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .scan-mode-toggle.three { grid-template-columns: 1fr; } }
+
+.detected-kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  border-radius: var(--radius);
+  background: rgba(0,255,170,0.04);
+  border: 1px solid rgba(0,255,170,0.15);
+  color: var(--accent-cyan);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
 .mode-option { cursor: pointer; }
 .mode-option input { display: none; }
 

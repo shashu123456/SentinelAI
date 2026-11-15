@@ -169,8 +169,13 @@ def build_report_data(scan: Scan) -> dict:
     loaded, this triggers one query via the lazy loader — acceptable for a
     report-generation path.
     """
+    counts_by_source: dict[str, int] = {}
+    for f in scan.findings:
+        counts_by_source[f.source] = counts_by_source.get(f.source, 0) + 1
+
     findings_data = [
         {
+            "source": f.source,
             "vulnerability_name": f.vulnerability_name,
             "owasp_category": f.owasp_category,
             "cwe_id": f.cwe_id,
@@ -209,6 +214,9 @@ def build_report_data(scan: Scan) -> dict:
     return {
         "api_name": scan.api_name,
         "api_version": scan.api_version or "N/A",
+        "kind": scan.kind,
+        "partial": bool((scan.source_spec or {}).get("partial", False)),
+        "counts_by_source": counts_by_source,
         "scan_date": scan.created_at.strftime("%Y-%m-%d %H:%M UTC") if scan.created_at else "N/A",
         "total_endpoints": scan.total_endpoints,
         "risk_score": scan.risk_score,

@@ -1,10 +1,99 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { scans } from '../services/api';
-import { Upload, FileText, AlertCircle, Loader2, Shield, Terminal } from 'lucide-react';
+import {
+  Upload, FileText, AlertCircle, Loader2, Shield, Code, Package, FileJson
+} from 'lucide-react';
 import './NewScan.css';
 
+const KINDS = {
+  spec: {
+    label: 'API Spec',
+    icon: FileJson,
+    extensions: ['.json', '.yaml', '.yml'],
+    accept: '.json,.yaml,.yml',
+    hint: 'JSON or YAML (.json, .yaml, .yml)',
+    dropzone: 'Drop your OpenAPI/Swagger specification here',
+    button: 'Scan API Spec',
+    checks: [
+      'OWASP API Security Top 10 checks (API1-API10)',
+      'Authentication & authorization analysis',
+      'Object property exposure detection',
+      'SSRF & business flow analysis',
+    ],
+  },
+  deps: {
+    label: 'Dependencies',
+    icon: Package,
+    extensions: ['.txt', '.json', '.xml', '.in', '.lock', '.zip'],
+    accept: '.txt,.json,.xml,.in,.lock,.zip',
+    hint: 'requirements.txt, package.json, pom.xml or a .zip of manifests',
+    dropzone: 'Drop your dependency manifest here',
+    button: 'Scan Dependencies',
+    checks: [
+      'Known CVEs in pinned packages',
+      'CWE mapping and CVSS score per finding',
+      'Minimum safe version to upgrade to',
+      'Python, JavaScript and Java manifests',
+    ],
+  },
+  code: {
+    label: 'Source Code',
+    icon: Code,
+    extensions: ['.py', '.js', '.jsx', '.ts', '.tsx', '.java', '.go', '.rb', '.php', '.zip'],
+    accept: '.py,.js,.jsx,.ts,.tsx,.java,.go,.rb,.php,.zip',
+    hint: 'source files or a .zip of a project',
+    dropzone: 'Drop a source file or a project .zip here',
+    button: 'Scan Source Code',
+    checks: [
+      'SQL injection, command injection, XSS patterns',
+      'Hardcoded secrets and weak cryptography',
+      'Unsafe deserialization, path traversal, SSRF',
+      'CWE/OWASP mapping with line-level evidence',
+    ],
+  },
+};
+
+const KIND_ORDER = ['spec', 'deps', 'code'];
+
+// Manifests whose extension alone is ambiguous (".json", ".xml") or that have
+// no scannable extension at all (".txt", ".in", ".lock").
+const DEP_MANIFESTS = [
+  'package.json', 'package-lock.json', 'pom.xml', 'pipfile', 'pipfile.lock',
+  'poetry.lock', 'composer.json', 'composer.lock', 'go.mod', 'gemfile.lock',
+];
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+function baseName(name) {
+  return (name || '').split(/[/\\]/).pop().toLowerCase();
+}
+
+/** Return the kind a file name belongs to, or null when it is ambiguous. */
+export function detectKind(filename) {
+  const name = baseName(filename);
+  if (!name) return null;
+  if (name.endsWith('.zip')) return 'code';
+  if (DEP_MANIFESTS.includes(name)) return 'deps';
+  if (/^requirements.*\.(txt|in)$/.test(name)) return 'deps';
+  if (name.endsWith('.lock')) return 'deps';
+  if (name.endsWith('.yaml') || name.endsWith('.yml')) return 'spec';
+  if (name.endsWith('.json')) return 'spec';
+  if (name.endsWith('.txt')) return 'deps';
+  if (name.endsWith('.xml')) return 'deps';
+  const ext = '.' + name.split('.').pop();
+  if (KINDS.code.extensions.includes(ext)) return 'code';
+  return null;
+}
+
 export default function NewScan() {
+  const [searchParams] = useSearchParams();
+  const requestedKind = searchParams.get('kind');
+
+  const [kind, setKind] = useState(
+    requestedKind && KINDS[requestedKind] ? requestedKind : 'spec'
+  );
+  const [detected, setDetected] = useState(null);
   const [file, setFile] = useState(null);
   const [apiName, setApiName] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -13,26 +102,47 @@ export default function NewScan() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (requestedKind && KINDS[requestedKind]) setKind(requestedKind);
+  }, [requestedKind]);
+
+  const active = KINDS[kind];
+  const ActiveIcon = active.icon;
+
   const handleFile = (f) => {
     setError('');
     if (!f) return;
 
-    const validExts = ['.json', '.yaml', '.yml'];
-    const ext = '.' + f.name.split('.').pop().toLowerCase();
-
-    if (!validExts.includes(ext)) {
-      setError('Please upload a JSON or YAML file (.json, .yaml, .yml)');
-      return;
-    }
-
-    if (f.size > 5 * 1024 * 1024) {
+    if (f.size > MAX_FILE_BYTES) {
       setError('File size must be under 5MB');
       return;
     }
 
+    const guessed = detectKind(f.name);
+    let target = guessed || kind;
+
+    if (!KINDS[target].extensions.some((ext) => f.name.toLowerCase().endsWith(ext))) {
+      setError(
+        `${f.name} is not a file this scanner reads. Allowed for ${KINDS[target].label}: ` +
+        `${KINDS[target].extensions.join(', ')}`
+      );
+      return;
+    }
+
+    setDetected(guessed);
+    setKind(target);
     setFile(f);
     if (!apiName) {
-      setApiName(f.name.replace(/\.(json|yaml|yml)$/, ''));
+      setApiName(f.name.replace(/\.[^.]+$/, ''));
+    }
+  };
+
+  const handleKindChange = (next) => {
+    setKind(next);
+    setDetected(null);
+    setError('');
+    if (file && !KINDS[next].extensions.some((ext) => file.name.toLowerCase().endsWith(ext))) {
+      setFile(null);
     }
   };
 
@@ -66,7 +176,7 @@ export default function NewScan() {
     setError('');
 
     try {
-      const result = await scans.upload(file, apiName);
+      const result = await scans.upload(file, apiName, kind);
       navigate(`/scan/${result.id}`);
     } catch (err) {
       setError(err.message || 'Scan failed');
@@ -79,11 +189,37 @@ export default function NewScan() {
     <div className="page-content">
       <div className="new-scan-header">
         <h1>New Security Scan</h1>
-        <p className="subtitle">Upload an OpenAPI/Swagger specification to analyze</p>
+        <p className="subtitle">
+          One upload box, three scanners — the file decides which engine runs
+        </p>
       </div>
 
       <div className="new-scan-card">
         <form onSubmit={handleSubmit}>
+          <div className="scan-mode-toggle three" role="radiogroup" aria-label="Scanner">
+            {KIND_ORDER.map((key) => {
+              const Icon = KINDS[key].icon;
+              return (
+                <label key={key} className="mode-option">
+                  <input
+                    type="radio"
+                    name="kind"
+                    value={key}
+                    checked={kind === key}
+                    onChange={() => handleKindChange(key)}
+                  />
+                  <div className="mode-card">
+                    <Icon size={18} />
+                    <div>
+                      <strong>{KINDS[key].label}</strong>
+                      <span>{KINDS[key].hint}</span>
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+
           <div
             className={`dropzone ${dragActive ? 'active' : ''} ${file ? 'has-file' : ''}`}
             onClick={() => fileInputRef.current?.click()}
@@ -95,22 +231,24 @@ export default function NewScan() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".json,.yaml,.yml"
+              accept={active.accept}
               onChange={(e) => handleFile(e.target.files[0])}
               style={{ display: 'none' }}
             />
 
             {file ? (
               <div className="file-selected">
-                <FileText size={40} />
+                <ActiveIcon size={40} />
                 <div className="file-info">
                   <span className="file-name">{file.name}</span>
-                  <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
+                  <span className="file-size">
+                    {(file.size / 1024).toFixed(1)} KB · {active.label} scanner
+                  </span>
                 </div>
                 <button
                   type="button"
                   className="remove-file"
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                  onClick={(e) => { e.stopPropagation(); setFile(null); setDetected(null); }}
                 >
                   Remove
                 </button>
@@ -118,22 +256,31 @@ export default function NewScan() {
             ) : (
               <>
                 <Upload size={48} className="upload-icon" />
-                <h3>Drop your OpenAPI specification here</h3>
+                <h3>{active.dropzone}</h3>
                 <p>or click to browse files</p>
-                <span className="file-types">Supports JSON and YAML (.json, .yaml, .yml) - Max 5MB</span>
+                <span className="file-types">Supports {active.hint} — Max 5MB</span>
               </>
             )}
           </div>
 
-          <div className="form-group">
-            <label>API Name (optional)</label>
-            <input
-              type="text"
-              value={apiName}
-              onChange={(e) => setApiName(e.target.value)}
-              placeholder="e.g., User Service API"
-            />
-          </div>
+          {detected && (
+            <div className="detected-kind">
+              <Shield size={14} />
+              Detected {KINDS[detected].label.toLowerCase()} — running the {KINDS[detected].label} scanner
+            </div>
+          )}
+
+          {kind === 'spec' && (
+            <div className="form-group">
+              <label>API Name (optional)</label>
+              <input
+                type="text"
+                value={apiName}
+                onChange={(e) => setApiName(e.target.value)}
+                placeholder="e.g., User Service API"
+              />
+            </div>
+          )}
 
           {error && (
             <div className="error-msg">
@@ -143,13 +290,11 @@ export default function NewScan() {
           )}
 
           <div className="scan-info">
-            <h4>What will be scanned:</h4>
+            <h4>What this scanner checks:</h4>
             <ul>
-              <li>OWASP API Security Top 10 checks (API1-API10)</li>
-              <li>Authentication & authorization analysis</li>
-              <li>Object property exposure detection</li>
-              <li>SSRF & business flow analysis</li>
-              <li>AI-powered risk assessment</li>
+              {active.checks.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
           </div>
 
@@ -165,8 +310,8 @@ export default function NewScan() {
               </>
             ) : (
               <>
-                <Shield size={16} />
-                {'Start Instant Scan'}
+                <FileText size={16} />
+                {active.button}
               </>
             )}
           </button>

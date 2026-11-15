@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: Demo Vulnerable API
+  version: 1.0.0
+  description: Minimal deliberately-weak API used to demo the spec scanner.
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+      summary: Read a user by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The user
+  /orders/{orderId}:
+    delete:
+      operationId: deleteOrder
+      summary: Delete an order (no auth declared)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+  /login:
+    post:
+      operationId: login
+      summary: Issue a token over plaintext
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: A token
+  /search:
+    get:
+      operationId: search
+      summary: Free-text search
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Results
