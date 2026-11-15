@@ -211,11 +211,14 @@ def build_report_data(scan: Scan) -> dict:
             "recommended_mitigation": scan.ai_analysis.recommended_mitigation,
         }
 
+    source_spec = scan.source_spec or {}
     return {
         "api_name": scan.api_name,
         "api_version": scan.api_version or "N/A",
         "kind": scan.kind,
-        "partial": bool((scan.source_spec or {}).get("partial", False)),
+        "partial": bool(source_spec.get("partial", False)),
+        "files_scanned": int(source_spec.get("files_scanned") or 0),
+        "files_eligible": int(source_spec.get("files_eligible") or 0),
         "counts_by_source": counts_by_source,
         "scan_date": scan.created_at.strftime("%Y-%m-%d %H:%M UTC") if scan.created_at else "N/A",
         "total_endpoints": scan.total_endpoints,

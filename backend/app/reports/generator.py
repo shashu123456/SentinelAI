@@ -90,6 +90,35 @@ OWASP_NAMES = {
 PAGE_W, PAGE_H = letter
 MARGIN = 0.75 * inch
 
+# A scan has a `kind`: an API specification, a dependency manifest, or source
+# code. Only the first has endpoints, so endpoint-shaped reporting is wrong for
+# the other two — the labels, blurbs and summary rows below switch on it.
+SCAN_TYPE_LABELS = {
+    "spec": "API Specification",
+    "deps": "Dependency Manifest",
+    "code": "Source Code",
+}
+
+SCAN_TYPE_BLURBS = {
+    "spec": "static analysis of the API specification",
+    "deps": "matching the pinned packages against known vulnerability data",
+    "code": "static analysis of the uploaded source files",
+}
+
+SOURCE_LABELS = {
+    "spec": "API Spec",
+    "deps": "Dependencies",
+    "code": "Source Code",
+}
+
+# What the affected location means differs per source: a path, a package pin, or
+# an operation from the specification.
+LOCATION_FIELD_LABELS = {
+    "spec": "ENDPOINT",
+    "deps": "PACKAGE",
+    "code": "LOCATION",
+}
+
 
 # ============================================================================
 # CUSTOM FLOWABLES
@@ -239,6 +268,46 @@ def _escape(text: str) -> str:
     )
 
 
+def _scan_kind(scan_data: dict) -> str:
+    kind = str(scan_data.get("kind") or "spec").lower()
+    return kind if kind in SCAN_TYPE_LABELS else "spec"
+
+
+def _count_by_source(findings: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for finding in findings:
+        source = str(finding.get("source") or "spec")
+        counts[source] = counts.get(source, 0) + 1
+    return counts
+
+
+def _scope_metric(kind: str, endpoints: int, findings: list[dict]) -> tuple[int, str]:
+    """Pick the fourth metric card: what a scan of this kind actually covered."""
+    if endpoints:
+        return endpoints, "Endpoints Scanned"
+    if kind == "deps":
+        return _distinct_locations(findings, "deps"), "Vulnerable Packages"
+    if kind == "code":
+        return _distinct_locations(findings, "code"), "Vulnerable Files"
+    return 0, "Endpoints Scanned"
+
+
+def _distinct_locations(findings: list[dict], source: str) -> int:
+    """Count the packages (deps) or files (code) the findings point at."""
+    locations = set()
+    for finding in findings:
+        if str(finding.get("source") or "spec") != source:
+            continue
+        location = str(finding.get("affected_endpoint") or "").strip()
+        if not location:
+            continue
+        if source == "code":
+            # ``path/to/file.py:12`` — the file is what was scanned, not the line.
+            location = location.rsplit(":", 1)[0]
+        locations.add(location)
+    return len(locations)
+
+
 def _severity_color_hex(severity):
     clr = SEVERITY_COLORS.get(severity, NAVY_900)
     return clr.hexval()
@@ -337,6 +406,12 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     )
 
     CONTENT_W = PAGE_W - 2 * MARGIN
+    kind = _scan_kind(scan_data)
+    scan_type = SCAN_TYPE_LABELS[kind]
+    target_name = scan_data.get("api_name", "N/A")
+    api_version = scan_data.get("api_version") or ""
+    if str(api_version) in ("N/A", "None"):
+        api_version = ""
 
     # ================================================================
     # COVER PAGE
@@ -373,15 +448,19 @@ def generate_pdf_report(scan_data: dict) -> bytes:
         alignment=TA_CENTER,
         leading=18,
     )
+    # A dependency manifest or a source archive is not an "API" and has no
+    # version, so the cover says what was scanned instead of inventing both.
+    target_prefix = "Target API" if kind == "spec" else "Target"
     story.append(
-        Paragraph(
-            f"Target API: <b>{_escape(scan_data.get('api_name', 'N/A'))}</b>",
-            cover_info_style,
-        )
+        Paragraph(f"{target_prefix}: <b>{_escape(target_name)}</b>", cover_info_style)
     )
+    cover_bits = [scan_type]
+    if api_version:
+        cover_bits.insert(0, f"Version {_escape(api_version)}")
+    cover_bits.append(_escape(scan_data.get("scan_date", "N/A")))
     story.append(
         Paragraph(
-            f"Version {_escape(scan_data.get('api_version', 'N/A'))}  |  {_escape(scan_data.get('scan_date', 'N/A'))}",
+            "  |  ".join(cover_bits),
             ParagraphStyle(
                 "CoverDate",
                 parent=styles["Normal"],
@@ -444,11 +523,23 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
     # Summary paragraph
     if total == 0:
-        summary = "No security vulnerabilities were identified. The API specification appears to follow security best practices."
-    else:
         summary = (
-            f"The security assessment of <b>{_escape(scan_data.get('api_name', 'the API'))}</b> identified "
-            f"<b>{total}</b> security finding{'s' if total != 1 else ''} across the OWASP API Security Top 10. "
+            "No security findings were identified. "
+            + (
+                "The API specification appears to follow security best practices."
+                if kind == "spec"
+                else f"No issues were reported by {SCAN_TYPE_BLURBS[kind]}."
+            )
+        )
+    else:
+        scope = (
+            "across the OWASP API Security Top 10"
+            if kind == "spec"
+            else f"through {SCAN_TYPE_BLURBS[kind]}"
+        )
+        summary = (
+            f"The security assessment of <b>{_escape(target_name if kind == 'spec' else target_name or 'the target')}</b> identified "
+            f"<b>{total}</b> security finding{'s' if total != 1 else ''} {scope}. "
         )
         if crit_high > 0:
             summary += (
@@ -464,7 +555,10 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     story.append(Spacer(1, 18))
 
     # Metric cards row
-    endpoints = scan_data.get("total_endpoints", 0)
+    endpoints = int(scan_data.get("total_endpoints") or 0)
+    packages = _distinct_locations(findings, "deps")
+    source_files = _distinct_locations(findings, "code")
+    scope_value, scope_label = _scope_metric(kind, endpoints, findings)
     card_w = (CONTENT_W - 30) / 4
     metric_row = [
         [
@@ -490,7 +584,7 @@ def generate_pdf_report(scan_data: dict) -> bytes:
                 RED_600 if crit_high > 0 else GREEN_600,
                 width=card_w,
             ),
-            MetricCard(str(endpoints), "Endpoints Scanned", BLUE_500, width=card_w),
+            MetricCard(str(scope_value), scope_label, BLUE_500, width=card_w),
         ]
     ]
     metric_table = Table(metric_row, colWidths=[card_w + 10] * 4)
@@ -563,14 +657,75 @@ def generate_pdf_report(scan_data: dict) -> bytes:
             story.append(legend)
             story.append(Spacer(1, 16))
 
+    # Findings by source — a scan of a manifest or an archive has no endpoints,
+    # so the per-scanner breakdown is the honest replacement for that view.
+    counts_by_source = scan_data.get("counts_by_source") or _count_by_source(findings)
+    if not endpoints and counts_by_source:
+        story.append(Paragraph("Findings by Source", subsection_style))
+        story.append(Spacer(1, 6))
+        sev_order = ["Critical", "High", "Medium", "Low", "Info"]
+        source_rows = [["Source", "Findings", *sev_order]]
+        for source, count in sorted(counts_by_source.items(), key=lambda kv: -kv[1]):
+            per_sev = dict.fromkeys(sev_order, 0)
+            for finding in findings:
+                if str(finding.get("source") or "spec") != source:
+                    continue
+                key = str(finding.get("severity") or "Info").strip().title()
+                per_sev[key] = per_sev.get(key, 0) + 1
+            source_rows.append(
+                [SOURCE_LABELS.get(source, source.title()), str(count)]
+                + [str(per_sev[sev]) for sev in sev_order]
+            )
+
+        src_w = 1.7 * inch
+        sev_w = (CONTENT_W - src_w) / 6
+        source_table = Table(source_rows, colWidths=[src_w] + [sev_w] * 6)
+        source_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), NAVY_900),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 7),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                    ("GRID", (0, 0), (-1, -1), 0.5, GRAY_200),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, NAVY_50]),
+                ]
+            )
+        )
+        story.append(source_table)
+        story.append(Spacer(1, 16))
+
     # Scan details
     story.append(Paragraph("Scan Details", subsection_style))
     detail_data = [
         ["Field", "Value"],
-        ["API Name", _escape(scan_data.get("api_name", "N/A"))],
-        ["API Version", _escape(scan_data.get("api_version", "N/A"))],
-        ["Scan Date", _escape(scan_data.get("scan_date", "N/A"))],
-        ["Total Endpoints", str(endpoints)],
+        ["API Name" if kind == "spec" else "Target", _escape(target_name)],
+    ]
+    if kind != "spec":
+        detail_data.append(["Scan Type", scan_type])
+    if api_version:
+        detail_data.append(["API Version", _escape(api_version)])
+    detail_data.append(["Scan Date", _escape(scan_data.get("scan_date", "N/A"))])
+    if endpoints:
+        detail_data.append(["Endpoints Scanned", str(endpoints)])
+    if kind == "deps" and packages:
+        detail_data.append(["Vulnerable Packages", str(packages)])
+    if kind == "code" and source_files:
+        detail_data.append(["Vulnerable Files", str(source_files)])
+    if scan_data.get("partial"):
+        scanned = int(scan_data.get("files_scanned") or 0)
+        eligible = int(scan_data.get("files_eligible") or 0)
+        coverage = (
+            f"Partial - first {scanned} of {eligible} files scanned"
+            if eligible
+            else "Partial - the per-scan file cap truncated this scan"
+        )
+        detail_data.append(["Coverage", coverage])
+    detail_data += [
         ["Total Findings", str(total)],
         ["Risk Score", f"{risk_score}/100 ({risk_level})"],
     ]
@@ -605,8 +760,8 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     story.append(HRFlowable(width="100%", thickness=1, color=GRAY_200, spaceAfter=8))
     story.append(
         Paragraph(
-            "Each finding below represents a potential security issue identified through static analysis "
-            "of the API specification. Manual verification is recommended before confirming exploitability.",
+            "Each finding below represents a potential security issue identified through "
+            f"{SCAN_TYPE_BLURBS[kind]}. Manual verification is recommended before confirming exploitability.",
             small_style,
         )
     )
@@ -615,7 +770,12 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     if not findings:
         story.append(
             Paragraph(
-                "No vulnerabilities were identified. The API specification appears to follow security best practices.",
+                "No vulnerabilities were identified."
+                + (
+                    " The API specification appears to follow security best practices."
+                    if kind == "spec"
+                    else ""
+                ),
                 body_style,
             )
         )
@@ -632,8 +792,11 @@ def generate_pdf_report(scan_data: dict) -> bytes:
             sev_clr = _severity_color_hex(severity)
             sev_bg = _severity_bg_hex(severity)
             confidence = finding.get("confidence", 85)
-            owasp = finding.get("owasp_category", "N/A")
+            owasp = str(finding.get("owasp_category") or "N/A").strip()
             cwe = finding.get("cwe_id", "N/A")
+            # Dependency and SAST findings carry no OWASP API category, and a
+            # bare "OWASP: N/A - " line is noise rather than a finding detail.
+            owasp_known = owasp not in ("", "N/A", "None", "Unmapped (SAST)")
 
             # ---- Finding Card ----
             # Header bar
@@ -670,14 +833,20 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
             # OWASP + CWE tags
             tags = []
-            tags.append(
-                Paragraph(
-                    f'<font color="{NAVY_600.hexval()}" size="8">OWASP: </font>'
-                    f'<font color="{BLUE_600.hexval()}" size="8"><b>{owasp}</b></font>'
-                    f'<font color="{NAVY_400.hexval()}" size="8"> - {_escape(OWASP_NAMES.get(owasp, ""))}</font>',
-                    ParagraphStyle("Tag1", fontSize=8, leading=11),
+            if owasp_known:
+                owasp_name = OWASP_NAMES.get(owasp, "")
+                tags.append(
+                    Paragraph(
+                        f'<font color="{NAVY_600.hexval()}" size="8">OWASP: </font>'
+                        f'<font color="{BLUE_600.hexval()}" size="8"><b>{_escape(owasp)}</b></font>'
+                        + (
+                            f'<font color="{NAVY_400.hexval()}" size="8"> - {_escape(owasp_name)}</font>'
+                            if owasp_name
+                            else ""
+                        ),
+                        ParagraphStyle("Tag1", fontSize=8, leading=11),
+                    )
                 )
-            )
             if cwe and cwe != "N/A":
                 tags.append(
                     Paragraph(
@@ -686,19 +855,20 @@ def generate_pdf_report(scan_data: dict) -> bytes:
                         ParagraphStyle("Tag2", fontSize=8, leading=11),
                     )
                 )
-            tag_row = [
-                [tags[0], tags[1] if len(tags) > 1 else Paragraph("", ParagraphStyle("Empty"))]
-            ]
-            tag_table = Table(tag_row, colWidths=[CONTENT_W / 2, CONTENT_W / 2])
-            tag_table.setStyle(
-                TableStyle(
-                    [
-                        ("TOPPADDING", (0, 0), (-1, -1), 6),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                    ]
+            if tags:
+                tag_w = CONTENT_W / len(tags)
+                tag_table = Table([tags], colWidths=[tag_w] * len(tags))
+                tag_table.setStyle(
+                    TableStyle(
+                        [
+                            ("TOPPADDING", (0, 0), (-1, -1), 6),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                        ]
+                    )
                 )
-            )
+            else:
+                tag_table = Spacer(0, 6)
 
             # Detail fields
             detail_rows: list[list[Paragraph]] = []
@@ -712,9 +882,19 @@ def generate_pdf_report(scan_data: dict) -> bytes:
                         ]
                     )
 
+            # "N/A C:\\...\\app.py" was the old output for a code finding, since
+            # only specification findings have a method.
+            location_parts = [
+                str(part).strip()
+                for part in (
+                    finding.get("affected_method"),
+                    finding.get("affected_endpoint"),
+                )
+                if part and str(part).strip() and str(part).strip().upper() != "N/A"
+            ]
             _add_field(
-                "ENDPOINT",
-                f"{finding.get('affected_method', 'N/A')} {finding.get('affected_endpoint', 'N/A')}",
+                LOCATION_FIELD_LABELS.get(str(finding.get("source") or "spec"), "ENDPOINT"),
+                " ".join(location_parts),
             )
             _add_field("DESCRIPTION", finding.get("description", ""))
             _add_field("DETECTION REASON", finding.get("detection_reason", ""))
@@ -851,7 +1031,8 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     story.append(HRFlowable(width="100%", thickness=0.5, color=GRAY_200, spaceAfter=10))
     story.append(
         Paragraph(
-            "<b>Disclaimer:</b> This report is generated by automated static analysis of the API specification. "
+            "<b>Disclaimer:</b> This report is generated by automated analysis: "
+            f"{SCAN_TYPE_BLURBS[kind]}. "
             "Findings represent potential vulnerabilities that may require manual verification. "
             "This assessment does not replace a comprehensive penetration test or security audit.",
             ParagraphStyle(

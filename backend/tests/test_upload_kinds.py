@@ -213,7 +213,22 @@ class TestPartialResults:
 
         resp = _upload(client, auth_headers, "many.zip", payload, kind="code")
         assert resp.status_code == 200, resp.text
-        assert resp.json()["partial"] is True
+        body = resp.json()
+        assert body["partial"] is True
+
+        # partial must say what was left out, not just that something was.
+        note = body["partial_note"]
+        assert note, body
+        assert "first 200 of 251 eligible files" in note, note
+        assert "not scanned" in note, note
+
+    def test_small_archive_has_no_partial_note(self, client, auth_headers):
+        payload = _zip({"app.py": INSECURE_PY})
+        resp = _upload(client, auth_headers, "small.zip", payload, kind="code")
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["partial"] is False
+        assert body["partial_note"] is None
 
 
 class TestSamplesExist:

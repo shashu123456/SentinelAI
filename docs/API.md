@@ -572,23 +572,19 @@ curl "http://localhost:8000/api/scans?page=1&per_page=10&status=completed" \
 
 ---
 
-### SAST Endpoints
+### Stateless Scanner Endpoints
+
+These run an engine over a **path on the server** and return findings without
+creating a `Scan` row. They are for API clients and integrations only: the web
+UI never calls them. The browser path is `POST /api/scans/upload`, which takes
+an uploaded file plus a `kind` (`spec` / `deps` / `code`), persists the scan and
+returns a scan id.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/sast/scan` | Yes | Run SAST scan |
-| GET | `/api/sast/rules` | Yes | List all SAST rules |
-| GET | `/api/sast/stats` | Yes | SAST statistics |
-
----
-
-### Dependency Scanner Endpoints
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/deps/scan` | Yes | Scan dependencies |
-| POST | `/api/deps/upload` | Yes | Upload manifest file |
-| GET | `/api/deps/stats` | Yes | Dependency statistics |
+| POST | `/api/security/sast/scan` | Yes | Run SAST over a server path |
+| POST | `/api/security/sast/scan/text` | Yes | Run SAST over submitted source text |
+| POST | `/api/security/deps/scan` | Yes | Scan dependencies at a server path |
 
 ---
 

@@ -144,11 +144,13 @@ def _safe_target(dest_dir: str, name: str) -> str:
 
 def extract_archive_safely(
     data: bytes, dest_dir: str, kind: str
-) -> tuple[list[str], bool]:
-    """Extract ``data`` into ``dest_dir``, returning (file paths, partial).
+) -> tuple[list[str], bool, int]:
+    """Extract ``data`` into ``dest_dir``.
 
-    ``partial`` is True when the per-scan caps stopped us before every eligible
-    file was written.
+    Returns ``(written_paths, partial, eligible_count)``. ``partial`` is True
+    when the per-scan caps stopped us before every eligible file was written;
+    ``eligible_count`` is how many entries passed the extension filter, so the
+    caller can say exactly how much of the archive was left unscanned.
     """
     extensions = SCANNABLE_EXTENSIONS[kind]
     try:
@@ -174,6 +176,11 @@ def extract_archive_safely(
                 f"{uncompressed / compressed:.0f}:1 exceeds {MAX_COMPRESSION_RATIO:.0f}:1",
             )
 
+        eligible = sum(
+            1
+            for info in infos
+            if not info.is_dir() and info.filename.lower().endswith(extensions)
+        )
         written: list[str] = []
         partial = False
         for info in infos:
@@ -213,7 +220,7 @@ def extract_archive_safely(
             f"archive rejected: no scannable file found "
             f"(allowed: {', '.join(extensions)})",
         )
-    return written, partial
+    return written, partial, eligible
 
 
 def _write_upload(filename: str, data: bytes, dest_dir: str) -> str:
@@ -229,14 +236,36 @@ def _write_upload(filename: str, data: bytes, dest_dir: str) -> str:
     return target
 
 
-def _run_engine(kind: str, target: str) -> list[dict]:
+def _relative_to_root(path: str, root: str) -> str:
+    """Return ``path`` relative to ``root``, or ``path`` when it cannot be.
+
+    The SAST engine reports absolute paths inside the temporary extraction
+    directory. Those host paths must not reach the API response, the UI or the
+    PDF report: a client should read ``app.py:9``, not the analyst's temp folder.
+    """
+    if not path:
+        return path
+    try:
+        relative = os.path.relpath(os.path.abspath(path), os.path.abspath(root))
+    except ValueError:  # different drive on Windows
+        return path
+    if relative == os.pardir or relative.startswith(os.pardir + os.sep):
+        return path
+    return relative.replace(os.sep, "/")
+
+
+def _run_engine(kind: str, target: str, root: str) -> list[dict]:
     """Call the existing engine and return normalized, deduped finding dicts."""
     if kind == DEPS_KIND:
         result = run_dep_scan(target)
         normalized = [normalize_dep(f.to_dict()) for f in result.findings]
     elif kind == CODE_KIND:
         result = run_sast_scan(target)
-        normalized = [normalize_sast(f.to_dict()) for f in result.findings]
+        normalized = []
+        for finding in result.findings:
+            raw = dict(finding.to_dict())
+            raw["file_path"] = _relative_to_root(str(raw.get("file_path") or ""), root)
+            normalized.append(normalize_sast(raw))
     else:  # pragma: no cover - guarded by validate_kind
         raise UploadRejected(422, f"Unsupported kind '{kind}'")
 
@@ -261,20 +290,29 @@ def execute_unified_scan(
     finding_repo = FindingRepository(db)
 
     partial = False
+    files_scanned = 1
+    files_eligible = 1
     with tempfile.TemporaryDirectory(prefix="sentinelai_upload_") as workdir:
         if filename.lower().endswith(".zip"):
-            files, partial = extract_archive_safely(data, workdir, kind)
+            files, partial, files_eligible = extract_archive_safely(data, workdir, kind)
+            files_scanned = len(files)
             target: str = workdir
             logger.info("Unified %s scan: %d files from %s", kind, len(files), filename)
         else:
             target = _write_upload(filename, data, workdir)
 
-        findings = _run_engine(kind, target)
+        findings = _run_engine(kind, target, workdir)
 
     scan = scan_repo.create_scan(
         user_id=user_id,
         api_name=filename,
-        source_spec={"kind": kind, "filename": filename, "partial": partial},
+        source_spec={
+            "kind": kind,
+            "filename": filename,
+            "partial": partial,
+            "files_scanned": files_scanned,
+            "files_eligible": files_eligible,
+        },
     )
     scan.kind = kind
     scan_repo.add(scan)

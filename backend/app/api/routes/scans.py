@@ -194,6 +194,21 @@ async def upload_and_scan(
     response = UnifiedScanResponse.model_validate(scan)
     response.kind = scan.kind
     response.partial = partial
+    if partial:
+        spec = scan.source_spec or {}
+        scanned = int(spec.get("files_scanned") or 0)
+        eligible = int(spec.get("files_eligible") or 0)
+        if eligible:
+            response.partial_note = (
+                f"Scanned the first {scanned} of {eligible} eligible files; "
+                f"{max(eligible - scanned, 0)} were not scanned. "
+                f"Split the archive to cover the rest."
+            )
+        else:
+            response.partial_note = (
+                "The per-scan file cap truncated this scan; split the archive to "
+                "cover the rest."
+            )
     response.counts_by_source = {str(k): int(v) for k, v in counts.items()}
     return response
 
@@ -310,8 +325,10 @@ def get_dashboard(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Check cache first
-    cache_key = f"dashboard:{current_user.id}"
+    # Check cache first. The username is part of the key because a numeric id can
+    # be reused (test fixtures, a restored database); id alone would then serve
+    # one account's dashboard to another. Uploads invalidate by the id prefix.
+    cache_key = f"dashboard:{current_user.id}:{current_user.username}"
     cached = cache.get(cache_key)
     if cached is not None:
         return DashboardStats(**cached)
@@ -343,8 +360,8 @@ def get_analytics(
     db: Session = Depends(get_db),
 ):
     """Return time-series analytics data for dashboard charts."""
-    # Check cache first
-    cache_key = f"analytics:{current_user.id}"
+    # Check cache first (see the dashboard key for why the username is included).
+    cache_key = f"analytics:{current_user.id}:{current_user.username}"
     cached = cache.get(cache_key)
     if cached is not None:
         return AnalyticsResponse(**cached)

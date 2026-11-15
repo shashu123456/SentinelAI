@@ -47,6 +47,8 @@ class UnifiedScanResponse(ScanResponse):
     many findings each source contributed."""
 
     partial: bool = False
+    # Set when ``partial`` is true: says how much of the upload was not scanned.
+    partial_note: str | None = None
     counts_by_source: dict[str, int] = {}
 
 
