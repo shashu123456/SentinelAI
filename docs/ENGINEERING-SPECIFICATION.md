@@ -397,11 +397,9 @@ frontend/src/
 │   ├── Landing.jsx              # Public landing page
 │   ├── Login.jsx                # Auth page
 │   ├── Dashboard.jsx            # Executive dashboard
-│   ├── NewScan.jsx              # API scanner upload
+│   ├── NewScan.jsx              # One upload box: spec / deps / code scanners
 │   ├── ScanResult.jsx           # Scan results detail
 │   ├── ScanLive.jsx             # Live scan progress
-│   ├── SASTScan.jsx             # SAST analysis
-│   ├── DepScan.jsx              # Dependency scanner
 │   ├── Copilot.jsx              # AI security copilot
 │   ├── VulnerabilityExplorer.jsx # Centralized findings
 │   ├── AuditCenter.jsx          # Audit log timeline

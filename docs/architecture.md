@@ -297,8 +297,8 @@ App
 │       ├── Breadcrumbs
 │       └── Lazy Pages (19 routes)
 │           ├── Dashboard, OrgDashboard
-│           ├── NewScan, ScanResult, ScanLive
-│           ├── SASTScan, DepScan
+│           ├── NewScan (one upload box: spec / deps / code)
+│           ├── ScanResult, ScanLive
 │           ├── Copilot (AI)
 │           ├── VulnerabilityExplorer
 │           ├── TeamManagement, Invitations

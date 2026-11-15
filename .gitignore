@@ -10,6 +10,8 @@ dist/
 build/
 .vite/
 *.db
+*.db-shm
+*.db-wal
 sentinelai.log
 .DS_Store
 Thumbs.db
