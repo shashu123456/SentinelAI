@@ -69,6 +69,11 @@ def _get_redis():
         return None
 
 
+def _now() -> float:
+    """Clock used for TTL arithmetic. A seam so tests can control expiry."""
+    return time.time()
+
+
 def _prefix_key(key: str) -> str:
     return f"sentinelai:cache:{key}"
 
@@ -97,7 +102,7 @@ class Cache:
             if entry is None:
                 return None
             value, expires = entry
-            if expires < time.time():
+            if expires < _now():
                 del _mem_store[prefix]
                 return None
             return value
@@ -116,7 +121,7 @@ class Cache:
         with _mem_lock:
             if len(_mem_store) >= _MEM_MAX:
                 self._evict_oldest()
-            _mem_store[prefix] = (value, time.time() + ttl)
+            _mem_store[prefix] = (value, _now() + ttl)
 
     def delete(self, key: str) -> None:
         r = _get_redis()

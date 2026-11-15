@@ -15,8 +15,13 @@ class TestAsyncUpload:
         assert data["task_id"]
         assert data["message"] == "Scan started"
 
-    def test_async_task_completes(self, client, auth_headers, petstore_spec, wait_for_task):
-        resp = client.post(
+    def test_async_task_completes(
+        self, client, async_client, auth_headers, petstore_spec, wait_for_task
+    ):
+        # The upload must go through async_client: create_scan_task() schedules
+        # asyncio.create_task() on the request's loop, which only outlives the
+        # request when the lifespan/portal is kept open.
+        resp = async_client.post(
             "/api/scans/upload/async",
             files={"file": ("petstore.json", json.dumps(petstore_spec), "application/json")},
             headers=auth_headers,
@@ -28,8 +33,10 @@ class TestAsyncUpload:
         assert task["result"]["total_vulnerabilities"] > 0
         assert task["result"]["risk_score"] > 0
 
-    def test_async_scan_persisted(self, client, auth_headers, petstore_spec, wait_for_task):
-        resp = client.post(
+    def test_async_scan_persisted(
+        self, client, async_client, auth_headers, petstore_spec, wait_for_task
+    ):
+        resp = async_client.post(
             "/api/scans/upload/async",
             files={"file": ("petstore.json", json.dumps(petstore_spec), "application/json")},
             headers=auth_headers,

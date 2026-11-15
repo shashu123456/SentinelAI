@@ -3,8 +3,6 @@
 These tests exercise the Cache class directly without requiring Redis.
 """
 
-import time
-
 from app.utils.cache import Cache
 
 
@@ -36,11 +34,25 @@ class TestCacheGetSet:
         c = Cache()
         c.delete("nope")  # Should not raise
 
-    def test_ttl_expiry(self):
+    def test_ttl_expiry(self, monkeypatch):
+        """TTL expiry driven by an injected clock, not by sleeping.
+
+        The old version used ``ttl=1`` plus ``time.sleep(1.1)``. On a loaded
+        machine more than a second can pass between the set and the very next
+        get, so the entry had already expired and ``assert None == 'value'``
+        failed intermittently. Controlling the clock makes it deterministic and
+        instant.
+        """
+        from app.utils import cache as cache_module
+
+        clock = [1000.0]
+        monkeypatch.setattr(cache_module, "_now", lambda: clock[0])
+
         c = Cache()
         c.set("expire_me", "value", ttl=1)
         assert c.get("expire_me") == "value"
-        time.sleep(1.1)
+
+        clock[0] += 1.1  # advance past the TTL instead of sleeping
         assert c.get("expire_me") is None
 
     def test_different_keys_independent(self):

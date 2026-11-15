@@ -1,7 +1,6 @@
-"""Tests for ExecutionRuntime, ExecutionState, and SessionStore components.
+"""Tests for ExecutionState, RuntimeMetrics, RuntimeSnapshot and SessionStore.
 
 Tests cover:
-- ExecutionRuntime integration with ExecutionEngine
 - ExecutionState lifecycle tracking
 - SessionStore persistence and recovery
 - RuntimeMetrics aggregation
@@ -18,7 +17,6 @@ import pytest
 from app.core.agent_framework.base_agent import BaseAgent
 from app.core.agent_framework.shared_models import AgentContext, AgentMetadata, AgentResult
 from app.core.execution.execution_engine import ExecutionConfig
-from app.core.execution.execution_runtime import ExecutionRuntime
 from app.core.execution.execution_state import (
     ExecutionContext,
     ExecutionState,
@@ -355,105 +353,6 @@ def test_runtime_snapshot_basic():
     snapshot2 = RuntimeSnapshot.from_dict(data)
     assert snapshot2.session_id == "snap-1"
     assert snapshot2.engine_status["active_executions"] == 0
-
-
-# ── ExecutionRuntime Tests ─────────────────────────────────────────────────
-
-
-def test_execution_runtime_basic():
-    """Test ExecutionRuntime basic execution."""
-    runtime = ExecutionRuntime()
-    agent = TestAgent()
-    context = _make_context()
-
-    exec_state, result = runtime.execute_agent(agent, context)
-
-    assert exec_state is not None
-    assert result is not None
-    assert result.success is True
-
-
-def test_execution_runtime_with_config():
-    """Test ExecutionRuntime execution with configuration."""
-    runtime = ExecutionRuntime()
-    agent = TestAgent()
-    context = _make_context()
-    config = ExecutionConfig(timeout=30.0)
-
-    exec_state, result = runtime.execute_agent(agent, context, config)
-
-    assert exec_state is not None
-    assert result is not None
-    assert result.success is True
-
-
-def test_execution_runtime_session_management():
-    """Test ExecutionRuntime session management."""
-    runtime = ExecutionRuntime()
-    agent = TestAgent()
-    context = _make_context()
-
-    # Execute without session ID (creates new)
-    exec_state, result = runtime.execute_agent(agent, context)
-    assert exec_state.session_id is not None
-    assert exec_state.agent_id == agent.metadata.id
-
-    # Execute with existing session
-    exec_state2, result2 = runtime.execute_agent(agent, context, session_id=exec_state.session_id)
-    assert exec_state2.session_id == exec_state.session_id
-
-
-def test_execution_runtime_session_lifecycle():
-    """Test ExecutionRuntime full session lifecycle."""
-    runtime = ExecutionRuntime()
-    agent = TestAgent()
-    _make_context()
-
-    # Execute full session
-    snapshot = runtime.execute_session(agent, "/tmp/test", session_id=None)
-
-    # Verify snapshot
-    assert snapshot is not None
-    assert snapshot.session_id is not None
-    assert snapshot.metrics.get_metrics()["total_executions"] >= 1
-
-    # Verify session status can be retrieved
-    status = runtime.get_session_status(snapshot.session_id)
-    assert status is not None
-    assert "status" in status
-
-    # Verify runtime metrics
-    metrics = runtime.get_runtime_metrics()
-    assert "total_executions" in metrics
-
-
-def test_execution_runtime_get_statuses():
-    """Test ExecutionRuntime get_all_session_statuses."""
-    runtime = ExecutionRuntime()
-    agent = TestAgent()
-    context = _make_context()
-
-    # Execute two sessions
-    runtime.execute_agent(agent, context)
-    runtime.execute_agent(agent, context)
-
-    # Get all statuses
-    statuses = runtime.get_all_session_statuses()
-    assert len(statuses) == 2
-
-
-def test_execution_runtime_cancel_session():
-    """Test ExecutionRuntime cancel_session."""
-    runtime = ExecutionRuntime()
-    agent = TestAgent()
-    context = _make_context()
-
-    # Execute session
-    exec_state, result = runtime.execute_agent(agent, context)
-
-    # Cancel session using the session ID from execution
-    runtime.cancel_session(exec_state.session_id)
-    # Note: This test verifies cancel_session doesn't crash
 
 
 # ── SessionStore Tests ────────────────────────────────────────────────────

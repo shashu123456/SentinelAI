@@ -4,6 +4,19 @@ All notable changes to SentinelAI are documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Removed
+
+- Removed the unwired `ExecutionRuntime` draft
+  (`backend/app/core/execution/execution_runtime.py`): it called three engine
+  APIs that no longer exist (`ExecutionEngine(timeout_seconds=)`,
+  `execute(workflow, timeout)`, `event_bus.publish(str, dict)`) and had no call
+  sites in the application. Its 6 tests were removed with it; the 9 tests in the
+  same file that cover live components (`ExecutionState`, `RuntimeMetrics`,
+  `RuntimeSnapshot`, `SessionStore`) were kept and moved to
+  `backend/app/core/execution/tests/test_execution_state.py`.
+
 ## [1.0.0] — 2026-08-27
 
 ### Added

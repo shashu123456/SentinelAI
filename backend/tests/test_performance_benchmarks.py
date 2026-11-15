@@ -14,6 +14,10 @@ import time
 
 import pytest
 
+# Every test in this module asserts a wall-clock latency threshold, so the whole
+# module is opt-in (see the `benchmark` marker in pytest.ini).
+pytestmark = pytest.mark.benchmark
+
 # ── Helpers ───────────────────────────────────────────────────────────
 
 

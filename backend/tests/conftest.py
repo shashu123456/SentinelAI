@@ -60,6 +60,36 @@ def client():
 
 
 @pytest.fixture()
+def async_client():
+    """Client that keeps the ASGI lifespan -- and therefore the event loop -- alive.
+
+    ``POST /api/scans/upload/async`` schedules its work with
+    ``asyncio.create_task`` on the *request's* loop, so the loop must outlive the
+    request. Under uvicorn it does; with the fast ``client`` fixture (no context
+    manager) it does not, and the task is cancelled. Use this fixture only for
+    tests that exercise asynchronous scheduling.
+
+    Cost: entering the context runs the lifespan (``init_db()``), a few seconds
+    per test, which is why the default ``client`` fixture does not.
+    """
+    import app.models.enterprise  # noqa: F401 - register enterprise tables
+    import app.models.models  # noqa: F401 - register core tables
+    import app.models.plugins  # noqa: F401 - register plugin tables
+    import app.models.saas  # noqa: F401 - register SaaS tables
+    from app.database.database import Base, engine
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture()
 def db_session():
     """Direct SQLAlchemy session against the isolated test database.
 
