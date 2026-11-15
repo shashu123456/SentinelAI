@@ -32,7 +32,13 @@ from app.utils.logger import logger
 
 
 def _trim_findings_for_ai(findings: list[dict]) -> list[dict]:
-    """Trim findings to essential fields only, reducing memory footprint for AI model."""
+    """Return the compact payload used ONLY as AI prompt input.
+
+    NEVER persist these dicts. FindingRepository.from_scan_data() requires
+    ``description``, ``impact`` and ``remediation``; the risk engine also uses
+    ``confidence``. Persisting a trimmed payload raises KeyError and turns every
+    scan into HTTP 500 "Scan execution failed".
+    """
     trimmed = []
     for f in findings:
         trimmed.append({
@@ -74,15 +80,16 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
         scan.total_endpoints = parsed_api["total_endpoints"]
 
         findings = run_owasp_scan(parsed_api)
-        # Trim findings before persisting and sending to AI to reduce memory
-        findings_trimmed = _trim_findings_for_ai(findings)
-        finding_repo.bulk_add_from_scan(scan.id, findings_trimmed)
+        # Storage and risk scoring take the COMPLETE finding dicts: persistence
+        # requires description/impact/remediation, and the risk engine reads
+        # confidence. Only the AI prompt payload is trimmed (below).
+        finding_repo.bulk_add_from_scan(scan.id, findings)
 
-        risk = calculate_risk_score(findings_trimmed)
+        risk = calculate_risk_score(findings)
 
         # Enhanced risk assessment
         try:
-            assessment = compute_risk_assessment(findings_trimmed)
+            assessment = compute_risk_assessment(findings)
             risk["security_grade"] = assessment.security_grade
             risk["confidence_score"] = assessment.confidence_score
             risk["priority"] = assessment.priority
@@ -95,9 +102,9 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
 
         scan_repo.complete(scan, risk, scan.transition_history)
 
-        # AI analysis (best-effort, non-blocking) - use trimmed findings
+        # AI analysis (best-effort, non-blocking). Only this payload is trimmed.
         try:
-            ai_result = analyze_vulnerabilities(findings_trimmed, parsed_api)
+            ai_result = analyze_vulnerabilities(_trim_findings_for_ai(findings), parsed_api)
             if ai_result:
                 db.add(
                     AIAnalysis(
