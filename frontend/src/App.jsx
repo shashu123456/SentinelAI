@@ -11,7 +11,7 @@ import OfflineIndicator from './components/OfflineIndicator';
 import CommandPalette from './components/CommandPalette';
 import { KeyboardShortcutsProvider } from './components/KeyboardShortcuts';
 import Breadcrumbs from './components/Breadcrumbs';
-import './App.css';
+import './index.css';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
@@ -89,58 +89,56 @@ function AppLayout() {
 
 function App() {
   return (
-    <ErrorBoundary>        <ThemeProvider>
-      <AuthProvider>
-      <OrgProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <KeyboardShortcutsProvider>
-            <CommandPalette />
-            <Routes>
-              <Route element={<LandingRoute />}>
-                <Route path="/" element={<Suspense fallback={<PageLoader />}><Landing /></Suspense>} />
-              </Route>
-              <Route element={<PublicRoute />}>
-                <Route path="/login" element={<Suspense fallback={<PageLoader />}><Login /></Suspense>} />
-              </Route>
-              <Route element={<ProtectedRoute />}>
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<ErrorBoundary pageLevel><Dashboard /></ErrorBoundary>} />
-                  <Route path="/new-scan" element={<ErrorBoundary pageLevel><NewScan /></ErrorBoundary>} />
-                  <Route path="/scan/:id" element={<ErrorBoundary pageLevel><ExecutionDetails /></ErrorBoundary>} />
-                  <Route path="/live/:taskId" element={<ErrorBoundary pageLevel><ScanLive /></ErrorBoundary>} />
-                  <Route path="/sast" element={<ErrorBoundary pageLevel><SASTScan /></ErrorBoundary>} />
-                  <Route path="/deps" element={<ErrorBoundary pageLevel><DepScan /></ErrorBoundary>} />
-                  <Route path="/copilot" element={<ErrorBoundary pageLevel><Copilot /></ErrorBoundary>} />
-                  <Route path="/vulnerabilities" element={<ErrorBoundary pageLevel><VulnerabilityExplorer /></ErrorBoundary>} />
-                  <Route path="/audit" element={<ErrorBoundary pageLevel><AuditCenter /></ErrorBoundary>} />
-                  <Route path="/reports" element={<ErrorBoundary pageLevel><ReportCenter /></ErrorBoundary>} />
-                  <Route path="/settings" element={<ErrorBoundary pageLevel><Settings /></ErrorBoundary>} />
-                  <Route path="/health" element={<ErrorBoundary pageLevel><SystemHealth /></ErrorBoundary>} />
-                  <Route path="/org/dashboard" element={<ErrorBoundary pageLevel><OrgDashboard /></ErrorBoundary>} />
-                  <Route path="/org/teams" element={<ErrorBoundary pageLevel><TeamManagement /></ErrorBoundary>} />
-                  <Route path="/org/api-keys" element={<ErrorBoundary pageLevel><ApiKeys /></ErrorBoundary>} />
-                  <Route path="/org/settings" element={<ErrorBoundary pageLevel><OrgSettings /></ErrorBoundary>} />
-                  <Route path="/org/invitations" element={<ErrorBoundary pageLevel><Invitations /></ErrorBoundary>} />
-                  <Route path="/security-events" element={<ErrorBoundary pageLevel><SecurityEvents /></ErrorBoundary>} />
-                  <Route path="/scheduled-scans" element={<ErrorBoundary pageLevel><ScheduledScans /></ErrorBoundary>} />
-                  <Route path="/templates" element={<ErrorBoundary pageLevel><ScanTemplates /></ErrorBoundary>} />
-                  <Route path="/policies" element={<ErrorBoundary pageLevel><PolicyEngine /></ErrorBoundary>} />
-                  <Route path="/compliance" element={<ErrorBoundary pageLevel><Compliance /></ErrorBoundary>} />
-                  <Route path="/webhooks" element={<ErrorBoundary pageLevel><WebhooksPage /></ErrorBoundary>} />
-                  <Route path="/exports" element={<ErrorBoundary pageLevel><ExportCenter /></ErrorBoundary>} />
-                  <Route path="/executive-report" element={<ErrorBoundary pageLevel><ExecutiveReport /></ErrorBoundary>} />
-                  <Route path="/compare" element={<ErrorBoundary pageLevel><VersionCompare /></ErrorBoundary>} />
-                  <Route path="/mobile" element={<ErrorBoundary pageLevel><ExecutiveMobile /></ErrorBoundary>} />
-                </Route>
-              </Route>
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-            </KeyboardShortcutsProvider>
-          </BrowserRouter>
-        </ToastProvider>
-      </OrgProvider>
-      </AuthProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <OrgProvider>
+            <ToastProvider>
+              <BrowserRouter>
+                <KeyboardShortcutsProvider>
+                  <CommandPalette />
+                  <Routes>
+                    <Route element={<LandingRoute/>}>
+                      <Route path="/" element={<Suspense fallback={<PageLoader/>}><Landing /></Suspense>} />
+                    </Route>
+                    <Route element={<PublicRoute/>}>
+                      <Route path="/login" element={<Suspense fallback={<PageLoader/>}><Login /></Suspense>} />
+                    </Route>
+                    <Route element={<ProtectedRoute/>}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/new-scan" element={<NewScan />} />
+                      <Route path="/scan/:id" element={<ExecutionDetails />} />
+                      <Route path="/live/:taskId" element={<ScanLive />} />
+                      <Route path="/sast" element={<SASTScan />} />
+                      <Route path="/deps" element={<DepScan />} />
+                      <Route path="/copilot" element={<Copilot />} />
+                      <Route path="/vulnerabilities" element={<VulnerabilityExplorer />} />
+                      <Route path="/audit" element={<AuditCenter />} />
+                      <Route path="/reports" element={<ReportCenter />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/health" element={<SystemHealth />} />
+                      <Route path="/org/dashboard" element={<OrgDashboard />} />
+                      <Route path="/org/teams" element={<TeamManagement />} />
+                      <Route path="/org/api-keys" element={<ApiKeys />} />
+                      <Route path="/org/settings" element={<OrgSettings />} />
+                      <Route path="/org/invitations" element={<Invitations />} />
+                      <Route path="/security-events" element={<SecurityEvents />} />
+                      <Route path="/scheduled-scans" element={<ScheduledScans />} />
+                      <Route path="/templates" element={<ScanTemplates />} />
+                      <Route path="/policies" element={<PolicyEngine />} />
+                      <Route path="/compliance" element={<Compliance />} />
+                      <Route path="/webhooks" element={<WebhooksPage />} />
+                      <Route path="/exports" element={<ExportCenter />} />
+                      <Route path="/executive-report" element={<ExecutiveReport />} />
+                      <Route path="/compare" element={<VersionCompare />} />
+                      <Route path="/mobile" element={<ExecutiveMobile />} />
+                    </Route>
+                  </Routes>
+                </KeyboardShortcutsProvider>
+              </BrowserRouter>
+            </ToastProvider>
+          </OrgProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

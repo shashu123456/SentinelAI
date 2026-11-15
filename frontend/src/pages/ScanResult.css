@@ -1,40 +1,23 @@
-/* ========== SCAN RESULT — SIEM THREAT ANALYSIS ========== */
+/* ============================
+   SENTINELAI — SCAN RESULT — SIEM THREAT ANALYSIS
+   ============================ */
+
 .back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 13px;
   margin-bottom: 20px;
   transition: color var(--transition);
 }
-.back-link:hover { color: var(--accent-cyan); }
+.back-link:hover { color: var(--accent-cyan) !important; }
 
 .result-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 28px;
-}
-
-.result-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.result-shield {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: rgba(0,255,170,0.08);
-  border: 1px solid rgba(0,255,170,0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-cyan);
-  flex-shrink: 0;
-  box-shadow: 0 0 12px rgba(0,255,170,0.1);
 }
 
 .result-title h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
@@ -54,7 +37,7 @@
 
 .result-actions { display: flex; gap: 8px; }
 
-/* ---- Summary ---- */
+/* ==== Summary Section ==== */
 .result-summary {
   display: grid;
   grid-template-columns: 280px 1fr auto;
@@ -74,6 +57,7 @@
   align-items: center;
   gap: 10px;
   position: relative;
+  color: var(--text-primary);
 }
 
 .threat-assessment::before {
@@ -93,6 +77,7 @@
 }
 
 .threat-gauge-svg { width: 100%; height: 100%; }
+.threat-gauge-arc { stroke: var(--accent-cyan); fill: none; }
 .threat-gauge-arc { transition: stroke-dasharray 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
 
 .threat-gauge-center {
@@ -110,6 +95,7 @@
   line-height: 1;
   font-family: var(--font-mono);
   text-shadow: 0 0 20px currentColor;
+  color: var(--text-primary);
 }
 
 .threat-gauge-sub {
@@ -140,14 +126,7 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   font-family: var(--font-mono);
-  text-transform: uppercase;
   border: 1px solid;
-}
-
-.threat-level-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
 }
 
 .threat-level-badge.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: rgba(255,34,68,0.2); }
@@ -174,7 +153,6 @@
   text-align: center;
   transition: all var(--transition);
 }
-
 .severity-card:hover { border-color: rgba(0,255,170,0.15); transform: translateY(-1px); }
 
 .sev-count {
@@ -212,6 +190,7 @@
   flex-direction: column;
   gap: 12px;
   position: relative;
+  color: var(--text-primary);
 }
 
 .meta-info::before {
@@ -234,7 +213,7 @@
 
 .meta-item svg { color: var(--text-muted); flex-shrink: 0; }
 
-/* ---- AI Section ---- */
+/* ==== AI Section ==== */
 .ai-section { margin-bottom: 32px; }
 
 .section-header {
@@ -290,7 +269,7 @@
   color: var(--text-secondary);
 }
 
-/* ---- Findings ---- */
+/* ==== Findings ==== */
 .findings-list {
   display: flex;
   flex-direction: column;
@@ -414,7 +393,7 @@
 
 .chevron-icon { color: var(--text-muted); flex-shrink: 0; }
 
-/* Finding Details */
+/* ==== Finding Details ==== */
 .finding-details {
   padding: 0 20px 20px;
   border-top: 1px solid var(--border);
@@ -472,7 +451,6 @@
   color: var(--text-secondary);
   overflow-x: auto;
   white-space: pre-wrap;
-  word-break: break-word;
   line-height: 1.6;
 }
 
@@ -483,7 +461,6 @@
 }
 
 .false-positive-note h4 { color: var(--accent-orange) !important; }
-
 .false-positive-note p {
   font-size: 12px !important;
   color: var(--text-muted) !important;
@@ -491,7 +468,7 @@
   font-style: italic;
 }
 
-/* No findings */
+/* ==== No Findings ==== */
 .no-findings {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -528,7 +505,7 @@
   font-size: 13px;
 }
 
-/* ---- Shared Scan Page Classes ---- */
+/* ==== Shared Scan Page Classes ==== */
 .scan-page-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -702,7 +679,7 @@
 .scan-empty h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
 .scan-empty p { color: var(--text-muted); font-size: 14px; }
 
-/* ---- Responsive ---- */
+/* ==== Responsive ==== */
 @media (max-width: 1000px) {
   .result-summary { grid-template-columns: 1fr; }
   .threat-assessment { flex-direction: row; justify-content: center; padding: 20px 28px; gap: 24px; }
@@ -719,7 +696,7 @@
   .finding-header { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
 
-/* ---- Info Card ---- */
+/* ==== Info Card ==== */
 .info-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -751,7 +728,7 @@
   color: var(--text-primary);
 }
 
-/* ---- Rule Category Card ---- */
+/* ==== Rule Category Card ==== */
 .rule-cat-card {
   display: flex;
   align-items: flex-start;
@@ -804,7 +781,7 @@
   font-family: var(--font-mono);
 }
 
-/* ---- Language Card ---- */
+/* ==== Language Card ==== */
 .lang-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -842,4 +819,85 @@
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+/* ==== Light Theme Overrides ==== */
+[data-theme="light"] .back-link { color: var(--text-secondary) !important; }
+[data-theme="light"] .back-link:hover { color: var(--accent-cyan) !important; }
+
+[data-theme="light"] .threat-assessment {
+  background: #ffffff;
+  border-color: #e2e5ea;
+  color: #0f172a;
+}
+
+[data-theme="light"] .threat-gauge-score { text-shadow: none; }
+
+[data-theme="light"] .meta-info {
+  background: #ffffff;
+  border-color: #e2e5ea;
+  color: #0f172a;
+}
+
+[data-theme="light"] .finding-card { background: #ffffff; }
+
+[data-theme="light"] .severity-indicator { text-shadow: none; }
+
+[data-theme="light"] .owasp-badge { background: rgba(170,102,255,0.05); border-color: rgba(170,102,255,0.1); color: #7c3aed; }
+
+[data-theme="light"] .cwe-badge { background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.1); color: #059669; }
+
+[data-theme="light"] .confidence-badge { background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.1); color: #06b6d4; }
+
+[data-theme="light"] .evidence { background: #f8fafc; color: #0f172a; }
+
+[data-theme="light"] .detail-block p { color: #475569; }
+
+[data-theme="light"] .sev-count { color: #0f172a; }
+
+[data-theme="light"] .sev-label { color: #64748b; }
+
+[data-theme="light"] .threat-level-badge { border-color: rgba(255,255,255,0.1); }
+
+[data-theme="light"] .threat-level-badge.critical { background: rgba(220,38,38,0.08); color: #dc2626; }
+
+[data-theme="light"] .threat-level-badge.high { background: rgba(234,88,12,0.08); color: #ea580c; }
+
+[data-theme="light"] .threat-level-badge.medium { background: rgba(202,138,4,0.08); color: #ca8a04; }
+
+[data-theme="light"] .threat-level-badge.low { background: rgba(5,150,105,0.08); color: #059669; }
+
+[data-theme="light"] .no-findings { background: #ffffff; }
+
+[data-theme="light"] .no-findings-icon { background: rgba(5,150,105,0.06); border-color: rgba(5,150,105,0.1); color: #059669; }
+
+[data-theme="light"] .loading-container { color: #64748b; }
+
+[data-theme="light"] .scan-page-card { background: #ffffff; }
+
+[data-theme="light"] .scan-dropzone { border-color: #e2e5ea; }
+
+[data-theme="light"] .scan-dropzone.has-file { border-color: #38bdf8; background: #eff6ff; }
+
+[data-theme="light"] .scan-file-selected svg { color: #0891b2; }
+
+[data-theme="light"] .scan-stats { background: #f1f5f9; }
+
+[data-theme="light"] .scan-stat.danger strong { color: #ea580c; }
+
+[data-theme="light"] .scan-stat.safe strong { color: #059669; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .threat-gauge-arc { transition: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .threat-gauge-arc { stroke-dasharray: 251.2 251.2; }
+  .finding-card { page-break-inside: avoid; }
 }

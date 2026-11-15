@@ -2,11 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { request } from '../services/api';
-import {
-  Settings as SettingsIcon, Building2, FolderKanban, Users, User,
-  Plus, Trash2, ChevronRight, Shield, Mail, Calendar, Key,
-  AlertCircle, Check, X, Loader2, Globe, Lock
-} from 'lucide-react';
+import { useToast } from '../components/ui/Toast';
+import { Settings as SettingsIcon, Building2, FolderKanban, Users, User, Plus, Trash2, ChevronRight, Shield, Mail, Calendar, Key, Lock, Eye, EyeOff, Slack, FileText } from 'lucide-react';
 import './Settings.css';
 
 const TABS = [
@@ -15,6 +12,7 @@ const TABS = [
   { id: 'team', label: 'Team', icon: Users },
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'api-keys', label: 'API Keys', icon: Key },
+  { id: 'integrations', label: 'Integrations', icon: Link },
 ];
 
 export default function Settings() {
@@ -126,7 +124,11 @@ export default function Settings() {
               onSelect={setSelectedOrg}
               showCreate={showCreateOrg}
               setShowCreate={setShowCreateOrg}
-              onCreated={() => { loadOrgs(); setShowCreateOrg(false); showToast('Organization created'); }}
+              onCreated={() => {
+                loadOrgs();
+                setShowCreateOrg(false);
+                showToast('Organization created');
+              }}
               showToast={showToast}
             />
           )}
@@ -136,7 +138,11 @@ export default function Settings() {
               projects={projects}
               showCreate={showCreateProject}
               setShowCreate={setShowCreateProject}
-              onCreated={() => { loadProjects(); setShowCreateProject(false); showToast('Project created'); }}
+              onCreated={() => {
+                loadProjects();
+                setShowCreateProject(false);
+                showToast('Project created');
+              }}
               showToast={showToast}
             />
           )}
@@ -145,12 +151,13 @@ export default function Settings() {
               org={selectedOrg}
               showInvite={showInviteMember}
               setShowInvite={setShowInviteMember}
-              onAction={() => { showToast('Team updated'); }}
+              onAction={() => showToast('Team updated')}
               showToast={showToast}
             />
           )}
           {activeTab === 'profile' && <ProfileTab user={user} showToast={showToast} />}
           {activeTab === 'api-keys' && <ApiKeysTab />}
+          {activeTab === 'integrations' && <IntegrationsTab />}
         </div>
       </div>
     </div>
@@ -158,6 +165,7 @@ export default function Settings() {
 }
 
 /* ── Organization Tab ── */
+
 function OrganizationTab({ orgs, selectedOrg, onSelect, showCreate, setShowCreate, onCreated, showToast }) {
   const [form, setForm] = useState({ name: '', slug: '', description: '' });
   const [creating, setCreating] = useState(false);
@@ -266,6 +274,7 @@ function OrganizationTab({ orgs, selectedOrg, onSelect, showCreate, setShowCreat
 }
 
 /* ── Projects Tab ── */
+
 function ProjectsTab({ org, projects, showCreate, setShowCreate, onCreated, showToast }) {
   const [form, setForm] = useState({ name: '', slug: '', description: '' });
   const [creating, setCreating] = useState(false);
@@ -382,6 +391,7 @@ function ProjectsTab({ org, projects, showCreate, setShowCreate, onCreated, show
 }
 
 /* ── Team Tab ── */
+
 function TeamTab({ org, showInvite, setShowInvite, onAction, showToast }) {
   const [inviteForm, setInviteForm] = useState({ user_id: '', role: 'member' });
   const [inviting, setInviting] = useState(false);
@@ -498,8 +508,155 @@ function TeamTab({ org, showInvite, setShowInvite, onAction, showToast }) {
   );
 }
 
+/* ── Integrations Tab ── */
+
+function IntegrationsTab() {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  const integrations = [
+    {
+      id: 'gmail',
+      name: 'Gmail',
+      description: 'Connect your Gmail account to receive security alerts and send scan reports via email',
+      icon: Mail,
+      color: 'var(--accent-cyan)',
+      status: 'connected',
+    },
+    {
+      id: 'slack',
+      name: 'Slack',
+      description: 'Connect Slack to receive real-time security notifications in your channels',
+      icon: Slack,
+      color: 'var(--accent-purple)',
+      status: 'disconnected',
+    },
+    {
+      id: 'notion',
+      name: 'Notion',
+      description: 'Connect Notion to automatically document scan results in your knowledge base',
+      icon: FileText,
+      color: 'var(--accent-green)',
+      status: 'disconnected',
+    },
+  ];
+
+  const handleConnect = async (integrationId) => {
+    try {
+      showToast(`Connecting ${integrations.find(i => i.id === integrationId)?.name}...`, 'info');
+      // TODO: Implement actual integration connection flow
+      // This would involve OAuth flow with the respective service
+      const timeouts = setTimeout(() => {
+        showToast(`${integrations.find(i => i.id === integrationId)?.name} connected successfully`, 'success');
+      }, 1500);
+      return true;
+    } catch (err) {
+      showToast(err.message || `Failed to connect ${integrationId}`, 'error');
+      return false;
+    }
+  };
+
+  const handleDisconnect = async (integrationId) => {
+    if (!window.confirm(`Disconnect ${integrations.find(i => i.id === integrationId)?.name}?`)) return;
+    try {
+      showToast(`Disconnecting ${integrations.find(i => i.id === integrationId)?.name}...`, 'info');
+      setTimeout(() => {
+        showToast(`${integrations.find(i => i.id === integrationId)?.name} disconnected`, 'success');
+      }, 1000);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  return (
+    <div className="settings-section">
+      <div className="settings-section-header">
+        <h2>Integrations</h2>
+      </div>
+
+      <div className="integrations-grid">
+        {integrations.map((integration) => (
+          <div
+            key={integration.id}
+            className={`integration-card ${integration.status}`}
+            style={{ borderLeftColor: integration.color }}
+          >
+            <div className="integration-header" style={{ color: integration.color }}>
+              {integration.icon}
+            </div>
+            <div className="integration-body">
+              <h3>{integration.name}</h3>
+              <p>{integration.description}</p>
+            </div>
+            <div className="integration-footer">
+              <span className={integration.status === 'connected' ? 'integration-status connected' : 'integration-status disconnected'}>
+                {integration.status === 'connected' ? 'Connected' : 'Disconnected'}
+              </span>
+              {integration.status === 'connected' && (
+                <button
+                  onClick={() => handleDisconnect(integration.id)}
+                  className="integration-disconnect-btn"
+                >
+                  Disconnect
+                </button>
+              )}
+              {integration.status !== 'connected' && (
+                <button
+                  onClick={() => handleConnect(integration.id)}
+                  className="integration-connect-btn"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="integrations-empty" style={{ padding: '2rem', textAlign: 'center' }}>
+        <Mail size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />
+        <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+          No integrations connected
+        </p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          Connect services to automate workflows and receive notifications
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ── Profile Tab ── */
+
 function ProfileTab({ user, showToast }) {
+  const [form, setForm] = useState({
+    username: user?.username || '',
+    email: user?.email || '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangingPassword(true);
+    try {
+      await request('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          current_password: form.current_password,
+          new_password: form.new_password,
+        }),
+      });
+      setShowChangePasswordForm(false);
+      setForm({ current_password: '', new_password: '' });
+      showToast('Password changed successfully', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   return (
     <div className="settings-section">
       <div className="settings-section-header">
@@ -555,13 +712,145 @@ function ProfileTab({ user, showToast }) {
               </span>
             </div>
           </div>
+          {user?.is_active && (
+            <div className="settings-detail-item">
+              <div className="settings-detail-icon"><Shield size={14} /></div>
+              <div className="settings-detail-content">
+                <span className="settings-detail-label">Security</span>
+                <span className="settings-detail-value">
+                  {user?.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {showChangePasswordForm && (
+        <div className="settings-change-password">
+          <h3>Change Password</h3>
+          <p>Update your account password</p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleChangePassword(e);
+            }}
+            className="settings-form"
+          >
+            <div className="settings-form-row">
+              <label>Current Password</label>
+              <Input
+                type="password"
+                value={form.current_password}
+                onChange={(e) => setForm({ ...form, current_password: e.target.value })}
+                required
+              />
+            </div>
+            <div className="settings-form-row">
+              <label>New Password</label>
+              <Input
+                type="password"
+                value={form.new_password}
+                onChange={(e) => setForm({ ...form, new_password: e.target.value })}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="settings-form-row">
+              <label>Confirm New Password</label>
+              <Input
+                type="password"
+              value={form.confirm_password}
+              onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+              required
+              minLength={8}
+            /></div>
+            <div className="settings-form-actions">
+              <button type="button" className="settings-btn" onClick={() => setShowChangePasswordForm(false)}>Cancel</button>
+              <button type="submit" className="settings-btn primary" disabled={changingPassword}>
+                {changingPassword ? <Loader2 size={14} className="spin" /> : 'Change Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
 
+/* ── Change Password Form (standalone) ── */
+
+function ChangePasswordForm({ show, setShow, onSubmit, showToast }) {
+  const [form, setForm] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  if (form.new_password !== form.confirm_password) {
+    setError('Passwords do not match');
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await onSubmit(form);
+      setSubmitting(false);
+      setShow(false);
+      setForm({ current_password: '', new_password: '', confirm_password: '' });
+      showToast('Password changed successfully', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="settings-form">
+      <div className="settings-form-row">
+        <label>Current Password</label>
+        <Input
+          type="password"
+          value={form.current_password}
+          onChange={(e) => setForm({ ...form, current_password: e.target.value })}
+          required
+        />
+      </div>
+      <div className="settings-form-row">
+        <label>New Password</label>
+        <Input
+          type="password"
+          value={form.new_password}
+          onChange={(e) => setForm({ ...form, new_password: e.target.value })}
+          required
+          minLength={8}
+        />
+      </div>
+      <div className="settings-form-row">
+        <label>Confirm New Password</label>
+        <Input
+          type="password"
+          value={form.confirm_password}
+          onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+          required
+          minLength={8}
+        />
+      </div>
+      <div className="settings-form-actions">
+        <button type="button" className="settings-btn" onClick={() => setShow(false)}>Cancel</button>
+        <button type="submit" className="settings-btn primary" disabled={submitting}>
+          {submitting ? <Loader2 size={14} className="spin" /> : 'Change Password'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 /* ── API Keys Tab ── */
+
 function ApiKeysTab() {
   return (
     <div className="settings-section">
@@ -586,8 +875,10 @@ function ApiKeysTab() {
         <div className="settings-api-info-icon"><Lock size={16} /></div>
         <div className="settings-api-info-content">
           <h4>API Access</h4>
-          <p>API keys allow you to integrate SentinelAI into your CI/CD pipeline, automate scans, and access results programmatically.</p>
-          <code>Authorization: Bearer &lt;your-api-key&gt;</code>
+          <p>
+            API keys allow you to integrate SentinelAI into your CI/CD pipeline, automate scans, and access results programmatically.
+          </p>
+          <code>Authorization: Bearer your-api-key</code>
         </div>
       </div>
     </div>

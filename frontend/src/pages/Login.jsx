@@ -99,11 +99,16 @@ export default function Login() {
             <div className="form-group">
               <label>Password</label>
               <div className="login-pw-wrap">
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" required minLength={6} autoComplete={isRegister ? 'new-password' : 'current-password'} />
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" required minLength={isRegister ? 8 : 1} autoComplete={isRegister ? 'new-password' : 'current-password'} />
                 <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {isRegister && (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                  At least 8 characters, including an uppercase letter, a number and a symbol.
+                </span>
+              )}
             </div>
 
             <button type="submit" className="login-btn" disabled={loading}>
