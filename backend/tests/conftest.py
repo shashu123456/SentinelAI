@@ -14,12 +14,35 @@ os.environ["DATABASE_URL"] = "sqlite:///" + os.path.join(
 # per-IP failed-login threshold (10) so the rate limiter is the first gate that
 # trips; with the production default of 30 the IP reputation block would answer
 # 429 first.
+# Defence in depth: point Redis at a closed local port so the connect is
+# refused instantly. app.utils.token_blacklist now initialises lazily (no
+# network I/O at import), so the code no longer *requires* this; it stays so a
+# developer with a real redis://localhost:6379 running still gets the in-memory
+# backend and deterministic tests.
+os.environ["REDIS_URL"] = "redis://127.0.0.1:1/0"
+
 os.environ["LOGIN_RATE_LIMIT_PER_MINUTE"] = "10"
 
 
 @pytest.fixture()
 def client():
-    """Fresh API client against an isolated test database (dropped per test)."""
+    """Fresh API client against an isolated test database (schema rebuilt per test).
+
+    Two deliberate changes for speed, both measured:
+
+    1. The schema is rebuilt with ``Base.metadata.create_all`` directly.
+    2. ``TestClient`` is NOT used as a context manager, so the app lifespan does
+       not run. Lifespan calls ``init_db()`` -> Alembic on *every* fixture setup,
+       which cost ~35-40s for the first test in a process and ~3s for each one
+       after; across the suite that made a single run impossible.
+
+    Per-test isolation is unchanged: the schema is dropped and recreated for
+    every test exactly as before.
+    """
+    import app.models.enterprise  # noqa: F401 - register enterprise tables
+    import app.models.models  # noqa: F401 - register core tables
+    import app.models.plugins  # noqa: F401 - register plugin tables
+    import app.models.saas  # noqa: F401 - register SaaS tables
     from app.database.database import Base, engine
 
     Base.metadata.drop_all(bind=engine)
@@ -29,8 +52,11 @@ def client():
 
     from app.main import app
 
-    with TestClient(app) as c:
+    c = TestClient(app)
+    try:
         yield c
+    finally:
+        c.close()
 
 
 @pytest.fixture()

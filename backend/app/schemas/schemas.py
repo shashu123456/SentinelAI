@@ -13,8 +13,18 @@ continues to work.  Prefer importing from the specific sub-module in new code.
 """
 
 # Constants
+from app.schemas.constants import (
+    FINDING_SORT_FIELDS,
+    RISK_LEVELS,
+    SCAN_SORT_FIELDS,
+    SCAN_STATUSES,
+    SEVERITIES,
+    SORT_DIRECTIONS,
+    parse_sort_fields,
+)
+
 # Analytics schemas
-from app.schemas.analytics import (  # noqa: F401
+from app.schemas.analytics import (
     AnalyticsResponse,
     OwaspCategoryItem,
     RiskScoreResponse,
@@ -23,7 +33,8 @@ from app.schemas.analytics import (  # noqa: F401
 )
 
 # Auth schemas
-from app.schemas.auth import (  # noqa: F401
+from app.schemas.auth import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
     MessageResponse,
@@ -37,25 +48,16 @@ from app.schemas.auth import (  # noqa: F401
     UserResponse,
     validate_password_strength,
 )
-from app.schemas.constants import (  # noqa: F401
-    FINDING_SORT_FIELDS,
-    RISK_LEVELS,
-    SCAN_SORT_FIELDS,
-    SCAN_STATUSES,
-    SEVERITIES,
-    SORT_DIRECTIONS,
-    parse_sort_fields,
-)
 
 # Dashboard schemas
-from app.schemas.dashboard import (  # noqa: F401
+from app.schemas.dashboard import (
     DashboardOverviewResponse,
     DashboardStats,
     ReportResponse,
 )
 
 # Finding schemas
-from app.schemas.finding import (  # noqa: F401
+from app.schemas.finding import (
     AIAnalysisResponse,
     FindingListParams,
     FindingResponse,
@@ -63,7 +65,7 @@ from app.schemas.finding import (  # noqa: F401
 )
 
 # Scan schemas
-from app.schemas.scan import (  # noqa: F401
+from app.schemas.scan import (
     ScanCreate,
     ScanDetailResponse,
     ScanListParams,

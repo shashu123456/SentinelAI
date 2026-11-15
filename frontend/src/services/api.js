@@ -20,6 +20,42 @@ function refreshSession() {
   return refreshPromise;
 }
 
+// Auth calls must never be swallowed by the global 401 handler — a failed
+// login has to surface the server's real message (e.g. "Invalid credentials"
+// or the password-policy violation), not a generic "Unauthorized".
+const AUTH_PATHS = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+]);
+
+// FastAPI returns 422 validation failures as an array of {loc, msg, type}.
+// Rendering that through `new Error(array)` produced "[object Object]", which
+// is what users saw when a password did not meet the policy.
+function formatApiError(body) {
+  const detail = body?.detail ?? body?.error?.message ?? body?.error ?? body;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const parts = detail
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        // FastAPI wraps validator messages as "Value error, <message>"; drop the
+        // prefix so the user sees the sentence, not the framework's furniture.
+        const msg = String(item?.msg || item?.message || '').replace(/^Value error,\s*/i, '');
+        const loc = Array.isArray(item?.loc)
+          ? item.loc.filter((p) => p !== 'body' && p !== 'query' && p !== 'path').join('.')
+          : '';
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .filter(Boolean);
+    if (parts.length) return parts.join(' · ');
+  }
+  if (detail && typeof detail === 'object' && detail.message) return String(detail.message);
+  return 'Request failed';
+}
+
 function redirectToLogin() {
   localStorage.removeItem('sentinelai_token');
   localStorage.removeItem('sentinelai_user');
@@ -52,32 +88,42 @@ async function request(path, options = {}) {
 
   const doFetch = () => fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
 
+  const isAuthCall = AUTH_PATHS.has(path);
   let response = await doFetch();
 
-  if (response.status === 401 && path !== '/auth/refresh' && localStorage.getItem('sentinelai_token')) {
+  if (
+    response.status === 401 &&
+    !isAuthCall &&
+    path !== '/auth/refresh' &&
+    localStorage.getItem('sentinelai_token')
+  ) {
     try {
       await refreshSession();
       response = await doFetch();
     } catch {
       redirectToLogin();
-      throw new Error('Unauthorized');
+      throw new Error('Session expired. Please sign in again.');
     }
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 && !isAuthCall) {
     redirectToLogin();
-    throw new Error('Unauthorized');
+    throw new Error('Session expired. Please sign in again.');
   }
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: 'Request failed' }));
-    if (response.status === 404 && (!err.detail || err.detail === 'Not Found')) {
+    if (
+      response.status === 404 &&
+      (!err.detail || err.detail === 'Not Found' || err.detail === undefined)
+    ) {
       throw new Error(
         'This feature is not available on the connected backend. ' +
         'The server you are talking to is older than this frontend — deploy the current backend.',
       );
     }
-    throw new Error(err.detail || 'Request failed');
+    const message = formatApiError(err);
+    throw new Error(response.status === 401 ? 'Invalid username or password.' : message);
   }
 
   if (response.status === 204) return null;

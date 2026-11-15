@@ -91,6 +91,23 @@ class RoleUpdateRequest(BaseModel):
     role: Role
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=8)
+    new_password: str = Field(..., min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v):
+        return validate_password_strength(v)
+
+    @field_validator("current_password")
+    @classmethod
+    def validate_current_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("Current password must be at least 8 characters")
+        return v
+
+
 class SessionInfo(BaseModel):
     model_config = {"from_attributes": True}
 

@@ -20,8 +20,14 @@ class TokenBlacklist:
         self._redis_client = None
         self._memory_store: dict[str, float] = {}  # jti -> expiry_timestamp
         self._lock = threading.Lock()
-        self._backend: str = "memory"
-        self._initialize_backend()
+        self._backend: str = "uninitialized"
+        self._backend_lock = threading.Lock()
+        self._init_attempts: int = 0
+        # Deliberately no network I/O here. This class is instantiated at import
+        # time (module-level singleton at the bottom of this file). Connecting to
+        # Redis during import made every cold start pay the connect + retry
+        # timeout when Redis was unreachable (~20s observed on Windows). The
+        # backend is now initialised on first use via _ensure_backend().
 
     def _initialize_backend(self):
         """Try to connect to Redis; fall back to in-memory store."""
@@ -29,7 +35,12 @@ class TokenBlacklist:
         try:
             import redis
 
-            client = redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
+            client = redis.from_url(
+                redis_url,
+                decode_responses=True,
+                socket_connect_timeout=0.5,
+                socket_timeout=0.5,
+            )
             client.ping()
             self._redis_client = client
             self._backend = "redis"
@@ -41,8 +52,23 @@ class TokenBlacklist:
                 "Token revocation will not survive server restarts."
             )
 
+    def _ensure_backend(self) -> None:
+        """Initialise the backend once, on first use, thread-safely.
+
+        Double-checked locking: the fast path is a single attribute read, so
+        steady-state calls never take the lock.
+        """
+        if self._backend != "uninitialized":
+            return
+        with self._backend_lock:
+            if self._backend != "uninitialized":
+                return
+            self._init_attempts += 1
+            self._initialize_backend()
+
     def add(self, jti: str, expires_at: float) -> None:
         """Add a JTI to the blacklist until its expiry time."""
+        self._ensure_backend()
         if self._backend == "redis":
             ttl = max(int(expires_at - time.time()), 1)
             try:
@@ -58,6 +84,7 @@ class TokenBlacklist:
 
     def is_blacklisted(self, jti: str) -> bool:
         """Check if a JTI is in the blacklist."""
+        self._ensure_backend()
         if self._backend == "redis":
             try:
                 return self._redis_client.exists(f"bl:{jti}") > 0
@@ -82,6 +109,7 @@ class TokenBlacklist:
         In Redis, we store a user-level revocation timestamp. Any token
         issued before this timestamp is considered revoked.
         """
+        self._ensure_backend()
         if self._backend == "redis":
             try:
                 key = f"bl:user:{user_id}"
@@ -98,6 +126,7 @@ class TokenBlacklist:
 
     def is_user_revoked(self, user_id: int, issued_at: float) -> bool:
         """Check if all tokens for a user have been revoked after issued_at."""
+        self._ensure_backend()
         if self._backend == "redis":
             try:
                 key = f"bl:user:{user_id}"
@@ -112,6 +141,7 @@ class TokenBlacklist:
 
     def cleanup(self) -> int:
         """Remove expired entries from in-memory store. Returns count removed."""
+        self._ensure_backend()
         if self._backend != "memory":
             return 0
         now = time.time()

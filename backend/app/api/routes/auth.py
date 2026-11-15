@@ -16,6 +16,7 @@ from app.schemas.schemas import (
     ForgotPasswordResponse,
     MessageResponse,
     ResetPasswordRequest,
+    ChangePasswordRequest,
     Role,
     Token,
     UserLogin,
@@ -417,6 +418,47 @@ def reset_password(
 
     logger.info(f"Password reset completed for: {user.username}")
     return MessageResponse(detail="Password reset successful")
+
+
+# NOTE: there is deliberately no "new password too short" check in the body.
+# ChangePasswordRequest.new_password is min_length=settings.PASSWORD_MIN_LENGTH
+# and carries a validate_password_strength validator, so a too-short or weak
+# password is rejected with 422 by request validation before this function runs.
+@router.post("/change-password", response_model=MessageResponse)
+@limiter.limit(AUTH_TOKEN_LIMIT)
+def change_password(
+    request: Request,
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    user = UserRepository(db).get_by_username(current_user.username)
+    if user is None:
+        raise HTTPException(status_code=400, detail="User not found")
+
+    if not verify_password(data.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    user.hashed_password = hash_password(data.new_password)
+    UserRepository(db).reset_failed_attempts(user)
+    record_action(
+        db,
+        "auth.password_changed",
+        user_id=user.id,
+        username=user.username,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        request_id=getattr(request.state, "request_id", None),
+        resource=f"user {user.username}",
+        risk_level="medium",
+    )
+    db.commit()
+
+    logger.info(f"Password changed for: {user.username}")
+    return MessageResponse(detail="Password changed successfully")
 
 
 def _send_reset_email(recipient: str, token: str) -> None:  # pragma: no cover - needs real SMTP
