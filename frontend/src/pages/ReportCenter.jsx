@@ -4,19 +4,40 @@ import {
   FileText, Download, FileJson, File, Calendar, Clock,
   CheckCircle2, AlertCircle, ExternalLink,
 } from 'lucide-react';
-import { scans } from '../services/api';
+import { scans, account } from '../services/api';
 import './ReportCenter.css';
 
 export default function ReportCenter() {
   const [scanList, setScanList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(null);
+  const [isDemo, setIsDemo] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     scans.list()
       .then(data => setScanList(data || []))
       .catch(() => setScanList([]))
       .finally(() => setLoading(false));
+  };
+
+  const handleDeleteData = async () => {
+    if (!window.confirm('Delete every scan and report on this account? The account itself is kept.')) return;
+    setDeleting(true);
+    try {
+      await account.deleteData();
+      setScanList([]);
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    setIsDemo(localStorage.getItem('sentinelai_demo') === 'true');
   }, []);
 
   const handleDownload = async (scanId, format) => {
@@ -49,6 +70,14 @@ export default function ReportCenter() {
         <div className="report-header-badge"><FileText size={12} /> REPORT CENTER</div>
         <h1 className="report-header-title">Reports</h1>
         <p className="report-header-sub">Generate executive, technical, and compliance reports</p>
+        {isDemo && (
+          <div className="demo-banner" role="note">Demo data — read-only. Sign up to scan your own material.</div>
+        )}
+        {scanList.length > 0 && (
+          <button className="report-delete-data" onClick={handleDeleteData} disabled={deleting}>
+            {deleting ? 'Deleting…' : 'Delete my scan data'}
+          </button>
+        )}
       </div>
 
       {scanList.length === 0 ? (

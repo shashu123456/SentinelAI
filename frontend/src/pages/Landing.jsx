@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { testimonials as testimonialsApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { testimonials as testimonialsApi, auth } from '../services/api';
 import TiltCard from '../components/TiltCard';
 import {
   Shield, Scan, Bot, FileCode, Package, Upload,
@@ -81,6 +82,26 @@ function LandingNav() {
 
 // ─── Hero Section ───────────────────────────────────────────────────
 function HeroSection() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState('');
+
+  const handleDemo = async () => {
+    setDemoLoading(true);
+    setDemoError('');
+    try {
+      const data = await auth.demoLogin();
+      localStorage.setItem('sentinelai_demo', 'true');
+      login(data.access_token, data.user);
+      navigate('/reports');
+    } catch (err) {
+      setDemoError(err.message || 'The demo is not available right now.');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   // Generate floating particles once
   const particles = useRef(
     Array.from({ length: 24 }, (_, i) => ({
@@ -124,7 +145,7 @@ function HeroSection() {
         <FadeIn>
           <div className="hero-badge">
             <Zap size={12} />
-            <span>AI-POWERED SECURITY PLATFORM</span>
+            <span>OPENAPI · DEPENDENCY · SOURCE CODE</span>
           </div>
         </FadeIn>
 
@@ -153,7 +174,16 @@ function HeroSection() {
               See How It Works
               <ChevronDown size={16} />
             </a>
+            <button
+              type="button"
+              className="hero-btn-secondary"
+              onClick={handleDemo}
+              disabled={demoLoading}
+            >
+              {demoLoading ? 'Loading demo…' : 'Try the demo'}
+            </button>
           </div>
+          {demoError && <p className="hero-demo-error" role="alert">{demoError}</p>}
         </FadeIn>
 
         <FadeIn delay={400}>
@@ -507,7 +537,7 @@ function Footer() {
             <span>SENTINEL<span className="accent">AI</span></span>
           </Link>
           <p className="footer-tagline">
-            AI-Powered Application Security Intelligence Platform
+            OpenAPI, dependency, and source-file security scanning
           </p>
         </div>
 

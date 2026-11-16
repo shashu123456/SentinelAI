@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from './ui/Toast';
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Settings, LogOut, Sun, Moon, User, Home, Search, ChevronDown } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, LogOut, Sun, Moon, FlaskConical } from 'lucide-react';
 import './Navbar.css';
+
+// Exactly three primary destinations. Everything else lives under /beta.
+const PRIMARY_LINKS = [
+  { to: '/scans/new', label: 'New Scan' },
+  { to: '/reports', label: 'Reports' },
+  { to: '/coverage', label: 'Coverage' },
+];
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -20,79 +27,75 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (darkMode) {
-      localStorage.setItem('sentinelai-dark-mode', 'true');
-      document.documentElement.classList.add('dark');
-    } else {
-      localStorage.setItem('sentinelai-dark-mode', 'false');
-      document.documentElement.classList.remove('dark');
-    }
+    localStorage.setItem('sentinelai-dark-mode', darkMode ? 'true' : 'false');
+    document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
   const handleLogout = () => {
     logout();
-    showToast('Logged out successfully', 'success');
+    showToast?.({ title: 'Logged out', description: 'You have been signed out.', variant: 'success' });
     navigate('/');
   };
 
-  const showToast = (msg, type = 'success') => {
-    useToast()(showToast, { title: type === 'success' ? 'Success' : 'Error', description: msg, variant: type, duration: 3000 });
-  };
+  const inBeta = location.pathname.startsWith('/beta');
 
   return (
-    <nav className="navbar">
+    <nav className="navbar" aria-label="Primary">
       <div className="navbar-left">
-        <a href="/" className="navbar-logo">
-          <Sun size={20} className="hidden-dark" />
-          <Moon size={20} className="visible-dark" />
-          SentinelAI
-        </a>
+        <NavLink to="/reports" className="navbar-logo">SentinelAI</NavLink>
       </div>
 
       <div className="navbar-center">
-        <div className="navbar-search">
-          <Search size={18} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search"
-            className="search-input"
-          />
-        </div>
+        <ul className="navbar-links">
+          {PRIMARY_LINKS.map((link) => (
+            <li key={link.to}>
+              <NavLink
+                to={link.to}
+                className={({ isActive }) => `navbar-link${isActive ? ' active' : ''}`}
+                end={link.to === '/scans/new'}
+              >
+                {link.label}
+              </NavLink>
+            </li>
+          ))}
+          <li>
+            <NavLink
+              to="/beta/dashboard"
+              className={({ isActive }) =>
+                `navbar-link navbar-beta${isActive || inBeta ? ' active' : ''}`
+              }
+            >
+              <FlaskConical size={13} aria-hidden="true" /> Beta
+            </NavLink>
+          </li>
+        </ul>
       </div>
 
       <div className="navbar-right">
+        <button
+          className="navbar-icon-btn"
+          onClick={() => setDarkMode((v) => !v)}
+          aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         {isAuthenticated && user && (
-          <div className="navbar-user">
-            <User size={24} className="navbar-user-avatar" />
-            <span className="navbar-user-name">{user.username}</span>
-            <ChevronDown size={12} className="navbar-user-arrow" />
-          </div>
+          <span className="navbar-user-name">{user.username}</span>
         )}
 
         <button
-          className="navbar-menu-btn"
-          onClick={() => setShowMenu(!showMenu)}
+          className="navbar-icon-btn"
+          onClick={() => setShowMenu((v) => !v)}
           aria-label="Menu"
+          aria-expanded={showMenu}
         >
           <Menu size={20} />
         </button>
 
         {showMenu && (
-          <div className="navbar-dropdown">
-            <a href="/dashboard" className="navbar-dropdown-item">
-              <Home size={14} className="navbar-dropdown-icon" /> Dashboard
-            </a>
-            <a href="/settings" className="navbar-dropdown-item">
-              <Settings size={14} className="navbar-dropdown-icon" /> Settings
-            </a>
-            <hr className="navbar-dropdown-divider" />
-            <button
-              onClick={handleLogout}
-              className="navbar-dropdown-item navbar-dropdown-logout"
-            >
+          <div className="navbar-dropdown" role="menu">
+            <button onClick={handleLogout} className="navbar-dropdown-item navbar-dropdown-logout" role="menuitem">
               <LogOut size={14} className="navbar-dropdown-icon" /> Logout
             </button>
           </div>

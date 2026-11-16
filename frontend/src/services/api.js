@@ -185,6 +185,13 @@ export const auth = {
   logoutAll: () => request('/auth/logout-all', { method: 'POST' }),
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (token, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, new_password: newPassword }) }),
+  demoLogin: () => request('/auth/demo-login', { method: 'POST' }),
+};
+
+export const account = {
+  authorizedUse: () => request('/account/authorized-use'),
+  acceptAuthorizedUse: () => request('/account/authorized-use', { method: 'POST' }),
+  deleteData: () => request('/account/delete-data', { method: 'POST' }),
 };
 
 export const scans = {

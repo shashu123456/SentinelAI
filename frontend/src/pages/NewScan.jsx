@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { scans } from '../services/api';
+import { scans, account } from '../services/api';
 import {
   Upload, FileText, AlertCircle, Loader2, Shield, Code, Package, FileJson
 } from 'lucide-react';
@@ -98,6 +98,8 @@ export default function NewScan() {
   const [apiName, setApiName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [authorized, setAuthorized] = useState(false);
+  const [accepted, setAccepted] = useState(true);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -105,6 +107,20 @@ export default function NewScan() {
   useEffect(() => {
     if (requestedKind && KINDS[requestedKind]) setKind(requestedKind);
   }, [requestedKind]);
+
+  // Has this account already accepted the authorized-use terms?
+  useEffect(() => {
+    account.authorizedUse()
+      .then((state) => {
+        if (state && state.accepted) {
+          setAccepted(true);
+          setAuthorized(true);
+        } else {
+          setAccepted(false);
+        }
+      })
+      .catch(() => setAccepted(false));
+  }, []);
 
   const active = KINDS[kind];
   const ActiveIcon = active.icon;
@@ -175,10 +191,25 @@ export default function NewScan() {
     setUploading(true);
     setError('');
 
+    if (!accepted && !authorized) {
+      setError('Please confirm you are authorized to scan this material.');
+      setUploading(false);
+      return;
+    }
+
     try {
+      if (!accepted) {
+        await account.acceptAuthorizedUse();
+        setAccepted(true);
+      }
       const result = await scans.upload(file, apiName, kind);
       navigate(`/scan/${result.id}`);
     } catch (err) {
+      if (/authorization_required/i.test(err.message || '')) {
+        setError('Please accept the authorized-use terms before scanning.');
+        navigate('/authorized-use');
+        return;
+      }
       setError(err.message || 'Scan failed');
     } finally {
       setUploading(false);
@@ -298,10 +329,22 @@ export default function NewScan() {
             </ul>
           </div>
 
+          <label className="authorized-check">
+            <input
+              type="checkbox"
+              checked={authorized}
+              onChange={(e) => setAuthorized(e.target.checked)}
+              disabled={accepted}
+            />
+            <span>
+              I am authorized to scan this material — I own it or have written permission to test it.
+            </span>
+          </label>
+
           <button
             type="submit"
             className="scan-btn"
-            disabled={!file || uploading}
+            disabled={!file || uploading || (!accepted && !authorized)}
           >
             {uploading ? (
               <>

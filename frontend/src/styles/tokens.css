@@ -1,0 +1,70 @@
+:root {
+  /* ---- 60%: Periwinkle Bloom (surfaces) ---- */
+  --bloom-50:  #F4F3FF;
+  --bloom-100: #EAE8FF;
+  --bloom-200: #DCD9FF;
+  --bloom-300: #C9C5FF;   /* primary periwinkle */
+  --bloom-400: #B0AAFF;
+
+  /* ---- 30%: Midnight Fig (ink + structure) ---- */
+  --fig-500: #4A3A63;
+  --fig-700: #33264A;
+  --fig-900: #211831;
+
+  /* ---- 10%: Wasabi Volt (accent) ---- */
+  --volt-300: #D8FA6A;
+  --volt-400: #C6F135;    /* primary accent */
+  --volt-500: #A9D41C;
+
+  /* ---- Semantic severity (exempt from 60/30/10) ---- */
+  --sev-critical-dot: #D92D20;  --sev-critical-bg: #FEE4E2;  --sev-critical-ink: #7A271A;
+  --sev-high-dot:     #E8590C;  --sev-high-bg:     #FEECDC;  --sev-high-ink:     #7A2E0E;
+  --sev-medium-dot:   #B54708;  --sev-medium-bg:   #FEF0C7;  --sev-medium-ink:   #78350F;
+  --sev-low-dot:      #A9D41C;  --sev-low-bg:      #F0FAD1;  --sev-low-ink:      #3F4A0E;
+  --sev-info-bg:      #EAE8FF;  --sev-info-ink:    #33264A;
+
+  /* ---- Roles (use these, never raw hex, in components) ---- */
+  --bg-page: var(--bloom-50);
+  --bg-surface: var(--bloom-100);
+  --bg-surface-alt: var(--bloom-200);
+  --border-subtle: var(--bloom-300);
+  --text-primary: var(--fig-900);
+  --text-secondary: var(--fig-500);
+  --text-on-dark: var(--bloom-50);
+  --btn-primary-bg: var(--volt-400);
+  --btn-primary-ink: var(--fig-900);
+  --btn-secondary-bg: var(--fig-900);
+  --btn-secondary-ink: var(--bloom-50);
+  --focus-ring: var(--volt-400);
+  --link: var(--fig-700);
+
+  /* ---- Type ---- */
+  --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --fs-12: 0.75rem; --fs-14: 0.875rem; --fs-16: 1rem;
+  --fs-20: 1.25rem; --fs-24: 1.5rem; --fs-32: 2rem; --fs-44: 2.75rem;
+
+  /* ---- Space / shape / motion ---- */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --r-sm: 8px; --r-md: 12px; --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(33,24,49,.06), 0 8px 24px rgba(33,24,49,.08);
+  --dur: 160ms;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+
+/* Dark mode is an INVERSION of the same ratio: fig dominates surfaces instead of bloom. */
+[data-theme="dark"] {
+  --bg-page: var(--fig-900);
+  --bg-surface: var(--fig-700);
+  --bg-surface-alt: var(--fig-500);
+  --border-subtle: #4A3A63;
+  --text-primary: var(--bloom-50);
+  --text-secondary: var(--bloom-300);
+  --link: var(--bloom-300);
+  /* Accent and severity stay identical — that is the point of an accent. */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

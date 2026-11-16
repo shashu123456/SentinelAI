@@ -44,8 +44,8 @@ export default function Login() {
           </div>
         </div>
         <div className="login-hero">
-          <h1>AI-Powered<br />Threat Intelligence</h1>
-          <p>Real-time vulnerability detection, automated risk scoring, and intelligent remediation across your entire attack surface.</p>
+          <h1>Find it.<br />Understand it.<br />Fix it.</h1>
+          <p>Three scanners, one upload box: API specs, dependency manifests and source files, with deterministic scoring and a fix instruction per finding.</p>
           <div className="login-features">
             <div className="login-feature">
               <span>OWASP API Security Top 10 Engine</span>

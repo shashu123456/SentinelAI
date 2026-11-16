@@ -660,3 +660,23 @@ a:focus-visible,
   max-width: 360px;
   line-height: 1.5;
 }
+
+/* ---- App shell footer (golden path) ---- */
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  margin-top: var(--s-7);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  flex-wrap: wrap;
+}
+.app-footer-links { display: flex; gap: var(--s-4); }
+.app-footer-links a { color: var(--link); text-decoration: none; font-weight: 600; }
+.app-footer-links a:hover { text-decoration: underline; }
+
+/* ---- Beta quarantine wrapper ---- */
+.beta-layout { padding: var(--s-4) var(--s-5); }

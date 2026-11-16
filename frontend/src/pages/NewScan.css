@@ -140,7 +140,7 @@
 .scan-btn {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, #003322, #002218);
+  background: linear-gradient(135deg, var(--fig-900), var(--fig-700));
   color: var(--accent-cyan);
   border: 1px solid rgba(0,255,170,0.3);
   border-radius: var(--radius);
@@ -157,5 +157,28 @@
   font-family: var(--font-mono);
   text-shadow: 0 0 10px rgba(0,255,170,0.3);
 }
-.scan-btn:hover:not(:disabled) { background: linear-gradient(135deg, #004433, #003322); border-color: rgba(0,255,170,0.5); transform: translateY(-1px); box-shadow: 0 0 25px rgba(0,255,170,0.12); }
+.scan-btn:hover:not(:disabled) { background: linear-gradient(135deg, var(--volt-400), var(--volt-500)); border-color: rgba(0,255,170,0.5); transform: translateY(-1px); box-shadow: 0 0 25px rgba(0,255,170,0.12); }
 .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Authorized-use confirmation (required before the first scan). */
+.authorized-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  margin: var(--s-3) 0;
+  padding: var(--s-3);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  cursor: pointer;
+}
+.authorized-check input {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--volt-500);
+  cursor: pointer;
+}
+.authorized-check input:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }

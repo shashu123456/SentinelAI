@@ -46,7 +46,7 @@ export default function Signup() {
       });
 
       login(data.access_token, data.user);
-      navigate('/dashboard');
+      navigate('/reports');
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -54,7 +54,7 @@ export default function Signup() {
     }
   };
 
-  const handleToggle = (mode: 'register' | 'login') => {
+  const handleToggle = (mode) => {
     setIsRegister(mode);
     setForm({
       username: '',

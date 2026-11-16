@@ -1498,3 +1498,9 @@
   .footer-links { grid-template-columns: repeat(2, 1fr); }
   .cta-title { font-size: 32px; }
 }
+
+.hero-demo-error {
+  margin-top: var(--s-2);
+  color: var(--sev-critical-ink);
+  font-size: var(--fs-14);
+}

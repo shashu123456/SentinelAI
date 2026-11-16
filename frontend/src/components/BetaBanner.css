@@ -1,0 +1,12 @@
+.beta-banner {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-4); margin-bottom: var(--s-4);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--volt-400);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-size: var(--fs-14);
+}
+.beta-banner-link { margin-left: auto; color: var(--link); font-weight: 600; text-decoration: none; }
+.beta-banner-link:hover { text-decoration: underline; }

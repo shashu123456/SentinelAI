@@ -55,6 +55,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('sentinelai_token');
     localStorage.removeItem('sentinelai_user');
+    localStorage.removeItem('sentinelai_demo');
     setToken(null);
     setUser(null);
   };

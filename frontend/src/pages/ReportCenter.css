@@ -121,15 +121,12 @@
 
 .report-empty-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 10px 20px; background: linear-gradient(135deg, #003322, #002218);
+  padding: 10px 20px; background: linear-gradient(135deg, var(--fig-900), var(--fig-700));
   color: var(--accent-cyan); border: 1px solid rgba(0,255,170,0.3);
   border-radius: 6px; font-size: 13px; font-weight: 600;
   text-decoration: none; transition: all 0.2s ease;
 }
-.report-empty-btn:hover {
-  background: linear-gradient(135deg, #004433, #003322);
-  border-color: rgba(0,255,170,0.5); text-decoration: none;
-}
+.report-empty-btn:hover { background: linear-gradient(135deg, var(--volt-400), var(--volt-500)); border-color: rgba(0,255,170,0.5); text-decoration: none; }
 
 .report-loading {
   display: flex; flex-direction: column; align-items: center;
@@ -138,7 +135,31 @@
 }
 
 /* ═══ LIGHT THEME ═══ */
-[data-theme="light"] .report-card { background: #ffffff; }
-[data-theme="light"] .report-card-actions { background: #f8f9fc; border-top-color: #eef0f3; }
-[data-theme="light"] .report-empty-btn { background: #009966; color: white; border-color: #009966; }
-[data-theme="light"] .report-empty-btn:hover { background: #00b377; }
+[data-theme="light"] .report-card { background: var(--bloom-50); }
+[data-theme="light"] .report-card-actions { background: var(--bloom-100); border-top-color: var(--bloom-200); }
+[data-theme="light"] .report-empty-btn { background: var(--volt-500); color: white; border-color: var(--volt-500); }
+[data-theme="light"] .report-empty-btn:hover { background: var(--volt-400); }
+
+.demo-banner {
+  margin-top: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--sev-medium-bg);
+  color: var(--sev-medium-ink);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+.report-delete-data {
+  margin-top: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: transparent;
+  color: var(--sev-critical-ink);
+  border: 1px solid var(--sev-critical-bg);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+.report-delete-data:hover { background: var(--sev-critical-bg); }
+.report-delete-data:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
