@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -140,6 +141,17 @@ class Settings(BaseSettings):
     # On by default; the test suite disables it (like OSV_ENABLED) so pre-existing
     # upload tests do not each have to accept, and a dedicated test re-enables it.
     ENFORCE_AUTHORIZED_USE: bool = True
+
+    @field_validator("SENTINEL_DEMO_EMAIL", "SENTINEL_DEMO_PASSWORD", mode="after")
+    @classmethod
+    def _strip_demo_credentials(cls, value: str) -> str:
+        """Trim surrounding whitespace/newlines pasted in by secret managers.
+
+        A trailing newline in the stored secret would otherwise make the demo
+        email lookup miss and the password comparison fail, which surfaces as a
+        confusing "unavailable" response rather than the real configuration bug.
+        """
+        return value.strip() if isinstance(value, str) else value
 
     class Config:
         env_file = ".env"
