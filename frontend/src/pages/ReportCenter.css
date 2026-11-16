@@ -7,13 +7,13 @@
 .report-header { margin-bottom: 24px; }
 .report-header-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 12px; background: rgba(170,102,255,0.08);
-  border: 1px solid rgba(170,102,255,0.15); border-radius: 3px;
-  font-size: 10px; font-weight: 700; color: var(--accent-purple);
+  padding: 4px 12px; background: var(--bg-surface-alt);
+  border: 1px solid var(--bg-surface-alt); border-radius: 3px;
+  font-size: 10px; font-weight: 700; color: var(--fig-500);
   letter-spacing: 1.5px; font-family: var(--font-mono); margin-bottom: 12px;
 }
 .report-header-title {
-  font-family: var(--font-display); font-size: 28px; font-weight: 700;
+  font-family: var(--font-ui); font-size: 28px; font-weight: 700;
   color: var(--text-primary); letter-spacing: -0.8px;
 }
 .report-header-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
@@ -28,7 +28,7 @@
   border-radius: 10px; overflow: hidden;
   transition: border-color 0.15s ease;
 }
-.report-card:hover { border-color: rgba(0,255,170,0.12); }
+.report-card:hover { border-color: var(--border-focus); }
 
 .report-card-header {
   display: flex; align-items: center; gap: 14px;
@@ -37,15 +37,15 @@
 
 .report-card-icon {
   width: 40px; height: 40px; border-radius: 8px;
-  background: rgba(170,102,255,0.08); border: 1px solid rgba(170,102,255,0.15);
+  background: var(--bg-surface-alt); border: 1px solid var(--bg-surface-alt);
   display: flex; align-items: center; justify-content: center;
-  color: var(--accent-purple); flex-shrink: 0;
+  color: var(--fig-500); flex-shrink: 0;
 }
 
 .report-card-info { flex: 1; min-width: 0; }
 
 .report-card-title {
-  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  font-family: var(--font-ui); font-size: 15px; font-weight: 600;
   color: var(--text-primary); letter-spacing: -0.2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -70,11 +70,11 @@
 }
 .report-card-risk.danger { color: var(--accent-red); background: var(--accent-red-light); }
 .report-card-risk.warning { color: var(--accent-orange); background: var(--accent-orange-light); }
-.report-card-risk.safe { color: var(--accent-cyan); background: rgba(0,255,170,0.08); }
+.report-card-risk.safe { color: var(--link); background: var(--bg-surface-alt); }
 
 .report-card-view {
   display: flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 500; color: var(--accent-cyan);
+  font-size: 12px; font-weight: 500; color: var(--link);
   text-decoration: none; white-space: nowrap;
 }
 .report-card-view:hover { text-decoration: underline; }
@@ -94,19 +94,19 @@
 }
 
 .report-download-btn.pdf {
-  background: rgba(255,51,85,0.08); border: 1px solid rgba(255,51,85,0.2);
+  background: var(--severity-critical-bg); border: 1px solid var(--severity-critical-bg);
   color: var(--accent-red);
 }
 .report-download-btn.pdf:hover:not(:disabled) {
-  background: rgba(255,51,85,0.15); border-color: rgba(255,51,85,0.35);
+  background: var(--severity-critical-bg); border-color: var(--severity-critical-bg);
 }
 
 .report-download-btn.json {
-  background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.15);
-  color: var(--accent-blue);
+  background: var(--bg-surface-alt); border: 1px solid var(--bg-surface-alt);
+  color: var(--link);
 }
 .report-download-btn.json:hover:not(:disabled) {
-  background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.3);
+  background: var(--bg-surface-alt); border-color: var(--bg-surface-alt);
 }
 
 .report-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -122,11 +122,11 @@
 .report-empty-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 10px 20px; background: linear-gradient(135deg, var(--fig-900), var(--fig-700));
-  color: var(--accent-cyan); border: 1px solid rgba(0,255,170,0.3);
+  color: var(--border-focus); border: 1px solid var(--border-focus);
   border-radius: 6px; font-size: 13px; font-weight: 600;
   text-decoration: none; transition: all 0.2s ease;
 }
-.report-empty-btn:hover { background: linear-gradient(135deg, var(--volt-400), var(--volt-500)); border-color: rgba(0,255,170,0.5); text-decoration: none; }
+.report-empty-btn:hover { background: linear-gradient(135deg, var(--volt-400), var(--volt-500)); border-color: var(--border-focus); text-decoration: none; }
 
 .report-loading {
   display: flex; flex-direction: column; align-items: center;

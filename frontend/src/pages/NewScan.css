@@ -19,7 +19,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,170,0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--bg-surface-alt), transparent);
 }
 
 .dropzone {
@@ -33,14 +33,14 @@
 }
 
 .dropzone:hover, .dropzone.active {
-  border-color: rgba(0,255,170,0.3);
-  background: rgba(0,255,170,0.03);
+  border-color: var(--border-focus);
+  background: var(--bg-surface-alt);
 }
 
 .dropzone.has-file {
   border-style: solid;
-  border-color: rgba(0,255,136,0.3);
-  background: rgba(0,255,136,0.03);
+  border-color: var(--severity-low-bg);
+  background: var(--severity-low-bg);
   padding: 20px;
 }
 
@@ -50,7 +50,7 @@
 .file-types { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
 
 .file-selected { display: flex; align-items: center; gap: 14px; text-align: left; }
-.file-selected svg { color: var(--accent-green); flex-shrink: 0; }
+.file-selected svg { color: var(--severity-low); flex-shrink: 0; }
 .file-info { flex: 1; display: flex; flex-direction: column; }
 .file-name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
 .file-size { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
@@ -68,12 +68,12 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.remove-file:hover { border-color: var(--accent-red); color: var(--accent-red); background: rgba(255,51,85,0.05); }
+.remove-file:hover { border-color: var(--accent-red); color: var(--accent-red); background: var(--severity-critical-bg); }
 
 .new-scan-card .form-group { margin-bottom: 20px; }
-.new-scan-card .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--accent-cyan); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.7; font-family: var(--font-mono); }
+.new-scan-card .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--link); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.7; font-family: var(--font-mono); }
 .new-scan-card .form-group input { width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-primary); font-size: 14px; transition: all var(--transition); }
-.new-scan-card .form-group input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(0,255,170,0.08), 0 0 15px rgba(0,255,170,0.05); }
+.new-scan-card .form-group input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--shadow-focus), 0 0 15px var(--shadow-focus); }
 
 .error-msg {
   display: flex;
@@ -81,8 +81,8 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: var(--radius);
-  background: rgba(255,51,85,0.06);
-  border: 1px solid rgba(255,51,85,0.15);
+  background: var(--severity-critical-bg);
+  border: 1px solid var(--severity-critical-bg);
   color: var(--accent-red);
   font-size: 13px;
   margin-bottom: 16px;
@@ -99,9 +99,9 @@
   padding: 8px 12px;
   margin-bottom: 20px;
   border-radius: var(--radius);
-  background: rgba(0,255,170,0.04);
-  border: 1px solid rgba(0,255,170,0.15);
-  color: var(--accent-cyan);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-focus);
+  color: var(--link);
   font-size: 12px;
   font-family: var(--font-mono);
 }
@@ -118,31 +118,31 @@
   border-radius: var(--radius);
   transition: all var(--transition);
 }
-.mode-option input:checked + .mode-card { border-color: rgba(0,255,170,0.3); background: rgba(0,255,170,0.04); box-shadow: 0 0 15px rgba(0,255,170,0.03); }
-.mode-card:hover { border-color: rgba(0,255,170,0.15); }
+.mode-option input:checked + .mode-card { border-color: var(--shadow-focus); background: var(--shadow-focus); box-shadow: 0 0 15px var(--shadow-focus); }
+.mode-card:hover { border-color: var(--border-focus); }
 .mode-card svg { color: var(--text-muted); flex-shrink: 0; }
-.mode-option input:checked + .mode-card svg { color: var(--accent-cyan); }
+.mode-option input:checked + .mode-card svg { color: var(--link); }
 .mode-card strong { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
 .mode-card span { font-size: 11px; color: var(--text-muted); display: block; line-height: 1.4; }
 
 .scan-info {
-  background: rgba(0,255,170,0.02);
+  background: var(--bg-surface-alt);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 24px;
 }
-.scan-info h4 { font-size: 13px; font-weight: 600; color: var(--accent-cyan); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--font-mono); opacity: 0.7; }
+.scan-info h4 { font-size: 13px; font-weight: 600; color: var(--link); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--font-mono); opacity: 0.7; }
 .scan-info ul { list-style: none; padding: 0; }
 .scan-info li { font-size: 13px; color: var(--text-muted); padding: 3px 0 3px 16px; position: relative; }
-.scan-info li::before { content: '>'; position: absolute; left: 0; color: var(--accent-cyan); font-family: var(--font-mono); font-weight: 700; font-size: 11px; opacity: 0.6; }
+.scan-info li::before { content: '>'; position: absolute; left: 0; color: var(--link); font-family: var(--font-mono); font-weight: 700; font-size: 11px; opacity: 0.6; }
 
 .scan-btn {
   width: 100%;
   padding: 12px;
   background: linear-gradient(135deg, var(--fig-900), var(--fig-700));
-  color: var(--accent-cyan);
-  border: 1px solid rgba(0,255,170,0.3);
+  color: var(--link);
+  border: 1px solid var(--border-focus);
   border-radius: var(--radius);
   font-size: 13px;
   font-weight: 700;
@@ -155,9 +155,9 @@
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-family: var(--font-mono);
-  text-shadow: 0 0 10px rgba(0,255,170,0.3);
+  text-shadow: 0 0 10px var(--shadow-focus);
 }
-.scan-btn:hover:not(:disabled) { background: linear-gradient(135deg, var(--volt-400), var(--volt-500)); border-color: rgba(0,255,170,0.5); transform: translateY(-1px); box-shadow: 0 0 25px rgba(0,255,170,0.12); }
+.scan-btn:hover:not(:disabled) { background: linear-gradient(135deg, var(--volt-400), var(--volt-500)); border-color: var(--shadow-focus); transform: translateY(-1px); box-shadow: 0 0 25px var(--shadow-focus); }
 .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Authorized-use confirmation (required before the first scan). */
