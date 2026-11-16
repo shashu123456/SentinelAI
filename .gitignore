@@ -61,3 +61,8 @@ backend/.vercel/
 
 # Scratch dirs
 .tmp-*/
+
+# local-only mypy parity venv, scratch output and design captures
+.venv-mypy/
+.tmp-mypy/
+previews/
