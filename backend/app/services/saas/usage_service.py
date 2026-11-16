@@ -4,6 +4,7 @@ Handles usage recording, querying, and quota checks.
 """
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -123,7 +124,7 @@ def enforce_quotas(db: Session, org_id: int) -> dict:
     if not plan:
         return {"error": "No plan found"}
 
-    checks = {
+    checks: dict[str, dict[str, Any]] = {
         "scans": {"metric": "scan", "limit": plan.max_scans_per_month},
         "ai_requests": {"metric": "ai_request", "limit": plan.max_ai_requests_per_day},
         "api_calls": {"metric": "api_call", "limit": plan.max_scans_per_month * 10},

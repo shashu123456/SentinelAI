@@ -40,6 +40,7 @@ def create_invitation(
     # Check capacity
     if not org_repo.can_add_member(org_id):
         org = org_repo.get(org_id)
+        assert org is not None, "org_repo reported capacity for a missing organization"
         raise ValueError(f"Organization has reached the maximum of {org.max_members} members")
 
     token = secrets.token_urlsafe(32)

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -53,7 +54,7 @@ class Organization(Base):
         String(20), default="private", nullable=False
     )
     enforce_sso: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    allowed_email_domains: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    allowed_email_domains: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 

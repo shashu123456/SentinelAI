@@ -254,9 +254,9 @@ def _run_engine(kind: str, target: str, root: str) -> list[dict]:
         result = run_dep_scan(target)
         normalized = [normalize_dep(f.to_dict()) for f in result.findings]
     elif kind == CODE_KIND:
-        result = run_sast_scan(target)
+        sast_result = run_sast_scan(target)
         normalized = []
-        for finding in result.findings:
+        for finding in sast_result.findings:
             raw = dict(finding.to_dict())
             raw["file_path"] = _relative_to_root(str(raw.get("file_path") or ""), root)
             normalized.append(normalize_sast(raw))

@@ -249,6 +249,8 @@ def _matches_conditions(finding: Finding, conditions: list[dict]) -> bool:
 
     for condition in conditions:
         field = condition.get("field")
+        if not isinstance(field, str):
+            return False
         operator = condition.get("operator")
         value = cast(Any, condition.get("value"))
 
@@ -831,7 +833,7 @@ def generate_sarif_export(db: Session, scan_ids: list[int]) -> dict:
     """Generate SARIF (Static Analysis Results Interchange Format) export."""
     scans = db.query(Scan).filter(Scan.id.in_(scan_ids)).all() if scan_ids else []
 
-    sarif = {
+    sarif: dict[str, Any] = {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
         "version": "2.1.0",
         "runs": [],

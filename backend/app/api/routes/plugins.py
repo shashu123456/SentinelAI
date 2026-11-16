@@ -60,8 +60,8 @@ def get_plugin(
     return {
         "manifest": manifest.to_dict(),
         "status": (
-            plugin_registry.get_status(plugin_id).value
-            if plugin_registry.get_status(plugin_id)
+            plugin_status.value
+            if (plugin_status := plugin_registry.get_status(plugin_id))
             else "unknown"
         ),
         "config": plugin_registry.get_config(plugin_id),

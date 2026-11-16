@@ -476,7 +476,7 @@ class SessionStore:
                 "completed_at, duration, error, files_scanned, findings_count, "
                 "created_at FROM sessions WHERE 1=1"
             )
-            params = []
+            params: list[Any] = []
 
             if status:
                 query += " AND status = ?"

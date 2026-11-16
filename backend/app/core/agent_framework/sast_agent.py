@@ -249,6 +249,11 @@ class SASTSecurityAgent(BaseAgent):
         """
         return ["sast_scan", "security_analysis", "code_analysis", "vulnerability_detection"]
 
+    @capabilities.setter
+    def capabilities(self, value: list[str]) -> None:
+        """Keep the read-write contract of BaseAgent.capabilities."""
+        self._capabilities = value or []
+
     def get_configuration(self, key: str, default: Any = None) -> Any:
         """Get a configuration value by key.
 

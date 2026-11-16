@@ -40,7 +40,7 @@ class AgentRegistry:
     _scope: RegistryScope = field(default=RegistryScope.GLOBAL, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
-    def register(self, agent: BaseAgent, scope: RegistryScope = RegistryScope.GLOBAL) -> None:
+    def register(self, agent: BaseAgent, scope: RegistryScope | str = RegistryScope.GLOBAL) -> None:
         """Register an agent in the registry.
 
         Args:
@@ -54,7 +54,7 @@ class AgentRegistry:
             agent_id = agent.metadata.id
             if agent_id in self._agents and self._agents[agent_id] is not agent:
                 raise ValueError(f"Agent ID already registered: {agent_id}")
-            agent._scope = scope
+            agent._scope = scope  # optional attribute documented on registry entries
             self._agents[agent_id] = agent
 
     def unregister(self, agent_id: str) -> BaseAgent | None:
@@ -110,7 +110,7 @@ class AgentRegistry:
         with self._lock:
             matching: list[BaseAgent] = []
             for agent in self._agents.values():
-                supported = getattr(agent, "supported_file_types", set()) or set()
+                supported: set[str] = getattr(agent, "supported_file_types", set()) or set()
                 if file_type in supported:
                     matching.append(agent)
             return matching

@@ -89,6 +89,9 @@ class AgentLifecycleManager:
         self._transitions: list[LifecycleTransition] = []
         self._metrics: LifecycleMetrics = LifecycleMetrics()
         self._event_callbacks: dict[EventType, list[Any]] = {}
+        # Health callback is wired by subclasses; annotated here so the
+        # registration point is type-checked (runtime behaviour unchanged).
+        self._on_health_changed: Any = getattr(self, "_on_health_changed", None)
 
         # Register default event callbacks
         self.register_event_callback(EventType.AGENT_HEALTH_CHANGED, self._on_health_changed)

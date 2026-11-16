@@ -177,7 +177,7 @@ def generate_executive_report(
             for f in sorted(
                 all_findings,
                 key=lambda x: {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}.get(
-                    x.get("severity"), 5
+                    x.get("severity") or "", 5
                 ),
             )[:10]
         ],
@@ -296,6 +296,7 @@ def review_architecture(
 
     engine = get_ai_engine()
 
+    assert data.scan_id is not None, "scan_id is required for AI analysis"
     scan, findings = _get_scan_findings(db, data.scan_id, current_user.id)
     if not scan:
         raise HTTPException(404, "Scan not found")
@@ -359,6 +360,7 @@ def summarize_scan(
 
     engine = get_ai_engine()
 
+    assert data.scan_id is not None, "scan_id is required for AI analysis"
     scan, findings = _get_scan_findings(db, data.scan_id, current_user.id)
     if not scan:
         raise HTTPException(404, "Scan not found")

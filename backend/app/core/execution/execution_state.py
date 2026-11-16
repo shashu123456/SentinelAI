@@ -207,7 +207,7 @@ class ScanSession:
     lines_scanned: int = 0
     findings_count: int = 0
     languages_detected: list[str] = field(default_factory=list)
-    agent_result: AgentResult | None = None
+    agent_result: AgentResult | dict[str, Any] | str | None = None
 
     # History
     transition_history: list[dict[str, Any]] = field(default_factory=list)
@@ -324,7 +324,11 @@ class ScanSession:
             "lines_scanned": self.lines_scanned,
             "findings_count": self.findings_count,
             "languages_detected": self.languages_detected,
-            "agent_result": self.agent_result.to_dict() if self.agent_result else None,
+            "agent_result": (
+                self.agent_result.to_dict()
+                if self.agent_result is not None and hasattr(self.agent_result, "to_dict")
+                else self.agent_result
+            ),
             "transition_history": self.transition_history,
             "agent_history": self.agent_history,
         }

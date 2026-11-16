@@ -208,6 +208,7 @@ def require_project_role(min_role: str) -> Callable:
             )
         org_level = ORG_ROLE_LEVELS.get(org_role, 0)
         org = db.get(Organization, project.organization_id)
+        assert org is not None, "project references a missing organization"
         org_ctx = OrgContext(
             organization=org, org_role=org_role, org_level=org_level, user_id=current_user.id
         )

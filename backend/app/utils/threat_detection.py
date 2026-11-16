@@ -442,8 +442,8 @@ def get_security_stats() -> dict:
         > now - 86400
     ]
 
-    severity_counts = defaultdict(int)
-    category_counts = defaultdict(int)
+    severity_counts: defaultdict[str, int] = defaultdict(int)
+    category_counts: defaultdict[str, int] = defaultdict(int)
     for e in events:
         severity_counts[e["severity"]] += 1
         category_counts[e["category"]] += 1

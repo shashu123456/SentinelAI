@@ -228,7 +228,7 @@ def retry_with_backoff(
     Raises:
         The last exception if all retries fail.
     """
-    last_exception = None
+    last_exception: BaseException | None = None
 
     for attempt in range(max_retries + 1):
         try:
@@ -254,6 +254,7 @@ def retry_with_backoff(
 
             time.sleep(delay)
 
+    assert last_exception is not None
     raise last_exception
 
 
@@ -267,7 +268,7 @@ async def async_retry_with_backoff(
     retryable_exceptions: tuple = (Exception,),
 ) -> Any:
     """Async version of retry with backoff."""
-    last_exception = None
+    last_exception: BaseException | None = None
 
     for attempt in range(max_retries + 1):
         try:
@@ -289,6 +290,7 @@ async def async_retry_with_backoff(
             )
             await asyncio.sleep(delay)
 
+    assert last_exception is not None
     raise last_exception
 
 

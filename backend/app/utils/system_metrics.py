@@ -17,10 +17,13 @@ from typing import Any
 
 from sqlalchemy.pool import QueuePool
 
+_resource_import: Any
 try:
-    import resource as _resource_module
+    import resource as _resource_import
 except ImportError:
-    _resource_module = None  # Windows doesn't have the resource module
+    _resource_import = None
+
+_resource_module: Any = _resource_import  # Windows doesn't have the resource module
 
 resource: Any = _resource_module  # None on Windows; guarded at each use
 
@@ -67,7 +70,8 @@ def get_cpu_info() -> dict[str, Any]:
     except ImportError:
         # Fallback without psutil
         try:
-            load_avg = os.getloadavg()
+            getloadavg = getattr(os, "getloadavg", None)
+            load_avg = getloadavg() if getloadavg is not None else (0.0, 0.0, 0.0)
             cores = os.cpu_count() or 1
             return {
                 "usage_percent": round((load_avg[0] / cores) * 100, 1),

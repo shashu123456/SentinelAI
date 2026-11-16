@@ -339,7 +339,7 @@ def add_member(
         org = org_repo.get(org_id)
         raise HTTPException(
             status_code=400,
-            detail=f"Organization has reached the maximum of {org.max_members} members",
+            detail=f"Organization has reached the maximum of {org.max_members if org else '?'} members",
         )
 
     # Find the user by email
@@ -439,7 +439,7 @@ def create_project(
         org = org_repo.get(org_id)
         raise HTTPException(
             status_code=400,
-            detail=f"Organization has reached the maximum of {org.max_projects} projects",
+            detail=f"Organization has reached the maximum of {org.max_projects if org else '?'} projects",
         )
 
     project_repo = ProjectRepository(db)

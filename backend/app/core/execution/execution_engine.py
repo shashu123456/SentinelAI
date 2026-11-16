@@ -21,6 +21,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 from app.core.agent_framework.base_agent import BaseAgent
 from app.core.agent_framework.event_bus import EventBus, create_event_bus
@@ -96,7 +97,7 @@ class ExecutionEngine:
             name="execution_engine", failure_threshold=3, recovery_timeout=30.0
         )
         self._executor = ThreadPoolExecutor(max_workers=4)
-        self._active_executions: dict[str, any] = {}
+        self._active_executions: dict[str, Any] = {}
 
     # ------------------------------------------------------------------ #
     # Internal lifecycle execution
@@ -241,7 +242,7 @@ class ExecutionEngine:
 
         # Execute with circuit breaker protection
         @self._circuit_breaker.protect
-        def _run_with_cb() -> AgentResult:
+        def _run_with_cb() -> AgentResult | None:
             return self._execute_lifecycle(agent, context)
 
         try:

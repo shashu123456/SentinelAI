@@ -62,9 +62,9 @@ def get_organization_dashboard(db: Session, org_id: int) -> dict:
     # Total projects
     total_projects = (
         db.scalar(
-            select(func.count(Project.id)).filter(
-                Project.organization_id == org_id, Project.is_active is True
-            )  # noqa: E712
+            select(func.count(Project.id)).where(
+                Project.organization_id == org_id, Project.is_active.is_(True)
+            )
         )
         or 0
     )

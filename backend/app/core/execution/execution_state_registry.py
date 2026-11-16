@@ -22,8 +22,6 @@ import builtins
 import threading
 from typing import Protocol
 
-from app.core.execution.execution_state import ExecutionState
-
 
 class ExecutionStateRecord(Protocol):
     """A stored execution state: anything carrying an execution id."""
@@ -54,7 +52,7 @@ class ExecutionStateRegistry:
 
     def __init__(self) -> None:
         """Initialize an empty ExecutionStateRegistry with a read-write lock."""
-        self._store: dict[str, ExecutionState] = {}
+        self._store: dict[str, ExecutionStateRecord] = {}
         self._lock = threading.RLock()
 
     def register(self, state: ExecutionStateRecord) -> None:
@@ -68,7 +66,7 @@ class ExecutionStateRegistry:
         with self._lock:
             self._store[state.execution_id] = state
 
-    def get(self, execution_id: str) -> ExecutionState | None:
+    def get(self, execution_id: str) -> ExecutionStateRecord | None:
         """Retrieve a stored ExecutionState by execution_id.
 
         Args:
@@ -107,7 +105,7 @@ class ExecutionStateRegistry:
                 return True
             return False
 
-    def list(self) -> builtins.list[ExecutionState]:
+    def list(self) -> builtins.list[ExecutionStateRecord]:
         """Return all stored ExecutionState instances.
 
         Concurrent calls to list() can proceed simultaneously without blocking

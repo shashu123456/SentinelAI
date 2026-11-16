@@ -36,7 +36,7 @@ class EventBus(Generic[PayloadT]):
             max_history: Maximum number of events to track in history.
         """
         self._name: str = name
-        self._subscribers: dict[EventType, list[Callable[[AgentEvent], None]]] = {}
+        self._subscribers: dict[EventType | str, list[Callable[[AgentEvent], None]]] = {}
         self._lock: threading.Lock = threading.Lock()
         self._history: list[AgentEvent] = []
         self._max_history: int = max_history
@@ -133,7 +133,7 @@ class EventBus(Generic[PayloadT]):
         with self._lock:
             self._history.clear()
 
-    def list_subscribed_types(self) -> list[EventType]:
+    def list_subscribed_types(self) -> list[EventType | str]:
         """List all event types that have subscribers.
 
         Returns:
