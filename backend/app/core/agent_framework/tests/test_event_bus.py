@@ -25,18 +25,18 @@ class TestEventBusInitialization:
 
     def test_default_bus_creation(self) -> None:
         """Test creating a default EventBus."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
         assert bus is not None
         assert bus._name == "default"
 
     def test_named_bus_creation(self) -> None:
         """Test creating a named EventBus."""
-        bus = EventBus(name="my-bus")
+        bus: EventBus = EventBus(name="my-bus")
         assert bus._name == "my-bus"
 
     def test_custom_named_bus(self) -> None:
         """Test creating a custom-named EventBus."""
-        bus = EventBus(name="custom-event-bus")
+        bus: EventBus = EventBus(name="custom-event-bus")
         assert bus._name == "custom-event-bus"
 
 
@@ -45,7 +45,7 @@ class TestEventBusSubscription:
 
     def test_subscribe_and_publish(self) -> None:
         """Test subscribing and publishing events."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
         captured: list = []
 
         def callback(event: Any) -> None:
@@ -58,7 +58,7 @@ class TestEventBusSubscription:
 
     def test_multiple_subscribers(self) -> None:
         """Test multiple subscribers to the same event type."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
         captured1: list = []
         captured2: list = []
 
@@ -77,7 +77,7 @@ class TestEventBusSubscription:
 
     def test_unsubscribe(self) -> None:
         """Test unsubscribing from an event."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
         captured: list = []
 
         def callback(event: Any) -> None:
@@ -91,7 +91,7 @@ class TestEventBusSubscription:
 
     def test_unsubscribe_nonexistent_callback(self) -> None:
         """Test unsubscribing a callback that wasn't subscribed."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
         result = bus.unsubscribe(EventType.AGENT_INITIALIZED, lambda e: None)
         assert result is False
 
@@ -101,7 +101,7 @@ class TestEventBusWildcardMatching:
 
     def test_subscribe_to_specific_type(self) -> None:
         """Test subscribing to a specific event type."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
 
         captured_specific: list = []
         captured_generic: list = []
@@ -127,7 +127,7 @@ class TestEventBusWildcardMatching:
 
     def test_list_subscribed_types(self) -> None:
         """Test listing subscribed event types."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
 
         bus.subscribe(EventType.AGENT_INITIALIZED, lambda e: None)
         bus.subscribe(EventType.AGENT_STARTED, lambda e: None)
@@ -142,7 +142,7 @@ class TestEventBusHistory:
 
     def test_history_tracking(self) -> None:
         """Test that events are tracked in history."""
-        bus = EventBus(max_history=5)
+        bus: EventBus = EventBus(max_history=5)
         captured: list = []
 
         def callback(event: Any) -> None:
@@ -158,7 +158,7 @@ class TestEventBusHistory:
 
     def test_history_bounded_size(self) -> None:
         """Test that history is bounded."""
-        bus = EventBus(max_history=3)
+        bus: EventBus = EventBus(max_history=3)
         captured: list = []
 
         def callback(event: Any) -> None:
@@ -181,7 +181,7 @@ class TestEventBusHistoryFiltering:
 
     def test_history_filter_by_type(self) -> None:
         """Test filtering history by event type."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
 
         # Publish different event types
         bus.publish(AgentEvent(event_type=EventType.AGENT_INITIALIZED, agent_id="agent-1"))
@@ -195,7 +195,7 @@ class TestEventBusHistoryFiltering:
 
     def test_history_without_filter(self) -> None:
         """Test getting all history without filter."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
 
         bus.publish(AgentEvent(event_type=EventType.AGENT_INITIALIZED, agent_id="agent-1"))
         bus.publish(AgentEvent(event_type=EventType.AGENT_STARTED, agent_id="agent-2"))
@@ -209,7 +209,7 @@ class TestEventBusClearHistory:
 
     def test_clear_history(self) -> None:
         """Test clearing the event history."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
         captured: list = []
 
         def callback(event: Any) -> None:
@@ -254,7 +254,7 @@ class TestEventBusIntegration:
 
     def test_event_bus_lifecycle_scenario(self) -> None:
         """Test a full event bus lifecycle scenario."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
 
         captured_events: list = []
 
@@ -289,7 +289,7 @@ class TestEventBusRawPublish:
 
     def test_publish_raw(self) -> None:
         """Test publishing raw event type and payload."""
-        bus = EventBus()
+        bus: EventBus = EventBus()
 
         captured: list = []
 

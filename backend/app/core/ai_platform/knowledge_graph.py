@@ -153,7 +153,7 @@ class VulnerabilityKnowledgeGraph:
         chain_edges = [e for e in self.edges if e.relationship in ("enables", "escalates_to")]
 
         # Group by connected components
-        visited = set()
+        visited: set[str] = set()
         for edge in chain_edges:
             if edge.source not in visited:
                 chain = self._trace_chain(edge.source)
@@ -171,9 +171,9 @@ class VulnerabilityKnowledgeGraph:
 
     def _trace_chain(self, start_id: str) -> list[dict]:
         """Trace an attack chain from a starting node."""
-        path = []
-        current = start_id
-        visited = set()
+        path: list[dict] = []
+        current: str | None = start_id
+        visited: set[str] = set()
 
         while current and current not in visited:
             visited.add(current)

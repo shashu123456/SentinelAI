@@ -1048,7 +1048,7 @@ def check_backward_compatibility(
     Returns:
         Dictionary with compatibility assessment
     """
-    result = {
+    result: dict[str, Any] = {
         "compatible": True,
         "breaking_changes": [],
         "new_features": [],

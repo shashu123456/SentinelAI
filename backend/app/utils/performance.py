@@ -100,9 +100,9 @@ def get_performance_stats() -> dict:
     n = len(durations)
 
     # Request breakdown
-    status_counts = {}
-    method_counts = {}
-    path_counts = {}
+    status_counts: dict[str, int] = {}
+    method_counts: dict[str, int] = {}
+    path_counts: dict[str, int] = {}
     for m in metrics:
         status_counts[str(m.status_code)] = status_counts.get(str(m.status_code), 0) + 1
         method_counts[m.method] = method_counts.get(m.method, 0) + 1
