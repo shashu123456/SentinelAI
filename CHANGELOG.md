@@ -27,6 +27,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The web app's New Scan page is the single upload box for all three scanners:
   it detects the scanner from the file name, allows an explicit override, and
   the old `/sast` and `/deps` routes now preselect that kind on the same page.
+- Dependency scans now query OSV.dev live (`app/core/dep_scanner/osv_client.py`)
+  on top of the curated table. Discovery uses `POST /v1/querybatch` (100 packages
+  per request) and full records come from `GET /v1/vulns/{id}` — measured on the
+  live API, querybatch answers with ids only, so severity, CVE aliases and fixed
+  versions have to be fetched separately. Where OSV publishes no CVSS vector and
+  no `database_specific.severity` the finding is reported as `unknown` rather
+  than guessed. Results merge instead of replacing: the curated table stays
+  authoritative on conflict, a GHSA advisory that aliases a curated CVE counts as
+  the same finding, OSV-only packages are added, and an OSV outage falls back to
+  curated data with a warning. Responses carry `merge_counts` (`curated_only`,
+  `osv_only`, `overlap`, `skipped_queries`) and `osv_warnings`.
+- Dependency queries with a version OSV cannot match — Maven property
+  placeholders such as `${spring.version}`, npm ranges such as `^4.17.0`,
+  wildcards such as `1.x` — are skipped and counted instead of being sent as if
+  they were installed versions.
+
+### Fixed
+
+- **Cache isolation for the dashboard and analytics aggregates.** `GET
+  /api/scans/dashboard` and `/api/scans/analytics` cached their response under
+  the numeric user id alone (`dashboard:{id}`). A numeric id is not a stable
+  identity: after a database restore — or any re-seed that reuses ids — the next
+  account to hold id 1 was served the previous holder's cached dashboard, scans
+  and all. Cache keys now carry the username as well
+  (`dashboard:{id}:{username}`), invalidation still deletes by the `dashboard:{id}`
+  prefix so a fresh upload is visible on the next read, and
+  `backend/tests/test_dashboard_cache.py` pins both properties: an entry left
+  under the old id-only key is never served, and two accounts with one upload
+  never share a response.
 
 ### Removed
 

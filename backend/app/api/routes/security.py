@@ -98,6 +98,10 @@ class DepScanResponse(BaseModel):
     findings: list[DepFindingResponse]
     dependencies: list[DependencyInfoResponse]
     errors: list[str] = []
+    #: How many findings came from the curated table, from live OSV, from both,
+    #: and how many dependencies could not be looked up (placeholders, ranges).
+    merge_counts: dict[str, int] = {}
+    osv_warnings: list[str] = []
 
 
 # =============================================================================
@@ -274,6 +278,8 @@ async def scan_dependencies(
                 for d in result.dependencies
             ],
             errors=result.errors,
+            merge_counts=result.merge_counts,
+            osv_warnings=result.osv_warnings,
         )
     except Exception as e:
         logger.error(f"Dependency scan failed: {e}")

@@ -105,6 +105,12 @@ class Settings(BaseSettings):
     OLLAMA_URL: str = "http://localhost:11434/api/generate"
     OLLAMA_MODEL: str = "mistral"
 
+    # --- Dependency scanning ---
+    # Live OSV.dev lookups on top of the curated vulnerability table. Turning this
+    # off (OSV_ENABLED=false) makes dependency scans offline and deterministic,
+    # which is what the test suite does.
+    OSV_ENABLED: bool = True
+
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://localhost:3000",

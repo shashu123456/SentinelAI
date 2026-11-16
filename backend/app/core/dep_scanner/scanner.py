@@ -9,7 +9,14 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
+from typing import Any
 
+from .osv_client import (
+    DEFAULT_TIMEOUT_SECONDS,
+    OsvVuln,
+    Query,
+    query_batch,
+)
 from .vulnerability_db import (
     JAVA_VULNERABILITIES,
     JAVASCRIPT_VULNERABILITIES,
@@ -101,6 +108,10 @@ class DepScanResult:
     dependencies: list[DependencyInfo] = field(default_factory=list)
     ecosystems_detected: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    #: Non-fatal problems from the live OSV lookup, safe to show the user.
+    osv_warnings: list[str] = field(default_factory=list)
+    #: curated_only / osv_only / overlap / skipped_queries for this scan.
+    merge_counts: dict[str, int] = field(default_factory=dict)
 
     @property
     def summary(self) -> dict:
@@ -113,12 +124,15 @@ class DepScanResult:
             "severity_counts": severity_counts,
             "files_scanned": self.total_files_scanned,
             "ecosystems_detected": self.ecosystems_detected,
+            "merge_counts": self.merge_counts,
         }
 
     def to_dict(self) -> dict:
         return {
             "target_path": self.target_path,
             "summary": self.summary,
+            "osv_warnings": self.osv_warnings,
+            "merge_counts": self.merge_counts,
             "findings": [f.to_dict() for f in self.findings],
             "dependencies": [
                 {
@@ -343,6 +357,125 @@ def _check_vulnerabilities(dep: DependencyInfo, vuln_db: dict) -> list[DepFindin
     return findings
 
 
+def _package_key(name: str) -> str:
+    """Normalise a package name so PyPI, npm and Maven spellings compare equal."""
+    return name.strip().lower().replace("-", "_").replace(".", "_")
+
+
+def _finding_key(finding: DepFinding) -> tuple[str, str]:
+    """Identity of a finding: (package, advisory id).
+
+    The advisory id is the CVE when one exists, so an OSV GHSA advisory that
+    aliases CVE-2024-24680 collapses with the curated CVE-2024-24680 entry
+    instead of appearing twice for the same package.
+    """
+    return (_package_key(finding.package), (finding.cve_id or "").strip().upper())
+
+
+def _osv_finding(dep: DependencyInfo, vuln: OsvVuln) -> DepFinding:
+    """Convert one OSV record into the shape the report and normaliser consume."""
+    identifier = vuln.identity
+    description = vuln.summary or vuln.details or f"{identifier} affects {dep.name} {dep.version}."
+    if vuln.details and vuln.summary and vuln.details != vuln.summary:
+        description = f"{description}\n\n{vuln.details}"
+    if vuln.severity is None:
+        # Say so instead of picking a band. The scanner's own severity stays
+        # "unknown" through finder, normaliser and report.
+        description = (
+            f"{description} OSV publishes no severity rating (no CVSS vector, no "
+            f"database_specific severity) for {identifier}."
+        )
+
+    return DepFinding(
+        package=dep.name,
+        installed_version=dep.version,
+        severity=vuln.severity or "unknown",
+        cvss_score=vuln.cvss_score if vuln.cvss_score is not None else 0.0,
+        cve_id=identifier,
+        cwe_id=vuln.cwe_ids[0] if vuln.cwe_ids else "",
+        description=description.strip(),
+        fixed_in=vuln.fixed_versions[0] if vuln.fixed_versions else "",
+        ecosystem=dep.ecosystem,
+        file_path=dep.file_path,
+        url=vuln.reference_url,
+        confidence=0.9,
+    )
+
+
+def _osv_enabled() -> bool:
+    """Global default for live lookups; tests disable it through the env."""
+    try:
+        from app.config import get_settings
+    except ImportError:  # scanner used standalone
+        return True
+    return bool(get_settings().OSV_ENABLED)
+
+
+def _lookup_osv(
+    dependencies: list[DependencyInfo], client: Any, timeout: float
+) -> tuple[list[DepFinding], list[str], dict[str, int]]:
+    """Query OSV for every dependency and convert what comes back."""
+    queries = [
+        Query(name=dep.name, version=dep.version, ecosystem=dep.ecosystem) for dep in dependencies
+    ]
+    batch = query_batch(queries, timeout=timeout, client=client)
+
+    findings: list[DepFinding] = []
+    for dep, vulns in zip(dependencies, batch.by_query, strict=True):
+        for vuln in vulns:
+            findings.append(_osv_finding(dep, vuln))
+
+    counts = {"skipped_queries": batch.skipped_queries}
+    reasons = batch.skip_reasons()
+    if reasons:
+        counts.update({f"skipped_{reason.replace(' ', '_')}": n for reason, n in reasons.items()})
+    return findings, list(batch.warnings), counts
+
+
+def _merge_findings(
+    curated: list[DepFinding], live: list[DepFinding]
+) -> tuple[list[DepFinding], dict[str, int]]:
+    """Merge curated and live findings, curated winning on conflict.
+
+    Also collapses duplicates inside each side (the same manifest scanned twice,
+    or two manifests pinning the same package) so one advisory is one finding.
+    """
+    curated_by_key: dict[tuple[str, str], DepFinding] = {}
+    for finding in curated:
+        curated_by_key.setdefault(_finding_key(finding), finding)
+
+    live_by_key: dict[tuple[str, str], DepFinding] = {}
+    for finding in live:
+        live_by_key.setdefault(_finding_key(finding), finding)
+
+    overlap = curated_by_key.keys() & live_by_key.keys()
+    live_only = [key for key in live_by_key if key not in curated_by_key]
+    curated_only = [key for key in curated_by_key if key not in live_by_key]
+
+    merged = list(curated_by_key.values()) + [live_by_key[key] for key in live_only]
+    counts = {
+        "curated_only": len(curated_only),
+        "osv_only": len(live_only),
+        "overlap": len(overlap),
+    }
+    return merged, counts
+
+
+def _sort_findings(findings: list[DepFinding]) -> list[DepFinding]:
+    """Stable order so two runs over the same input produce the same report."""
+    severity_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}
+    return sorted(
+        findings,
+        key=lambda f: (
+            severity_order.get(f.severity, 5),
+            _package_key(f.package),
+            f.installed_version,
+            (f.cve_id or "").upper(),
+            f.file_path,
+        ),
+    )
+
+
 def _collect_dep_files(target_path: str) -> list[str]:
     """Collect dependency manifest files from the target path."""
     files = []
@@ -382,16 +515,27 @@ def _collect_dep_files(target_path: str) -> list[str]:
     return files
 
 
-def run_dep_scan(target_path: str) -> DepScanResult:
+def run_dep_scan(
+    target_path: str,
+    *,
+    osv_client: Any = None,
+    use_osv: bool | None = None,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+) -> DepScanResult:
     """Run dependency security scan on a file or directory.
 
-    Scans for:
-    - Known CVEs in dependencies
-    - Outdated packages
-    - Insecure dependency configurations
+    Two sources feed the findings: the curated table in ``vulnerability_db``
+    (always, offline) and OSV.dev (when enabled). Curated entries win on conflict;
+    OSV contributes advisories the table does not know about. If OSV is
+    unreachable the scan still returns the curated results plus a warning, so an
+    upload never fails because a third party is down.
 
     Args:
         target_path: Path to a file or directory containing dependency manifests.
+        osv_client: Injectable HTTP client (anything with ``post``). Tests pass a
+            stub; production passes None and the client uses ``requests``.
+        use_osv: Force live lookup on or off. Defaults to ``settings.OSV_ENABLED``.
+        timeout: Per-request timeout for the OSV calls.
 
     Returns:
         DepScanResult with findings, dependency list, and metadata.
@@ -445,13 +589,23 @@ def run_dep_scan(target_path: str) -> DepScanResult:
                 findings = _check_vulnerabilities(dep, vuln_db)
                 all_findings.extend(findings)
 
-    # Sort findings by severity
-    severity_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}
-    all_findings.sort(key=lambda f: (severity_order.get(f.severity, 5), f.package))
+    live_enabled = _osv_enabled() if use_osv is None else use_osv
+    if live_enabled and all_deps:
+        live_findings, warnings, lookup_counts = _lookup_osv(all_deps, osv_client, timeout)
+        all_findings, merge_counts = _merge_findings(all_findings, live_findings)
+        merge_counts.update(lookup_counts)
+        result.osv_warnings = warnings
+        result.merge_counts = merge_counts
+        result.errors.extend(f"OSV: {warning}" for warning in warnings)
+    else:
+        all_findings, merge_counts = _merge_findings(all_findings, [])
+        result.merge_counts = merge_counts
+        if not live_enabled:
+            result.merge_counts["osv_disabled"] = 1
 
     result.dependencies = all_deps
     result.total_dependencies = len(all_deps)
-    result.findings = all_findings
+    result.findings = _sort_findings(all_findings)
     result.ecosystems_detected = sorted(ecosystems_seen)
 
     return result

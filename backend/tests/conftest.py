@@ -21,6 +21,11 @@ os.environ["DATABASE_URL"] = "sqlite:///" + os.path.join(
 # backend and deterministic tests.
 os.environ["REDIS_URL"] = "redis://127.0.0.1:1/0"
 
+# Dependency scans merge live OSV.dev data in production. The suite is offline by
+# design (no network, deterministic findings), so the live lookup is off here and
+# the OSV client is tested against a stubbed HTTP layer instead.
+os.environ["OSV_ENABLED"] = "false"
+
 os.environ["LOGIN_RATE_LIMIT_PER_MINUTE"] = "10"
 
 
