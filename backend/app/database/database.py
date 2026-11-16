@@ -59,6 +59,46 @@ def transaction(db: Session):
         raise
 
 
+def ensure_runtime_schema() -> None:
+    """Idempotently repair additive schema drift that Alembic missed.
+
+    The deployment database was recorded at an older Alembic revision and the
+    migration graph has multiple heads, so ``upgrade head`` cannot be relied on
+    to add every column. This runs *only* additive, non-destructive DDL:
+
+    * ``create_all(checkfirst=True)`` creates tables that do not exist yet
+      (e.g. ``authorized_use_acceptances``) and never alters existing ones.
+    * On PostgreSQL, ``ADD COLUMN IF NOT EXISTS`` adds the two columns whose
+      migrations predate the recorded revision (``scans.kind`` and
+      ``findings.source``), with a server default so existing rows are valid.
+
+    Nothing is ever dropped or rewritten, so this is safe to run on every boot.
+    """
+    from sqlalchemy import text
+
+    import app.models.models  # noqa: F401 - populate Base.metadata
+
+    try:
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+    except Exception as exc:  # pragma: no cover - defensive
+        logging.getLogger(__name__).warning("create_all during schema ensure failed: %s", exc)
+
+    if engine.dialect.name != "postgresql":
+        return
+
+    statements = (
+        "ALTER TABLE scans ADD COLUMN IF NOT EXISTS kind VARCHAR(10) NOT NULL DEFAULT 'spec'",
+        "ALTER TABLE findings ADD COLUMN IF NOT EXISTS source VARCHAR(10) NOT NULL DEFAULT 'spec'",
+        "CREATE INDEX IF NOT EXISTS ix_scans_kind ON scans (kind)",
+    )
+    try:
+        with engine.begin() as conn:
+            for stmt in statements:
+                conn.execute(text(stmt))
+    except Exception as exc:  # pragma: no cover - defensive
+        logging.getLogger(__name__).warning("additive schema ensure failed: %s", exc)
+
+
 def init_db():
     """Initialize the schema.
 
@@ -74,7 +114,11 @@ def init_db():
     # DDL, so a newly added migration never reached an existing database — the
     # new kind/source columns were missing while alembic_version claimed head.
     if recorded_revision(engine) is not None:
-        run_migrations()
+        try:
+            run_migrations()
+        except Exception as exc:  # pragma: no cover - multi-head drift
+            logging.getLogger(__name__).warning("Alembic upgrade skipped: %s", exc)
+        ensure_runtime_schema()
         return
 
     if baseline_tables_exist(engine, Base.metadata):
@@ -83,6 +127,7 @@ def init_db():
         stamp_head()
         return
     run_migrations()
+    ensure_runtime_schema()
 
 
 # Re-export for backward compatibility
