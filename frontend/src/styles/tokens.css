@@ -1,3 +1,7 @@
+/* Single source of truth for the SentinelAI palette.
+   60% Periwinkle Bloom (surfaces) / 30% Midnight Fig (ink + structure) /
+   10% Wasabi Volt (accent). Severity colours are semantic and exempt.
+   Components must reference the role tokens below, never these palette values. */
 :root {
   /* ---- 60%: Periwinkle Bloom (surfaces) ---- */
   --bloom-50:  #F4F3FF;
@@ -27,9 +31,20 @@
   --bg-page: var(--bloom-50);
   --bg-surface: var(--bloom-100);
   --bg-surface-alt: var(--bloom-200);
+  --bg-elevated: var(--bloom-100);
+  --bg-hover: var(--bloom-200);
+  --bg-input: var(--bloom-50);
+  --bg-sidebar: var(--bloom-100);
+  --bg-overlay: rgba(33, 24, 49, .35);
   --border-subtle: var(--bloom-300);
+  --border: var(--bloom-300);
+  --border-light: var(--bloom-200);
+  --border-focus: var(--volt-400);
   --text-primary: var(--fig-900);
   --text-secondary: var(--fig-500);
+  --text-muted: var(--fig-500);
+  --text-tertiary: var(--bloom-400);
+  --text-inverse: var(--bloom-50);
   --text-on-dark: var(--bloom-50);
   --btn-primary-bg: var(--volt-400);
   --btn-primary-ink: var(--fig-900);
@@ -37,9 +52,24 @@
   --btn-secondary-ink: var(--bloom-50);
   --focus-ring: var(--volt-400);
   --link: var(--fig-700);
+  --shadow-focus: 0 0 0 3px rgba(198, 241, 53, .35);
+
+  /* Severity roles: semantic, theme-aware, and the only allowed red/green/orange. */
+  --severity-critical: var(--sev-critical-dot);
+  --severity-critical-bg: var(--sev-critical-bg);
+  --severity-high: var(--sev-high-dot);
+  --severity-high-bg: var(--sev-high-bg);
+  --severity-medium: var(--sev-medium-dot);
+  --severity-medium-bg: var(--sev-medium-bg);
+  --severity-low: var(--sev-low-dot);
+  --severity-low-bg: var(--sev-low-bg);
+  --severity-info: var(--sev-info-ink);
+  --severity-info-bg: var(--sev-info-bg);
 
   /* ---- Type ---- */
   --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-ui);
+  --font-sans: var(--font-ui);
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   --fs-12: 0.75rem; --fs-14: 0.875rem; --fs-16: 1rem;
   --fs-20: 1.25rem; --fs-24: 1.5rem; --fs-32: 2rem; --fs-44: 2.75rem;
@@ -48,9 +78,10 @@
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
   --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
   --r-sm: 8px; --r-md: 12px; --r-pill: 999px;
-  --shadow-1: 0 1px 2px rgba(33,24,49,.06), 0 8px 24px rgba(33,24,49,.08);
+  --shadow-1: 0 1px 2px rgba(33, 24, 49, .06), 0 8px 24px rgba(33, 24, 49, .08);
+  --shadow-card-hover: 0 8px 32px rgba(33, 24, 49, .10), 0 0 0 1px var(--bloom-300);
   --dur: 160ms;
-  --ease: cubic-bezier(.2,.8,.2,1);
+  --ease: cubic-bezier(.2, .8, .2, 1);
 }
 
 /* Dark mode is an INVERSION of the same ratio: fig dominates surfaces instead of bloom. */
@@ -58,11 +89,30 @@
   --bg-page: var(--fig-900);
   --bg-surface: var(--fig-700);
   --bg-surface-alt: var(--fig-500);
-  --border-subtle: #4A3A63;
+  --bg-elevated: var(--fig-700);
+  --bg-hover: var(--fig-500);
+  --bg-input: var(--fig-700);
+  --bg-sidebar: var(--fig-900);
+  --bg-overlay: rgba(10, 8, 16, .72);
+  --border-subtle: var(--fig-500);
+  --border: var(--fig-500);
+  --border-light: var(--fig-700);
   --text-primary: var(--bloom-50);
   --text-secondary: var(--bloom-300);
+  --text-muted: var(--bloom-400);
+  --text-tertiary: var(--bloom-400);
+  --text-inverse: var(--fig-900);
   --link: var(--bloom-300);
-  /* Accent and severity stay identical — that is the point of an accent. */
+  --shadow-focus: 0 0 0 3px rgba(198, 241, 53, .25);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px rgba(0, 0, 0, .45);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, .5), 0 0 0 1px var(--fig-500);
+  /* Accent stays identical — that is the point of an accent. */
+  /* Severity keeps its dot hue but darkens the fill so it does not glare on fig. */
+  --severity-critical-bg: rgba(217, 45, 32, .16);
+  --severity-high-bg: rgba(232, 89, 12, .16);
+  --severity-medium-bg: rgba(181, 71, 8, .18);
+  --severity-low-bg: rgba(169, 212, 28, .16);
+  --severity-info-bg: rgba(74, 58, 99, .55);
 }
 
 @media (prefers-reduced-motion: reduce) {

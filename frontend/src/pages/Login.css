@@ -12,8 +12,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(0,255,170,0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 50%, rgba(0,212,255,0.03) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, var(--bg-surface-alt) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, var(--bg-surface-alt) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -38,7 +38,7 @@
   right: 0;
   width: 1px;
   height: 100%;
-  background: linear-gradient(180deg, transparent, rgba(0,255,170,0.3), transparent);
+  background: linear-gradient(180deg, transparent, var(--bg-surface-alt), transparent);
 }
 
 /* Terminal-style corner decorations */
@@ -49,7 +49,7 @@
   left: 48px;
   right: 48px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0,255,170,0.15), transparent);
+  background: linear-gradient(90deg, var(--bg-surface-alt), transparent);
 }
 
 .login-brand {
@@ -64,39 +64,39 @@
   height: 48px;
   border-radius: 8px;
   background: linear-gradient(135deg, #002211, #001a0d);
-  border: 1px solid rgba(0,255,170,0.3);
+  border: 1px solid var(--border-focus);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-cyan);
-  box-shadow: 0 0 20px rgba(0,255,170,0.15);
+  color: var(--link);
+  box-shadow: 0 0 20px var(--shadow-focus);
 }
 
 .login-brand-name {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.3px;
-  color: var(--accent-cyan);
-  text-shadow: 0 0 20px rgba(0,255,170,0.3);
+  color: var(--link);
+  text-shadow: 0 0 20px var(--shadow-focus);
 }
 
 .login-brand-tag {
   font-size: 10px;
-  color: var(--accent-cyan);
+  color: var(--link);
   text-transform: uppercase;
   letter-spacing: 2px;
   opacity: 0.5;
 }
 
 .login-hero h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 40px;
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -1.8px;
   margin-bottom: 18px;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 60%, var(--accent-blue) 100%);
+  background: var(--btn-primary-bg);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -127,7 +127,7 @@
 
 .login-feature::before {
   content: '>';
-  color: var(--accent-cyan);
+  color: var(--link);
   font-weight: 700;
   font-size: 11px;
   opacity: 0.6;
@@ -157,7 +157,7 @@
   left: 0;
   width: 1px;
   height: 100%;
-  background: linear-gradient(180deg, transparent, rgba(0,255,170,0.1), transparent);
+  background: linear-gradient(180deg, transparent, var(--bg-surface-alt), transparent);
 }
 
 .login-card {
@@ -193,16 +193,16 @@
 
 .login-tab.active {
   background: linear-gradient(135deg, #003322, #002218);
-  color: var(--accent-cyan);
-  border: 1px solid rgba(0,255,170,0.2);
-  box-shadow: 0 0 12px rgba(0,255,170,0.08);
-  text-shadow: 0 0 8px rgba(0,255,170,0.3);
+  color: var(--link);
+  border: 1px solid var(--border-focus);
+  box-shadow: 0 0 12px var(--shadow-focus);
+  text-shadow: 0 0 8px var(--shadow-focus);
 }
 
 .login-error {
   padding: 12px 14px;
-  background: rgba(255,51,85,0.08);
-  border: 1px solid rgba(255,51,85,0.2);
+  background: var(--severity-critical-bg);
+  border: 1px solid var(--severity-critical-bg);
   border-radius: 6px;
   color: var(--accent-red);
   font-size: 13px;
@@ -239,15 +239,15 @@
 }
 
 .pw-toggle:hover {
-  color: var(--accent-cyan);
+  color: var(--link);
 }
 
 .login-btn {
   padding: 12px;
-  border: 1px solid rgba(0,255,170,0.3);
+  border: 1px solid var(--border-focus);
   border-radius: 6px;
   background: linear-gradient(135deg, #003322, #002218);
-  color: var(--accent-cyan);
+  color: var(--link);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -256,13 +256,13 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   font-family: var(--font-mono);
-  text-shadow: 0 0 10px rgba(0,255,170,0.3);
+  text-shadow: 0 0 10px var(--shadow-focus);
 }
 
 .login-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #004433, #003322);
-  border-color: rgba(0,255,170,0.5);
-  box-shadow: 0 0 25px rgba(0,255,170,0.15);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 25px var(--shadow-focus);
   transform: translateY(-1px);
 }
 

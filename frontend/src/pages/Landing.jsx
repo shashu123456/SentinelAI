@@ -110,7 +110,7 @@ function HeroSection() {
       size: 2 + Math.random() * 3,
       duration: 8 + Math.random() * 14,
       delay: Math.random() * 10,
-      color: ['rgba(0,255,170,0.4)', 'rgba(0,212,255,0.3)', 'rgba(170,102,255,0.25)'][i % 3],
+      color: ['var(--bg-surface-alt)', 'var(--bg-surface-alt)', 'var(--bg-surface-alt)'][i % 3],
     }))
   ).current;
 
@@ -266,14 +266,14 @@ const FEATURES = [
     icon: Scan,
     title: 'API Security Scanner',
     description: 'Complete OpenAPI/Swagger analysis with OWASP Top 10 coverage. Detects broken authentication, SSRF, mass assignment, and injection vulnerabilities.',
-    color: '#00ffaa',
+    color: 'var(--bloom-300)',
     tag: 'Core Engine',
   },
   {
     icon: FileCode,
     title: 'Static Analysis (SAST)',
     description: '48 security rules across Python, JavaScript, and Java. Detects SQL injection, XSS, hardcoded secrets, command injection, and unsafe deserialization.',
-    color: '#aa66ff',
+    color: 'var(--bloom-400)',
     tag: 'Code Analysis',
   },
   {
@@ -287,7 +287,7 @@ const FEATURES = [
     icon: Bot,
     title: 'AI Security Copilot',
     description: 'Ask natural language questions about your security posture. Get vulnerability context and analysis. (Automated when LLM is available, otherwise uses rule-based intelligence.)',
-    color: '#00d4ff',
+    color: 'var(--volt-400)',
     tag: 'Intelligence',
   },
   {
@@ -357,21 +357,21 @@ const STEPS = [
     icon: Upload,
     title: 'Upload Your Spec',
     description: 'Drop your OpenAPI/Swagger specification, source code files, or dependency manifests. We support JSON, YAML, and all major formats.',
-    color: '#00ffaa',
+    color: 'var(--bloom-300)',
   },
   {
     step: '02',
     icon: Cpu,
     title: 'Security Analysis',
     description: 'Our engines scan for OWASP Top 10 vulnerabilities, static code issues, and known CVEs. Automated analysis runs immediately; AI explanations available when LLM is configured.',
-    color: '#00d4ff',
+    color: 'var(--volt-400)',
   },
   {
     step: '03',
     icon: Activity,
     title: 'Get Prioritized Results',
     description: 'Receive a comprehensive risk assessment with severity scores, confidence levels, and business impact analysis for every finding.',
-    color: '#aa66ff',
+    color: 'var(--bloom-400)',
   },
   {
     step: '04',
