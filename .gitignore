@@ -58,3 +58,6 @@ scan-*-report.*
 .env*
 backend/.vercel/
 .neon
+
+# Scratch dirs
+.tmp-*/
