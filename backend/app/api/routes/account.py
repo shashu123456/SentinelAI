@@ -26,9 +26,7 @@ from app.utils.security import get_client_ip, get_current_user
 router = APIRouter(prefix="/api/account", tags=["Account"])
 
 AUTHORIZED_USE_VERSION = "1"
-AUTHORIZED_USE_TEXT = (
-    "Only scan material you own or have written permission to test."
-)
+AUTHORIZED_USE_TEXT = "Only scan material you own or have written permission to test."
 
 
 class AuthorizedUseState(BaseModel):
@@ -96,10 +94,7 @@ def delete_my_data(
     db: Session = Depends(get_db),
 ) -> DeleteDataResult:
     """Delete every scan (and its findings/reports via cascade) for the caller."""
-    scan_ids = [
-        row[0]
-        for row in db.query(Scan.id).filter(Scan.user_id == current_user.id).all()
-    ]
+    scan_ids = [row[0] for row in db.query(Scan.id).filter(Scan.user_id == current_user.id).all()]
     if scan_ids:
         # Findings, reports and AI analysis cascade from the scan rows.
         db.execute(delete(Scan).where(Scan.user_id == current_user.id))

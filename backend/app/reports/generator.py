@@ -451,9 +451,7 @@ def generate_pdf_report(scan_data: dict) -> bytes:
     # A dependency manifest or a source archive is not an "API" and has no
     # version, so the cover says what was scanned instead of inventing both.
     target_prefix = "Target API" if kind == "spec" else "Target"
-    story.append(
-        Paragraph(f"{target_prefix}: <b>{_escape(target_name)}</b>", cover_info_style)
-    )
+    story.append(Paragraph(f"{target_prefix}: <b>{_escape(target_name)}</b>", cover_info_style))
     cover_bits = [scan_type]
     if api_version:
         cover_bits.insert(0, f"Version {_escape(api_version)}")
@@ -523,13 +521,10 @@ def generate_pdf_report(scan_data: dict) -> bytes:
 
     # Summary paragraph
     if total == 0:
-        summary = (
-            "No security findings were identified. "
-            + (
-                "The API specification appears to follow security best practices."
-                if kind == "spec"
-                else f"No issues were reported by {SCAN_TYPE_BLURBS[kind]}."
-            )
+        summary = "No security findings were identified. " + (
+            "The API specification appears to follow security best practices."
+            if kind == "spec"
+            else f"No issues were reported by {SCAN_TYPE_BLURBS[kind]}."
         )
     else:
         scope = (

@@ -480,6 +480,7 @@ def _send_reset_email(recipient: str, token: str) -> None:  # pragma: no cover -
             smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
         smtp.send_message(msg)
 
+
 @router.post("/demo-login", response_model=Token)
 @limiter.limit("5/minute")
 def demo_login(

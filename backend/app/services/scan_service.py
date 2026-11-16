@@ -42,12 +42,14 @@ def _trim_findings_for_ai(findings: list[dict]) -> list[dict]:
     """
     trimmed = []
     for f in findings:
-        trimmed.append({
-            "vulnerability_name": f.get("vulnerability_name"),
-            "severity": f.get("severity"),
-            "owasp_category": f.get("owasp_category"),
-            "cwe_id": f.get("cwe_id"),
-        })
+        trimmed.append(
+            {
+                "vulnerability_name": f.get("vulnerability_name"),
+                "severity": f.get("severity"),
+                "owasp_category": f.get("owasp_category"),
+                "cwe_id": f.get("cwe_id"),
+            }
+        )
     return trimmed
 
 
@@ -65,9 +67,7 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
     # The scan itself runs on the original parsed dict; only storage is masked.
     stored_spec, redacted_count = redact_spec(spec)
     if redacted_count:
-        logger.info(
-            "Redacted %d credential field(s) before storing the scan spec", redacted_count
-        )
+        logger.info("Redacted %d credential field(s) before storing the scan spec", redacted_count)
 
     # --- Phase 1: create scan record (committed immediately) ---
     scan = scan_repo.create_scan(user_id=user_id, api_name=api_name, source_spec=stored_spec)

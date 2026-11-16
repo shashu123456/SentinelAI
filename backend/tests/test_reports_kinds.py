@@ -104,9 +104,7 @@ class TestPdfForEveryKind:
 
 
 class TestAggregatesWithMixedKinds:
-    def test_dashboard_returns_200_and_counts_every_kind(
-        self, client, auth_headers, scans_by_kind
-    ):
+    def test_dashboard_returns_200_and_counts_every_kind(self, client, auth_headers, scans_by_kind):
         resp = client.get("/api/scans/dashboard", headers=auth_headers)
         assert resp.status_code == 200, resp.text
         body = resp.json()
@@ -117,9 +115,7 @@ class TestAggregatesWithMixedKinds:
         assert deps_scan["total_endpoints"] == 0
         assert deps_scan["total_vulnerabilities"] > 0
 
-    def test_analytics_returns_200_and_a_full_window(
-        self, client, auth_headers, scans_by_kind
-    ):
+    def test_analytics_returns_200_and_a_full_window(self, client, auth_headers, scans_by_kind):
         resp = client.get("/api/scans/analytics", headers=auth_headers)
         assert resp.status_code == 200, resp.text
         body = resp.json()

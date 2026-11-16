@@ -502,9 +502,7 @@ def query_batch(
             continue
 
         result.sent += len(chunk)
-        details = (
-            _fetch_details(_ids_in(entries), http, timeout, result) if fetch_details else {}
-        )
+        details = _fetch_details(_ids_in(entries), http, timeout, result) if fetch_details else {}
 
         for (_query, cache_key, _ecosystem), entry in zip(chunk, entries, strict=True):
             vulns = _vulns_for_entry(entry, details)

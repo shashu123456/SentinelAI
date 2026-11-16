@@ -100,9 +100,7 @@ def _require_authorized_use(db: Session, user_id: int) -> None:
     """
     if not settings.ENFORCE_AUTHORIZED_USE:
         return
-    accepted = (
-        db.query(AuthorizedUse.id).filter(AuthorizedUse.user_id == user_id).first()
-    )
+    accepted = db.query(AuthorizedUse.id).filter(AuthorizedUse.user_id == user_id).first()
     if accepted is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -141,9 +139,7 @@ async def upload_and_scan(
         kind = validate_kind(kind)
         validate_filename(kind, file.filename)
     except UploadRejected as rejected:
-        raise HTTPException(
-            status_code=rejected.status_code, detail=rejected.detail
-        ) from None
+        raise HTTPException(status_code=rejected.status_code, detail=rejected.detail) from None
 
     raw = await file.read()
     if len(raw) > MAX_FILE_SIZE:
@@ -190,9 +186,7 @@ async def upload_and_scan(
             scan.project_id = project_id
         db.commit()
     except UploadRejected as rejected:
-        raise HTTPException(
-            status_code=rejected.status_code, detail=rejected.detail
-        ) from None
+        raise HTTPException(status_code=rejected.status_code, detail=rejected.detail) from None
     except Exception as e:
         logger.error(f"Scan execution failed: {e}")
         raise HTTPException(status_code=500, detail="Scan execution failed") from None
@@ -226,8 +220,7 @@ async def upload_and_scan(
             )
         else:
             response.partial_note = (
-                "The per-scan file cap truncated this scan; split the archive to "
-                "cover the rest."
+                "The per-scan file cap truncated this scan; split the archive to " "cover the rest."
             )
     response.counts_by_source = {str(k): int(v) for k, v in counts.items()}
     return response

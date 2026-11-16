@@ -122,18 +122,14 @@ def normalize_dep(
         package_version: overrides the version (defaults to the finding's).
     """
     name = _text(package_name or _get(dep_finding, "package"), "unknown-package")
-    version = _text(
-        package_version or _get(dep_finding, "installed_version"), "unknown-version"
-    )
+    version = _text(package_version or _get(dep_finding, "installed_version"), "unknown-version")
     cve = _text(_get(dep_finding, "cve_id"), "")
     fixed_in = _text(_get(dep_finding, "fixed_in"), "")
     ecosystem = _text(_get(dep_finding, "ecosystem"), "")
     file_path = _text(_get(dep_finding, "file_path"), "")
 
     identifier = cve or "vulnerable-dependency"
-    vulnerability_name = _clip(
-        f"{name} {version}: {identifier}", MAX_NAME_LENGTH
-    )
+    vulnerability_name = _clip(f"{name} {version}: {identifier}", MAX_NAME_LENGTH)
 
     description = _text(
         _get(dep_finding, "description"),
@@ -243,8 +239,7 @@ def normalize_sast(sast_finding: Any) -> dict:
         "affected_endpoint": _clip(location, 500),
         "detection_reason": _text(
             _get(sast_finding, "detection_reason"),
-            f"Static rule {rule_id} matched"
-            + (f" ({language})" if language else ""),
+            f"Static rule {rule_id} matched" + (f" ({language})" if language else ""),
         ),
         "_dedupe": ("code", file_path.lower(), rule_id.lower(), line),
     }

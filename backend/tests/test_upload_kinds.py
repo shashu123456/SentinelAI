@@ -134,7 +134,11 @@ class TestKindsSucceed:
         scan_id = created.json()["id"]
         report = client.get(f"/api/scans/{scan_id}/report/json", headers=auth_headers)
         assert report.status_code == 200, report.text
-        data = json.loads(report.text) if report.headers["content-type"].startswith("application/json") else report.json()
+        data = (
+            json.loads(report.text)
+            if report.headers["content-type"].startswith("application/json")
+            else report.json()
+        )
         payload = data if isinstance(data, dict) else json.loads(data)
         assert payload["kind"] == "deps"
         assert payload["counts_by_source"]["deps"] >= 1

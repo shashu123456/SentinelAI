@@ -105,8 +105,7 @@ def validate_filename(kind: str, filename: str | None) -> str:
     if not lowered.endswith(ALLOWED_EXTENSIONS[kind]):
         raise UploadRejected(
             422,
-            f"Invalid file type for kind '{kind}'. Allowed: "
-            f"{allowed_extensions_message(kind)}",
+            f"Invalid file type for kind '{kind}'. Allowed: " f"{allowed_extensions_message(kind)}",
         )
     return filename
 
@@ -142,9 +141,7 @@ def _safe_target(dest_dir: str, name: str) -> str:
     return target
 
 
-def extract_archive_safely(
-    data: bytes, dest_dir: str, kind: str
-) -> tuple[list[str], bool, int]:
+def extract_archive_safely(data: bytes, dest_dir: str, kind: str) -> tuple[list[str], bool, int]:
     """Extract ``data`` into ``dest_dir``.
 
     Returns ``(written_paths, partial, eligible_count)``. ``partial`` is True
@@ -177,9 +174,7 @@ def extract_archive_safely(
             )
 
         eligible = sum(
-            1
-            for info in infos
-            if not info.is_dir() and info.filename.lower().endswith(extensions)
+            1 for info in infos if not info.is_dir() and info.filename.lower().endswith(extensions)
         )
         written: list[str] = []
         partial = False
@@ -217,8 +212,7 @@ def extract_archive_safely(
     if not written:
         raise UploadRejected(
             422,
-            f"archive rejected: no scannable file found "
-            f"(allowed: {', '.join(extensions)})",
+            f"archive rejected: no scannable file found " f"(allowed: {', '.join(extensions)})",
         )
     return written, partial, eligible
 
@@ -320,16 +314,17 @@ def execute_unified_scan(
     db.refresh(scan)
 
     record_scan_event(
-        db, "scan.started", user_id=user_id, scan_id=scan.id,
+        db,
+        "scan.started",
+        user_id=user_id,
+        scan_id=scan.id,
         detail={"kind": kind, "filename": filename},
     )
     db.commit()
 
     try:
         # Full dicts to storage and risk engine; only the AI prompt is trimmed.
-        finding_repo.bulk_add_from_scan(
-            scan.id, [strip_internal(f) for f in findings]
-        )
+        finding_repo.bulk_add_from_scan(scan.id, [strip_internal(f) for f in findings])
         risk = calculate_risk_score(findings)
         try:
             assessment = compute_risk_assessment(findings)
@@ -349,7 +344,10 @@ def execute_unified_scan(
         db.commit()
 
         record_scan_event(
-            db, "scan.completed", user_id=user_id, scan_id=scan.id,
+            db,
+            "scan.completed",
+            user_id=user_id,
+            scan_id=scan.id,
             detail={
                 "kind": kind,
                 "total_vulnerabilities": risk["total_vulnerabilities"],
@@ -359,7 +357,9 @@ def execute_unified_scan(
         db.commit()
         logger.info(
             "Unified %s scan %s completed: %d findings",
-            kind, scan.id, len(findings),
+            kind,
+            scan.id,
+            len(findings),
         )
     except Exception as exc:
         db.rollback()

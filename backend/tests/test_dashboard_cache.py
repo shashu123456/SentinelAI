@@ -88,7 +88,9 @@ def test_id_only_cache_entry_is_not_served(client, auth_headers, user_token):
     from app.utils.cache import cache
 
     cache.set(f"dashboard:{user_id}", {"total_scans": 999}, ttl=60)
-    cache.set(f"analytics:{user_id}", {"scan_activity": [{"date": "2026-01-01", "scans": 999}]}, ttl=60)
+    cache.set(
+        f"analytics:{user_id}", {"scan_activity": [{"date": "2026-01-01", "scans": 999}]}, ttl=60
+    )
 
     dashboard = client.get("/api/scans/dashboard", headers=auth_headers)
     assert dashboard.status_code == 200, dashboard.text

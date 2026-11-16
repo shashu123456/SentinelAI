@@ -18,12 +18,17 @@ def analyze_vulnerabilities(findings: list[dict], api_info: dict) -> dict | None
         f"Total endpoints: {api_info.get('total_endpoints', 0)}\n"
     )
 
-    prompt = """You are a senior security analyst. Analyze the following API security scan results and provide a comprehensive security assessment.
+    prompt = (
+        """You are a senior security analyst. Analyze the following API security scan results and provide a comprehensive security assessment.
 
-""" + api_context + """
+"""
+        + api_context
+        + """
 
 Detected Vulnerabilities:
-""" + findings_summary + """
+"""
+        + findings_summary
+        + """
 
 Provide your analysis as a JSON object with exactly these keys:
 - executive_summary: A 2-3 sentence overview for C-level executives
@@ -33,6 +38,7 @@ Provide your analysis as a JSON object with exactly these keys:
 - recommended_mitigation: Prioritized list of mitigation steps
 
 Return ONLY valid JSON, no markdown fences, no extra text."""
+    )
 
     payload = {
         "model": settings.OLLAMA_MODEL,
