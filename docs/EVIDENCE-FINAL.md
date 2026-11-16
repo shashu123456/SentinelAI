@@ -107,6 +107,25 @@ trust-gate tests. Zero failures, zero errors.
 
 ---
 
+### 4b. Full suite on the final commits (81021b8, 2026-11-16)
+
+```
+cd backend
+python -m pytest -q --durations=20
+```
+
+```
+12.40s call     tests/test_migrations.py::test_migration_upgrades_legacy_schema
+1090 passed, 2 skipped, 17 deselected, 785 warnings in 1553.41s (0:25:53)
+```
+
+Same counts as the run at `e2a8590`, now covering the config validator
+(`769d7e2`), the black formatting (`d114969`), the ruff import cleanup and the
+`schemas.py` `__all__` restoration (`f196d5e`), and the evidence redaction
+(`81021b8`). Zero failures, zero errors.
+
+---
+
 ## 5. Deployment
 
 Live targets: API `https://sentinelai-api.vercel.app`, web
@@ -310,37 +329,78 @@ a trailing newline; the demo email lookup then missed and the endpoint reported
 
 ---
 
+### 5.11 Deployed build at the end of this pass
+
+```
+$ curl -s https://sentinelai-api.vercel.app/api/v1/version
+{"success":true,"data":{"commit":"81021b8420410188a5b15023d2d1f3e2a41badef","env":"production","build":"81021b8"},"meta":null}
+
+$ git rev-parse --short HEAD
+81021b8
+```
+
+Build equals HEAD, so the deployed code is the pushed code.
+
 ## 6. CI status
 
-`gh run list` today (most recent first):
+Run for `81021b8` (2026-11-16), job conclusions from
+`gh run view 43879996402 --json jobs`:
 
 ```
-2026-11-16T12:20  failure  769d7e2  fix(config): trim whitespace from demo credential env values
-2026-11-16T11:55  failure  ed87343  fix(db): idempotent additive schema repair for deployment drift
-2026-11-16T11:28  failure  e2a8590  docs: record baseline, targeted tests, and full-suite evidence
-2026-11-13T21:18  failure  cce6a8e  fix(ruff): clear remaining F841/F841 warnings in b
-2026-11-13T20:51  failure  7611578  docs(ratchet): add MYPY_BASELINE and mypy gate; ci
-... (every run back to 2026-11-12 is also `failure`)
+Backend lint & type check   failure   failing step: Run python -m mypy app
+Backend tests               success
+Frontend test & build       success
+CodeQL analysis (python)    success
+CodeQL analysis (javascript) success
+Secret scanning             success
+Docker build                skipped   (needs the lint job)
+Deployment smoke test       skipped   (needs the lint job)
 ```
 
-The workflow is red on every recorded commit, including commits from before this
-session, so CI was already failing when this work started.
-
-What this session changed about the failure:
-
-* `python -m black --check app tests` failed on 14 files; formatted all of them.
-  It now reports `219 files would be left unchanged.` and `black_exit=0`.
-* The remaining failures are pre-existing and outside this session's change:
-  `python -m ruff check app tests` still reports unused imports in
-  `app/core/execution/tests/`, and `python -m mypy app` reports
-  `Found 129 errors in 30 files`. Both are staged remediation, not something to
-  fix by loosening the gate.
-
-Verified locally after formatting:
+Inside the lint job, every gate before mypy now passes:
 
 ```
-python -m ruff check <files touched this session>   -> All checks passed!
-python -c "import app.main"                          -> import app.main OK
-python -m pytest -q tests/test_trust_gate.py tests/test_redaction.py
-                                                    -> 7 passed
+Run python -m black --check app tests   success
+Run python -m ruff check app tests      success
+Run python -m mypy app                  failure
 ```
+
+Local equivalents:
+
+```
+$ python -m black --check app tests
+All done! 219 files would be left unchanged.        (black_exit=0)
+
+$ python -m ruff check app tests
+All checks passed!
+```
+
+The single remaining red is mypy, and it is pre-existing rather than introduced
+here:
+
+```
+$ python -m mypy app
+Found 129 errors in 30 files (checked 168 source files)
+
+# same step inside CI, whose stub versions differ slightly:
+Found 126 errors in 30 files (checked 168 source files)
+```
+
+Representative errors (unchanged by this session):
+
+```
+app/tasks.py:97: error: "ScanTask" has no attribute "transition_history"  [attr-defined]
+app/services/unified_scan.py:257: error: Incompatible types in assignment (expression has type "SASTScanResult", variable has type "DepScanResult")  [assignment]
+app/api/routes/organizations.py:442: error: Item "None" of "Organization | None" has no attribute "max_projects"  [union-attr]
+```
+
+`backend/scripts/mypy_gate.py` and `backend/docs/MYPY_BASELINE.md` exist in the
+tree, but the workflow on the remote branch runs `python -m mypy app` directly
+(`git show origin/main:.github/workflows/ci.yml`, line 30), so the ratchet gate
+is not wired in. `.github/workflows/*` was not edited, the errors were not
+silenced, and no error was fixed in this pass. The lint job therefore stays red
+at mypy until that remediation is done deliberately.
+
+Earlier state in this session, for contrast: CI was red on *every* recorded
+commit back to 2026-11-12, and the lint job failed at `black` before it ever
+reached ruff or mypy. Both are now resolved.
