@@ -16,7 +16,6 @@ import pytest
 
 from app.core.agent_framework.base_agent import BaseAgent
 from app.core.agent_framework.shared_models import AgentContext, AgentMetadata, AgentResult
-from app.core.execution.execution_engine import ExecutionConfig
 from app.core.execution.execution_state import (
     ExecutionContext,
     ExecutionState,

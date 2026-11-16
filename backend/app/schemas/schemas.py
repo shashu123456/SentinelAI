@@ -13,17 +13,6 @@ continues to work.  Prefer importing from the specific sub-module in new code.
 """
 
 # Constants
-from app.schemas.constants import (
-    FINDING_SORT_FIELDS,
-    RISK_LEVELS,
-    SCAN_SORT_FIELDS,
-    SCAN_STATUSES,
-    SEVERITIES,
-    SORT_DIRECTIONS,
-    parse_sort_fields,
-)
-
-# Analytics schemas
 from app.schemas.analytics import (
     AnalyticsResponse,
     OwaspCategoryItem,
@@ -31,8 +20,6 @@ from app.schemas.analytics import (
     RiskTrendItem,
     ScanActivityItem,
 )
-
-# Auth schemas
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -48,15 +35,20 @@ from app.schemas.auth import (
     UserResponse,
     validate_password_strength,
 )
-
-# Dashboard schemas
+from app.schemas.constants import (
+    FINDING_SORT_FIELDS,
+    RISK_LEVELS,
+    SCAN_SORT_FIELDS,
+    SCAN_STATUSES,
+    SEVERITIES,
+    SORT_DIRECTIONS,
+    parse_sort_fields,
+)
 from app.schemas.dashboard import (
     DashboardOverviewResponse,
     DashboardStats,
     ReportResponse,
 )
-
-# Finding schemas
 from app.schemas.finding import (
     AIAnalysisResponse,
     FindingListParams,
@@ -72,6 +64,48 @@ from app.schemas.scan import (
     ScanResponse,
     UnifiedScanResponse,
 )
+
+# The names above exist for backward compatibility, so they are part of this
+# module's public API even though nothing inside it references them.
+__all__ = [
+    "FINDING_SORT_FIELDS",
+    "RISK_LEVELS",
+    "SCAN_SORT_FIELDS",
+    "SCAN_STATUSES",
+    "SEVERITIES",
+    "SORT_DIRECTIONS",
+    "parse_sort_fields",
+    "AnalyticsResponse",
+    "OwaspCategoryItem",
+    "RiskScoreResponse",
+    "RiskTrendItem",
+    "ScanActivityItem",
+    "ChangePasswordRequest",
+    "ForgotPasswordRequest",
+    "ForgotPasswordResponse",
+    "MessageResponse",
+    "ResetPasswordRequest",
+    "Role",
+    "RoleUpdateRequest",
+    "SessionInfo",
+    "Token",
+    "UserLogin",
+    "UserRegister",
+    "UserResponse",
+    "validate_password_strength",
+    "DashboardOverviewResponse",
+    "DashboardStats",
+    "ReportResponse",
+    "AIAnalysisResponse",
+    "FindingListParams",
+    "FindingResponse",
+    "VulnerabilityItem",
+    "ScanCreate",
+    "ScanDetailResponse",
+    "ScanListParams",
+    "ScanResponse",
+    "UnifiedScanResponse",
+]
 
 # Resolve circular forward references
 ScanDetailResponse.model_rebuild()
