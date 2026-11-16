@@ -95,7 +95,7 @@ def _call_llm(
         return None
 
 
-def _parse_json_response(text: str) -> dict | None:
+def _parse_json_response(text: str | None) -> dict | None:
     """Safely parse JSON from LLM response with fallback extraction."""
     if not text:
         return None
@@ -164,7 +164,7 @@ class SentinelAIEngine:
 
     # ── Executive Report ──────────────────────────────────────────────────
     def generate_executive_report(
-        self, scan_data: dict, compliance_data: dict = None, trend_data: dict = None
+        self, scan_data: dict, compliance_data: dict | None = None, trend_data: dict | None = None
     ) -> dict:
         prompt, meta = self.prompts.render(
             "executive_report",
@@ -239,7 +239,7 @@ class SentinelAIEngine:
         }
 
     # ── Threat Prediction ─────────────────────────────────────────────────
-    def predict_threats(self, vulnerabilities: list[dict], api_surface: dict = None) -> dict:
+    def predict_threats(self, vulnerabilities: list[dict], api_surface: dict | None = None) -> dict:
         vuln_summary = json.dumps(vulnerabilities[:10], indent=2, default=str)
         api_summary = json.dumps(api_surface or {}, indent=2, default=str)
 
@@ -475,7 +475,7 @@ class SentinelAIEngine:
 
     # ── Scan Summarizer ───────────────────────────────────────────────────
     def summarize_scan(self, scan: dict, findings: list[dict]) -> dict:
-        severity_breakdown = {}
+        severity_breakdown: dict[str, int] = {}
         for f in findings:
             sev = f.get("severity", "Unknown")
             severity_breakdown[sev] = severity_breakdown.get(sev, 0) + 1

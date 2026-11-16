@@ -11,7 +11,7 @@ Architecture:
 """
 
 from datetime import UTC, datetime, timedelta
-from typing import TypeVar
+from typing import Any, TypeVar, cast
 
 from sqlalchemy.orm import Session
 
@@ -36,7 +36,7 @@ ModelT = TypeVar("ModelT")
 
 
 def _paginate_org(
-    db: Session, model: type, org_id: int, page: int = 1, page_size: int = 20
+    db: Session, model: type[Any], org_id: int, page: int = 1, page_size: int = 20
 ) -> tuple[list, int]:
     """Paginated list of records for an organization."""
     query = db.query(model).filter(model.organization_id == org_id)
@@ -50,12 +50,12 @@ def _paginate_org(
     return items, total
 
 
-def _get_org_resource(db: Session, model: type, resource_id: int, org_id: int):
+def _get_org_resource(db: Session, model: type[Any], resource_id: int, org_id: int):
     """Fetch a single resource scoped to an organization, or None."""
     return db.query(model).filter(model.id == resource_id, model.organization_id == org_id).first()
 
 
-def _create_org_resource(db: Session, model: type, org_id: int, user_id: int, data: dict):
+def _create_org_resource(db: Session, model: type[Any], org_id: int, user_id: int, data: dict):
     """Create a new organization-scoped resource from a data dict."""
     record = model(
         organization_id=org_id,
@@ -68,7 +68,7 @@ def _create_org_resource(db: Session, model: type, org_id: int, user_id: int, da
     return record
 
 
-def _update_org_resource(db: Session, model: type, resource_id: int, org_id: int, data: dict):
+def _update_org_resource(db: Session, model: type[Any], resource_id: int, org_id: int, data: dict):
     """Update fields on an organization-scoped resource, or return None."""
     record = _get_org_resource(db, model, resource_id, org_id)
     if not record:
@@ -82,7 +82,7 @@ def _update_org_resource(db: Session, model: type, resource_id: int, org_id: int
     return record
 
 
-def _delete_org_resource(db: Session, model: type, resource_id: int, org_id: int) -> bool:
+def _delete_org_resource(db: Session, model: type[Any], resource_id: int, org_id: int) -> bool:
     """Delete an organization-scoped resource. Returns True if deleted."""
     record = _get_org_resource(db, model, resource_id, org_id)
     if not record:
@@ -128,7 +128,7 @@ def get_due_scans(db: Session) -> list:
     """Get scans that are due to run (for the scheduler worker)."""
     return (
         db.query(ScheduledScan)
-        .filter(ScheduledScan.is_active is True, ScheduledScan.next_run_at <= datetime.now(UTC))
+        .filter(ScheduledScan.is_active.is_(True), ScheduledScan.next_run_at <= datetime.now(UTC))
         .all()
     )
 
@@ -205,7 +205,7 @@ def delete_policy(db: Session, policy_id: int, org_id: int) -> bool:
 def evaluate_policies(db: Session, org_id: int, findings: list[Finding]) -> list[dict]:
     """Evaluate all active policies against a set of findings."""
     policies = (
-        db.query(Policy).filter(Policy.organization_id == org_id, Policy.is_active is True).all()
+        db.query(Policy).filter(Policy.organization_id == org_id, Policy.is_active.is_(True)).all()
     )
 
     violations = []
@@ -250,7 +250,7 @@ def _matches_conditions(finding: Finding, conditions: list[dict]) -> bool:
     for condition in conditions:
         field = condition.get("field")
         operator = condition.get("operator")
-        value = condition.get("value")
+        value = cast(Any, condition.get("value"))
 
         finding_value = getattr(finding, field, None)
         if finding_value is None:
@@ -301,7 +301,9 @@ def delete_webhook(db: Session, webhook_id: int, org_id: int) -> bool:
 def trigger_webhooks(db: Session, org_id: int, event: str, payload: dict) -> int:
     """Trigger all active webhooks subscribed to an event. Returns count triggered."""
     webhooks = (
-        db.query(Webhook).filter(Webhook.organization_id == org_id, Webhook.is_active is True).all()
+        db.query(Webhook)
+        .filter(Webhook.organization_id == org_id, Webhook.is_active.is_(True))
+        .all()
     )
 
     count = 0
@@ -837,7 +839,7 @@ def generate_sarif_export(db: Session, scan_ids: list[int]) -> dict:
 
     for scan in scans:
         findings = db.query(Finding).filter(Finding.scan_id == scan.id).all()
-        run = {
+        run: dict[str, Any] = {
             "tool": {
                 "driver": {
                     "name": "SentinelAI",
