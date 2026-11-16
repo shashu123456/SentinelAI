@@ -5,7 +5,6 @@ real security context for the agent's responses.
 """
 
 from sqlalchemy import case as sa_case
-from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.models.models import AIAnalysis, Finding, Scan
@@ -16,7 +15,7 @@ def get_latest_scan(db: Session, user_id: int) -> dict | None:
     scan = (
         db.query(Scan)
         .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
-        .order_by(desc(Scan.created_at))
+        .order_by(Scan.created_at.desc())
         .first()
     )
     if not scan:
@@ -29,7 +28,7 @@ def get_scan_history(db: Session, user_id: int, limit: int = 10) -> list[dict]:
     scans = (
         db.query(Scan)
         .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
-        .order_by(desc(Scan.created_at))
+        .order_by(Scan.created_at.desc())
         .limit(limit)
         .all()
     )
@@ -131,7 +130,7 @@ def get_risk_summary(db: Session, user_id: int) -> dict:
     scans = (
         db.query(Scan)
         .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
-        .order_by(desc(Scan.created_at))
+        .order_by(Scan.created_at.desc())
         .all()
     )
     if not scans:
@@ -161,7 +160,7 @@ def compare_scans(db: Session, user_id: int) -> dict | None:
     scans = (
         db.query(Scan)
         .filter(Scan.user_id == user_id, Scan.status == "completed", Scan.deleted_at.is_(None))
-        .order_by(desc(Scan.created_at))
+        .order_by(Scan.created_at.desc())
         .limit(2)
         .all()
     )

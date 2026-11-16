@@ -98,7 +98,7 @@ class EventBus(Generic[PayloadT]):
                 callback(event)
 
     def publish_raw(
-        self, event_type: EventType, payload: dict[str, Any], source: str | None = None
+        self, event_type: EventType | str, payload: dict[str, Any], source: object | None = None
     ) -> None:
         """Publish an event with the given type and payload.
 

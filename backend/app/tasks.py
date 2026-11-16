@@ -29,6 +29,7 @@ class ScanTask:
     error: str | None = None
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     subscribers: list = field(default_factory=list)
+    transition_history: list[dict[str, Any]] = field(default_factory=list)
 
 
 _tasks: dict[str, ScanTask] = {}

@@ -13,14 +13,16 @@ import os
 import platform
 import threading
 import time
+from typing import Any
 
 from sqlalchemy.pool import QueuePool
 
 try:
-    import resource
+    import resource as _resource_module
 except ImportError:
-    resource = None  # Windows doesn't have resource module
-from typing import Any
+    _resource_module = None  # Windows doesn't have the resource module
+
+resource: Any = _resource_module  # None on Windows; guarded at each use
 
 # ── Uptime tracking ─────────────────────────────────────────────────
 _START_TIME: float = time.time()
