@@ -1,6 +1,6 @@
 # SentinelAI
 
-A production-ready AI-powered API security scanner that detects OWASP API vulnerabilities, runs static application security testing, and performs dependency checks.
+An OpenAPI, dependency, and source-file security scanner with deterministic rules. Upload one file — an API spec, a dependency manifest, or a source file — and get findings, a risk score, and a fix instruction for each.
 
 [![CI](https://github.com/shashu123456/SentinelAI/actions/workflows/ci.yml/badge.svg)](https://github.com/shashu123456/SentinelAI/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/badge/codeql-analysis-enabled-blue.svg)](https://github.com/shashu123456/SentinelAI/tree/main/docs)
