@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SentinelAI"
     VERSION: str = "1.0.0"
-    DESCRIPTION: str = "AI-Powered API & LLM Security Scanner"
+    DESCRIPTION: str = (
+        "OpenAPI, dependency, and source-file security scanner with deterministic rules"
+    )
 
     DATABASE_URL: str = "sqlite:///./sentinelai.db"
 
@@ -126,6 +128,18 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
     SENTINEL_ENV: str = "development"
     SENTINEL_VERSION: str = "1.0.0"
+
+    # --- Demo account ---
+    # Password for the seeded read-only demo user (demo@sentinelai.dev). Empty by
+    # default so the demo-login endpoint and seed script refuse to run until it
+    # is deliberately set. Never logged, never committed.
+    SENTINEL_DEMO_PASSWORD: str = ""
+    SENTINEL_DEMO_EMAIL: str = "demo@sentinelai.dev"
+
+    # Trust gate: refuse uploads until the user accepted authorized-use terms.
+    # On by default; the test suite disables it (like OSV_ENABLED) so pre-existing
+    # upload tests do not each have to accept, and a dedicated test re-enables it.
+    ENFORCE_AUTHORIZED_USE: bool = True
 
     class Config:
         env_file = ".env"

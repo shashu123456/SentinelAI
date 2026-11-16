@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.errors import register_exception_handlers
 from app.api.middleware import envelope_middleware
 from app.api.routes import (
+    account,
     admin,
     ai_platform,
     api_keys,
@@ -214,6 +215,7 @@ async def security_headers(request: Request, call_next):
 
 
 app.include_router(auth.router)
+app.include_router(account.router)
 app.include_router(admin.router)
 app.include_router(scans.router)
 app.include_router(websocket.router)

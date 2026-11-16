@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database.database import SessionLocal, get_db
-from app.models.models import Finding, Scan, User
+from app.models.models import AuthorizedUse, Finding, Scan, User
 from app.reports.generator import generate_json_report, generate_pdf_report
 from app.repositories.reports import ReportRepository
 from app.repositories.scans import ScanRepository
@@ -92,6 +92,24 @@ def _read_and_validate_spec(file: UploadFile, api_name: str) -> tuple[str, dict]
     return api_name, spec
 
 
+def _require_authorized_use(db: Session, user_id: int) -> None:
+    """Refuse to scan until the caller has accepted the authorized-use terms.
+
+    Returns 403 ``authorization_required`` so the UI can route the user to the
+    acceptance page. Demo/test flows accept via POST /api/account/authorized-use.
+    """
+    if not settings.ENFORCE_AUTHORIZED_USE:
+        return
+    accepted = (
+        db.query(AuthorizedUse.id).filter(AuthorizedUse.user_id == user_id).first()
+    )
+    if accepted is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="authorization_required",
+        )
+
+
 def _get_owned_scan(db: Session, scan_id: int, user_id: int):
     scan = ScanRepository(db).get_owned(scan_id, user_id)
     if scan is None:
@@ -117,6 +135,8 @@ async def upload_and_scan(
     manifests) or ``code`` (source files / zip). Every kind persists findings in
     the same shape, each tagged with its ``source``.
     """
+    _require_authorized_use(db, current_user.id)
+
     try:
         kind = validate_kind(kind)
         validate_filename(kind, file.filename)
@@ -256,11 +276,38 @@ def get_task_status(task_id: str, current_user: User = Depends(get_current_user)
     }
 
 
+def _purge_stale_specs(db: Session, user_id: int) -> None:
+    """Lazy 24h retention: null out the stored spec on old scans.
+
+    The scan record and its findings are kept (they are the report), but the
+    uploaded specification itself — which may contain example credentials — is
+    dropped once it is older than 24 hours. Runs opportunistically on read so no
+    scheduler is required.
+    """
+    cutoff = datetime.now(UTC) - timedelta(hours=24)
+    stale = (
+        db.query(Scan)
+        .filter(
+            Scan.user_id == user_id,
+            Scan.created_at < cutoff,
+            Scan.source_spec.isnot(None),
+        )
+        .all()
+    )
+    if not stale:
+        return
+    for scan in stale:
+        scan.source_spec = None
+    db.commit()
+    logger.info("Purged stored specs for %d scan(s) past the 24h window", len(stale))
+
+
 @router.get("/", response_model=list[ScanResponse])
 def list_scans(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _purge_stale_specs(db, current_user.id)
     return ScanRepository(db).list_by_user(current_user.id, limit=50)
 
 

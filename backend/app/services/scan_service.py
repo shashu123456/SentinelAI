@@ -29,6 +29,7 @@ from app.repositories.scans import ScanRepository
 from app.services.audit_service import record_scan_event
 from app.services.risk_engine import compute_risk_assessment
 from app.utils.logger import logger
+from app.utils.redaction import redact_spec
 
 
 def _trim_findings_for_ai(findings: list[dict]) -> list[dict]:
@@ -60,8 +61,16 @@ def execute_scan(db: Session, user_id: int, api_name: str, spec: dict) -> Scan:
     scan_repo = ScanRepository(db)
     finding_repo = FindingRepository(db)
 
+    # Redact credentials in example/default fields before the spec is persisted.
+    # The scan itself runs on the original parsed dict; only storage is masked.
+    stored_spec, redacted_count = redact_spec(spec)
+    if redacted_count:
+        logger.info(
+            "Redacted %d credential field(s) before storing the scan spec", redacted_count
+        )
+
     # --- Phase 1: create scan record (committed immediately) ---
-    scan = scan_repo.create_scan(user_id=user_id, api_name=api_name, source_spec=spec)
+    scan = scan_repo.create_scan(user_id=user_id, api_name=api_name, source_spec=stored_spec)
     scan_repo.add(scan)
     db.commit()
     db.refresh(scan)

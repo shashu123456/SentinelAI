@@ -12,11 +12,11 @@ from app.repositories.refresh_tokens import RefreshTokenRepository
 from app.repositories.reset_tokens import PasswordResetTokenRepository
 from app.repositories.users import UserRepository
 from app.schemas.schemas import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
     MessageResponse,
     ResetPasswordRequest,
-    ChangePasswordRequest,
     Role,
     Token,
     UserLogin,
@@ -479,3 +479,52 @@ def _send_reset_email(recipient: str, token: str) -> None:  # pragma: no cover -
         if settings.SMTP_USER:
             smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
         smtp.send_message(msg)
+
+@router.post("/demo-login", response_model=Token)
+@limiter.limit("5/minute")
+def demo_login(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """Log in the seeded read-only demo user. Never creates users.
+
+    The password comes from ``SENTINEL_DEMO_PASSWORD``; the account is looked up
+    by the configured demo email only. Rate-limited to 5 requests/minute per IP.
+    """
+    password = settings.SENTINEL_DEMO_PASSWORD
+    if not password:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Demo account is not configured",
+        )
+
+    user = UserRepository(db).get_by_email(settings.SENTINEL_DEMO_EMAIL)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Demo account is unavailable"
+        )
+
+    if not verify_password(password, user.hashed_password):
+        # Defensive: the stored hash and configured password disagree.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Demo account is not configured",
+        )
+
+    record_action(
+        db,
+        "auth.demo_login",
+        user_id=user.id,
+        username=user.username,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        request_id=getattr(request.state, "request_id", None),
+        resource=f"user {user.username}",
+    )
+    db.commit()
+
+    access = create_access_token(data={"sub": user.username})
+    raw_refresh = create_refresh_token(db, user, get_client_ip(request))
+    set_refresh_cookie(response, raw_refresh)
+    return Token(access_token=access, user=UserResponse.model_validate(user))

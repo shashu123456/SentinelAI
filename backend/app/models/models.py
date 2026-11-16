@@ -494,3 +494,25 @@ class Testimonial(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
+
+
+class AuthorizedUse(Base):
+    """Records that a user accepted the authorized-use terms before scanning.
+
+    One row per user is kept; re-accepting updates the timestamp/ip/version.
+    The API refuses to run a scan until a row exists for the caller.
+    """
+
+    __tablename__ = "authorized_use_acceptances"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True
+    )
+    accepted_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+    ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    version: Mapped[str] = mapped_column(String(20), default="1", nullable=False)
+
+    user: Mapped["User"] = relationship("User")

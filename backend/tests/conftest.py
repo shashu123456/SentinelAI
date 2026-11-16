@@ -25,6 +25,9 @@ os.environ["REDIS_URL"] = "redis://127.0.0.1:1/0"
 # design (no network, deterministic findings), so the live lookup is off here and
 # the OSV client is tested against a stubbed HTTP layer instead.
 os.environ["OSV_ENABLED"] = "false"
+# Authorized-use gate is exercised by its own test; keep pre-existing upload
+# tests from needing an acceptance row each.
+os.environ["ENFORCE_AUTHORIZED_USE"] = "false"
 
 os.environ["LOGIN_RATE_LIMIT_PER_MINUTE"] = "10"
 
