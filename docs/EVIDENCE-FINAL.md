@@ -178,7 +178,7 @@ relevant lines.
 
 ```
 === register ===
-{"access_token":"eyJ...","token_type":"bearer","user":{"id":6,"username":"evid1794830408",...}}
+{"access_token":"<redacted-jwt>","token_type":"bearer","user":{"id":6,"username":"evid1794830408",...}}
 HTTP 201
 === account/authorized-use GET (before accepting) ===
 {"accepted":false,"accepted_at":null,"version":"1","text":"Only scan material you own or have written permission to test."}
@@ -239,7 +239,7 @@ Live demo path:
 
 ```
 === POST /api/auth/demo-login ===
-{"access_token":"eyJhbGciOiJIUzI1NiIs...","token_type":"bearer","user":{"id":7,...}}
+{"access_token":"<redacted-jwt>","token_type":"bearer","user":{"id":7,...}}
 === GET /api/scans/ (demo) ===
 count: 3
   6 code demo-code.zip 2 None
