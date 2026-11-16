@@ -125,7 +125,7 @@ class AgentEvent:
     """Typed event published through the event bus."""
 
     event_type: EventType | str
-    agent_id: str
+    agent_id: str | None
     timestamp: float = field(default_factory=lambda: __import__("time").time())
     source: str | None = None
     payload: dict[str, Any] = field(default_factory=dict)

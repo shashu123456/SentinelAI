@@ -23,8 +23,27 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
+from typing import Protocol
 
 from app.core.execution.execution_state import ExecutionState
+
+
+class ExecutionStateLike(Protocol):
+    """The slice of an execution state this aggregator reads.
+
+    ExecutionState is the status enum; the observations it aggregates are state
+    objects carrying a status plus timing, so the contract is expressed
+    structurally rather than by naming one concrete class.
+    """
+
+    status: ExecutionState
+    duration: float
+
+    @property
+    def is_running(self) -> bool: ...
+
+    @property
+    def is_terminal(self) -> bool: ...
 
 
 @dataclass(frozen=True)
@@ -83,7 +102,7 @@ class RuntimeMetrics:
         self._duration_total: float = 0.0
         self._duration_count: int = 0
 
-    def record_state(self, state: ExecutionState) -> None:
+    def record_state(self, state: ExecutionStateLike) -> None:
         """Record a completed ExecutionState instance for metrics aggregation.
 
         Updates all relevant counters based on the state's status and

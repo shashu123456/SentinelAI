@@ -20,8 +20,15 @@ from __future__ import annotations
 
 import builtins
 import threading
+from typing import Protocol
 
 from app.core.execution.execution_state import ExecutionState
+
+
+class ExecutionStateRecord(Protocol):
+    """A stored execution state: anything carrying an execution id."""
+
+    execution_id: str
 
 
 class ExecutionStateRegistry:
@@ -50,7 +57,7 @@ class ExecutionStateRegistry:
         self._store: dict[str, ExecutionState] = {}
         self._lock = threading.RLock()
 
-    def register(self, state: ExecutionState) -> None:
+    def register(self, state: ExecutionStateRecord) -> None:
         """Store an ExecutionState instance keyed by execution_id.
 
         If a state with the same execution_id already exists, it is replaced.
@@ -73,7 +80,7 @@ class ExecutionStateRegistry:
         with self._lock:
             return self._store.get(execution_id)
 
-    def update(self, state: ExecutionState) -> None:
+    def update(self, state: ExecutionStateRecord) -> None:
         """Update a stored ExecutionState.
 
         Replaces the existing state for the given execution_id. If no state
