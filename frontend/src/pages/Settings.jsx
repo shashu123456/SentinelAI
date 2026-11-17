@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { request } from '../services/api';
 import { useToast } from '../components/ui/Toast';
-import { Settings as SettingsIcon, Building2, FolderKanban, Users, User, Plus, Trash2, ChevronRight, Shield, Mail, Calendar, Key, Lock, Eye, EyeOff, Slack, FileText } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, FolderKanban, Users, User, Plus, Trash2, ChevronRight, Shield, Mail, Calendar, Key, Lock, Eye, EyeOff, Slack, FileText, Loader2 } from 'lucide-react';
 import './Settings.css';
 
 const TABS = [
