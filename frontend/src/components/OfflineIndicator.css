@@ -24,8 +24,8 @@
 }
 
 .reconnected-banner {
-  background: linear-gradient(135deg, rgba(0, 255, 170, 0.95), rgba(0, 180, 120, 0.95));
-  color: #0a0f1a;
+  background: linear-gradient(135deg, var(--volt-400), var(--volt-500));
+  color: var(--fig-900);
   backdrop-filter: blur(8px);
   animation: bannerSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1),
              bannerFadeOut 0.3s ease 2.7s forwards;
@@ -57,6 +57,6 @@
 }
 
 [data-theme="light"] .reconnected-banner {
-  background: linear-gradient(135deg, rgba(0, 153, 102, 0.95), rgba(5, 150, 105, 0.95));
-  color: white;
+  background: linear-gradient(135deg, var(--volt-400), var(--volt-500));
+  color: var(--fig-900);
 }

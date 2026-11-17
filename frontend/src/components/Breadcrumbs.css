@@ -42,8 +42,8 @@
 }
 
 .breadcrumbs-link:hover {
-  color: var(--accent-cyan);
-  background: rgba(0,255,170,0.04);
+  color: var(--link);
+  background: var(--bg-hover);
   text-decoration: none;
 }
 
@@ -56,9 +56,4 @@
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-body);
-}
-
-/* Light theme */
-[data-theme="light"] .breadcrumbs-link:hover {
-  background: rgba(0,100,80,0.04);
 }
