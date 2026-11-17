@@ -9,9 +9,12 @@ An OpenAPI, dependency, and source-file security scanner with deterministic rule
 
 ## Try it
 
-1. **Register** — open the app and create an account
-2. **New scan** — one upload box: drop an OpenAPI spec, a dependency manifest, or source code / a project zip and the matching scanner runs
-3. **Report** — view detected findings with severity, CWEs, and remediation hints
+1. **Demo** — the landing page starts a read-only demo session with three seeded
+   scans already in place
+2. **Register** — or create your own account
+3. **New scan** — one upload box: drop an OpenAPI spec, a dependency manifest, or
+   source code / a project zip and the matching scanner runs
+4. **Report** — view detected findings with severity, CWEs, and remediation hints
 
 Live API: https://sentinelai-api.vercel.app  
 Live Web: https://sentinelai-web.vercel.app
@@ -20,12 +23,29 @@ Live Web: https://sentinelai-web.vercel.app
 
 ## Capabilities
 
-| Check Type | Rules / Checks | Description |
-|------------|---------------|-------------|
-| **OWASP API Security** | 10 checks | API1–API10: injection, authentication, authorization, rate limiting, data validation, etc. |
-| **SAST Rules** | 48 rules | Python source-level security checks for hardcoded secrets, injection flaws, unsafe deserialization |
-| **Dependency Scanner** | Verified | Cross-references installed packages against known CVE databases |
-| **Passive URL checks** | Ongoing | Emitted per-scan for discovered endpoints |
+| Check type | Input it reads | What actually runs |
+|------------|----------------|--------------------|
+| **OWASP API Security** | OpenAPI / Swagger spec (`.json`, `.yaml`, `.yml`) | 10 category checks, API1–API10, each mapped to a CWE |
+| **SAST** | one source file, or a project `.zip` | 48 pattern rules: 23 Python, 14 JavaScript, 11 Java |
+| **Dependency check** | manifest or lockfile (`requirements.txt`, `package.json`, `pom.xml`, lockfiles) | live **OSV.dev** advisories for PyPI, npm and Maven, merged with a small curated fallback table |
+
+Rule counts are the lengths of the registries in the codebase:
+`ALL_RULES` is 48 and the spec scanner covers `API1`–`API10`.
+
+## What it does not do
+
+- **No live-URL scanning.** It reads an uploaded file and never sends traffic to a
+  host you name.
+- **No full-repository scanning.** Archive scans are capped at 200 source files /
+  2 MB; beyond that the scan returns a partial report with scanned/skipped counts.
+- **No automatic fixing.** A finding includes a fix *instruction*; nothing is
+  patched for you.
+- **No exploitation or fuzzing.** No proof-of-concept payloads, auth-bypass proofs
+  or input mutation.
+- **AgentGuard is not enabled.** The prompt-injection probe is not shipped in this
+  build and is not reachable from the app.
+
+Full detail: [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ---
 
@@ -50,14 +70,22 @@ graph TD
 
 ---
 
-## Limitations
+## Limits
 
-- **No live exploitation** — all checks are static/spec-based; nothing is sent to target endpoints
-- **Static spec analysis only** — async endpoints, websockets, and runtime behaviour are not analysed
-- **Async scans hidden** — background scan status is not persisted across restarts (ephemeral container storage)
-- **Vercel function timeout** — 12-second limit may truncate large spec analyses; results may be partial
+- **Upload ceiling** — 5 MB per upload in the application. On Vercel the platform
+  body limit can reject a request before that check runs, returning its own `413`.
+- **Serverless budget** — the API runs on Vercel with a ~10 s function budget, so a
+  large input returns `200` with `partial: true` instead of a gateway timeout.
+- **Dependency freshness** — OSV results are cached in memory for up to 1 hour, so a
+  brand-new advisory can lag by up to an hour. The only outbound call is
+  `api.osv.dev`.
+- **SAST is pattern-based** — no data-flow or taint analysis; false positives and
+  false negatives are expected. Treat a finding as a lead, not a verdict.
+- **Trust gate** — scanning requires accepting the authorized-use terms: only scan
+  material you own or have written permission to test.
 
-Deploy: see [docs/DEPLOY.md](docs/DEPLOY.md)
+Deploy: see [docs/DEPLOY.md](docs/DEPLOY.md)  
+Verification record for the current build: [docs/EVIDENCE-FINAL.md](docs/EVIDENCE-FINAL.md)
 
 ---
 
@@ -65,5 +93,5 @@ Deploy: see [docs/DEPLOY.md](docs/DEPLOY.md)
 
 - CI: [![CI](https://github.com/shashu123456/SentinelAI/actions/workflows/ci.yml/badge.svg)](https://github.com/shashu123456/SentinelAI/actions/workflows/ci.yml)
 - CodeQL: [![CodeQL](https://img.shields.io/badge/codeql-analysis-enabled-blue.svg)](https://github.com/shashu123456/SentinelAI/tree/main/docs)
-- Python: [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/download/releases/3.11/)
+- Python: [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 - License: [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
