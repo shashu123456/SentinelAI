@@ -218,7 +218,7 @@ export default function SystemHealth() {
         />
 
         <ServiceCard
-          icon={Database} iconClass="db" name="Database" description={db.engine || 'SQLite'}
+          icon={Database} iconClass="db" name="Database" description={db.engine || 'unknown engine'}
           status={checks.database}
           details={[
             { label: 'Status', value: db.status === 'healthy' ? 'Connected' : db.status || 'unknown', error: db.status !== 'healthy' },

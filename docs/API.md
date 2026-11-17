@@ -287,7 +287,7 @@ Retry-After: 30
 {
   "success": true,
   "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+    "access_token": "<jwt>",
     "token_type": "bearer",
     "user": {
       "id": 1,

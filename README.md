@@ -42,6 +42,10 @@ Rule counts are the lengths of the registries in the codebase:
   patched for you.
 - **No exploitation or fuzzing.** No proof-of-concept payloads, auth-bypass proofs
   or input mutation.
+- **No hosted LLM.** The Copilot the UI uses is rule-based (`app/core/copilot/` has
+  no HTTP client). Optional self-hosted Ollama support exists only on the `/ai/*`
+  platform endpoints, which the UI never calls and which cannot reach a model from
+  the serverless deployment's default `localhost` address.
 - **AgentGuard is not enabled.** The prompt-injection probe is not shipped in this
   build and is not reachable from the app.
 

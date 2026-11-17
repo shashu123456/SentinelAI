@@ -58,6 +58,12 @@ over-claim.
 
 - Uploaded files are deleted immediately after the scan; stored specs are purged
   after 24 hours (lazily, on read).
-- Only outbound call: `api.osv.dev`. No LLM call is made by the product.
+- **Outbound calls:** `api.osv.dev` for dependency data. The Copilot the UI uses is
+  rule-based — `app/core/copilot/` contains no HTTP client and makes no model call.
+- **Optional self-hosted Ollama.** `/ai/*` platform endpoints can call
+  `settings.OLLAMA_URL` (default `http://localhost:11434/api/generate`). The UI never
+  calls those endpoints, and the default address is unreachable from the Vercel
+  deployment, so no model is contacted in production. No hosted third-party LLM is
+  used anywhere.
 - Scanning requires accepting the authorized-use terms: only scan material you own
   or have written permission to test.
