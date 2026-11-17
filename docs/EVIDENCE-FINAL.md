@@ -5,8 +5,8 @@ Where something was not run, this file says so.
 
 - Date: 2026-11-17
 - Branch: `main`, in sync with `origin/main`
-- Verified commit: `60e0b67` (full: `60e0b673ffeb2b23fcc49358863e52888a9e4c63`)
-- Deployed API build: `60e0b67` — the live `commit` field equals this SHA exactly
+- Verified commit: `f0daff2` (full: `f0daff2d7bde0fbec5f328f40fce2653c892db6b`)
+- Deployed API build: `f0daff2` — the live `commit` field equals this SHA exactly
 - The commit that adds *this file* is documentation-only: no code, CSS, test or
   config change, so it reproduces every result below.
 
@@ -18,190 +18,237 @@ is **superseded by this file** for current `main`.
 ## 1. Commit chain for this pass
 
 ```
-$ git log --oneline a20aa3f..HEAD
-60e0b67 refactor(design): tokenise the legacy emerald family
-accc706 docs(design): refresh golden-path screenshots
-388fa27 docs: align README with verified capabilities
-de77eaf fix(ui): make the report badge text visible
-2a56f15 refactor(design): finish tokenising every shipped UI surface
+$ git log --oneline ce47a7a..HEAD
+f0daff2 refactor(design): replace named colour keywords with tokens
+011cf39 fix(copy): align copilot, LLM and banner claims with actual behavior
+93b17bc fix(ui): import the missing Loader2 icon on settings
+c031f36 fix(ui): give every authenticated page one gutter
+f261532 refactor(design): tokenise the last raw colour literals
 
 $ git status --porcelain
 (empty)
 $ git rev-list --left-right --count origin/main...HEAD
 0	0
+
+$ git diff --stat ce47a7a..HEAD -- backend | wc -l
+0
+$ git diff --stat ce47a7a..HEAD -- .github | wc -l
+0
 ```
+
+No backend behaviour, no workflow file and no test was changed in this pass.
 
 ---
 
 ## 2. Encoding: nothing to repair
 
-An earlier hand-off reported mojibake in `README.md` and `docs/EVIDENCE-FINAL.md`.
-That was checked rather than assumed, and it is **not present**:
+The earlier report of mojibake was checked rather than assumed. A UTF-8-aware scan
+of every `*.md`, `*.py`, `*.js`, `*.jsx`, `*.css`, `*.html`, `*.json` and `*.yml`
+file under `frontend/src`, `docs/` and `backend/app`, plus `README.md` and
+`frontend/index.html`:
 
 ```
-scanned 46 docs md files; files with mojibake: 0      # byte scan for â€ / Ã / U+FFFD
-
-README.md:  BOM: False   bytes: 4519   mojibake hits: none   em dashes: 11
+scanned 309 files | files with real corruption: 0
 ```
 
-All 82 tracked `*.md` files decode as UTF-8; none carries a BOM.
+The one prior hit was prose in this document that quoted the mojibake byte
+sequences themselves; it has been removed, so the scan is clean and the scanner no
+longer trips over an example.
 
 ---
 
-## 3. README aligned with the code
+## 3. Copy now matches the code
 
-The README claimed **"Passive URL checks | Ongoing"**. There is no such feature —
-`docs/LIMITATIONS.md` and the Coverage page both say the scanner never sends
-traffic to a target. That row is gone, and the unsupported work is now an explicit
-"what it does not do" list linking `docs/LIMITATIONS.md`.
+### 3.1 The LLM claim
 
-Counts were re-derived from the registries, not copied:
+The old `docs/LIMITATIONS.md` said "No LLM call is made by the product". The code
+is narrower and more useful to state precisely:
 
 ```
-$ python -c "from app.core.sast_engine import rules as r; print(len(r.ALL_RULES))"
-PYTHON_RULES 23
-JAVASCRIPT_RULES 14
-JAVA_RULES 11
-ALL_RULES 48
+$ grep -rn "ollama\|_call_llm\|httpx\|requests\|OLLAMA\|openai" app/core/copilot/*.py
+(no output)
 
-$ grep -n "API1\|API10" app/core/security_engine/scanner.py
-scanner.py:6:    "API1": "Broken Object Level Authorization",
-scanner.py:15:    "API10": "Unsafe Consumption of APIs",
+$ grep -rn "OLLAMA_URL" app/config.py app/core/ai_platform/engine.py
+app/config.py:108:    OLLAMA_URL: str = "http://localhost:11434/api/generate"
+app/core/ai_platform/engine.py:69:    if not _is_safe_url(settings.OLLAMA_URL):
+
+$ grep -rn "'/ai/\|\"/ai/" frontend/src
+(no output)
 ```
 
-So "48 rules" and "API1–API10" are true as written. The dependency row now says the
-scanner reads a manifest and queries OSV.dev, instead of claiming it
-"cross-references installed packages".
+So: the Copilot the UI calls is rule-based and has no HTTP client at all; the
+`/ai/*` platform endpoints can call a self-hosted Ollama, the UI never calls them,
+and the production default address is `localhost`, unreachable from Vercel.
+`LIMITATIONS.md`, `README.md` and the Landing page now say exactly that, and the
+Copilot feature is kept.
+
+### 3.2 The SQLite claim
+
+`Copilot.jsx` told users the data came from "your SQLite database"; production runs
+PostgreSQL (`DATABASE_URL`). It now reads "your scan database (PostgreSQL in
+production)". `SystemHealth` no longer falls back to printing "SQLite" when the
+engine is unknown.
+
+### 3.3 The beta banner
+
+The span and the link were siblings in a flex container, so `innerText` produced
+`"…core workflow.Back to the app"`. The link now sits inside the same text node
+flow:
+
+```
+1440 /beta/dashboard {"banner":"Beta — not part of the core workflow. Back to the app"}
+390  /beta/dashboard {"banner":"Beta — not part of the core workflow. Back to the app"}
+```
+
+The characters used are U+2014 (em dash) and a normal space.
+
+### 3.4 Documentation placeholder
+
+`docs/API.md` carried a truncated JWT-shaped placeholder in a response example.
+It is now `<jwt>`, so it cannot be mistaken for a leaked token by a scanner or a
+reviewer.
 
 ---
 
-## 4. Design system — finished across every shipped surface
+## 4. Design system — no raw colour outside `tokens.css`
 
-### 4.1 Source
+### 4.1 Source gate
 
 ```
-$ grep -RInoE '#00ffaa|#00d4ff|#aa66ff' src --include=*.css --include=*.jsx --include=*.js | wc -l
+$ grep -RInE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' src \
+    --include=*.css --include=*.jsx --include=*.js | grep -v tokens.css
+(no output)      # exit 1: zero matches
+
+$ grep -RInoE '(?<![-\w])(white|black)(?![-\w])' -P src --include=*.css --include=*.jsx  # named colours
+none
+```
+
+343 hex/`rgba` literals plus 19 named-colour keywords (`white`, `black`) were
+replaced. The named colours mattered: the first gate only matched hex and `rgba`,
+so `color: white` survived in source and the minifier compiled it to `#fff` in the
+bundle — which is how it was found.
+
+`tokens.css` gained a documented block of absolute neutral and semantic values
+(`--ink-0` … `--ink-950`, `--scrim`, `--tint-*`, `--state-*`) plus the shell
+`--gutter`. They are absolute on purpose: the older surfaces keep their exact
+rendering, so this pass changed no hue anywhere.
+
+Charts stay token-driven: `Charts.jsx` resolves `--chart-1`…`--chart-6`,
+`--chart-grid`, `--chart-axis` and `--chart-tick` through `getComputedStyle`,
+because an SVG presentation attribute cannot resolve `var()`. The fallback argument
+is now `currentColor` instead of a duplicated hex.
+
+### 4.2 Built output
+
+```
+$ for f in dist/assets/*.css; do echo "$(basename $f) hex=$(grep -oE '#[0-9a-fA-F]{3,8}\b' "$f" | wc -l)"; done
+AuditCenter-*.css            hex=0
+Charts-*.css                 hex=0
+Copilot-*.css                hex=0
+Coverage-*.css               hex=0
+Dashboard-*.css              hex=0
+ExecutionDetails-*.css       hex=0
+ExecutiveMobile-*.css        hex=0
+Landing-*.css                hex=0
+Legal-*.css                  hex=0
+Login-*.css                  hex=0
+NewScan-*.css                hex=0
+ReportCenter-*.css           hex=0
+ScanLive-*.css               hex=0
+Settings-*.css               hex=0
+SystemHealth-*.css           hex=0
+VulnerabilityExplorer-*.css  hex=0
+index-*.css                  hex=65   # the token definitions themselves
+
+$ grep -oE '#00ffaa|#00d4ff|#aa66ff|#10b981|#009966|#003322|#002218|#004433' dist/assets/*.css dist/assets/*.js | wc -l
 0
-$ grep -RInoE '#00ff88|#ff2244|#ff3355|#ff6622|#ffaa00' src --include=*.css --include=*.jsx --include=*.js | wc -l
+```
+
+The only hex left in the bundle is the palette definition block, which is exactly
+where colours are supposed to live.
+
+### 4.3 Deployed CSS
+
+```
+$ curl -s https://sentinelai-web.vercel.app/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.(css|js)'
+assets/index-BD3iNsFh.css
+assets/index-DtyXdRrK.js
+
+$ curl -s https://sentinelai-web.vercel.app/assets/index-BD3iNsFh.css | grep -oE '#00ffaa|#00d4ff|#aa66ff|#10b981|#009966|#003322|#002218|#004433' | wc -l
 0
-$ grep -RInoE '#10b981|#059669|#009966|#003322|#002218|#004433' src --include=*.css --include=*.jsx --include=*.js | wc -l
-0
+$ ... | grep -oE '#[0-9a-fA-F]{3,8}\b' | wc -l
+65
 ```
 
-Work done, in two sweeps:
+`index-BD3iNsFh.css` is byte-identical in name to the local `npm run build`
+output for this commit.
+
+Runtime check on the chart-heavy page — colours come from tokens, not literals:
 
 ```
-# alpha-form neon tints and hot severity hexes
-replacements: {'rgba->--severity-critical': 32, 'rgba->--severity-high': 7,
- 'hex->--severity-critical': 10, 'hex->--severity-low': 9,
- 'rgba->--severity-medium': 12, 'hex->--severity-medium': 8, 'hex->--severity-high': 2}
-color-mix calls: 162
-
-# legacy emerald family (last off-palette hue still rendering)
-replacements: {'rgba->--volt-500': 39, 'hex->--volt-500': 31, 'hex->--fig-900': 25,
- 'hex->--fig-700': 7, 'hex->--severity-low': 8, 'rgba->--fig-700': 9} total: 119
+charts {"svgs":4,"fills":["rgb(217, 45, 32)","rgb(232, 89, 12)","rgb(181, 71, 8)",
+        "rgb(176, 170, 255)","rgb(169, 212, 28)"]}
 ```
-
-Charts are token-driven: `--chart-1`…`--chart-6` (plus `--chart-grid`,
-`--chart-axis`, `--chart-tick`) live in `frontend/src/styles/tokens.css` with
-dark-mode values, and `Charts.jsx` resolves them through `getComputedStyle`
-because an SVG presentation attribute cannot resolve `var()`.
-
-`frontend/src/App.css` was deleted: 978 lines, **0** brand-neon hits, **0**
-importers.
-
-### 4.2 Build
-
-```
-$ npm run test
- Test Files  6 passed (6)
-      Tests  35 passed (35)
-   Duration  32.33s
-
-$ npm run build
-dist/assets/Charts-Cb0-ryrQ.js   409.81 kB │ gzip: 118.14 kB
-✓ built in 30.50s
-BUILD_EXIT=0
-```
-
-### 4.3 Built output
-
-```
-$ grep -ohE '#00ffaa|#00d4ff|#aa66ff' dist/assets/*.css dist/assets/*.js | wc -l
-0
-$ grep -ohE '#00ffaa|#00d4ff|#aa66ff|#10b981|#009966|#003322' dist/assets/*.css dist/assets/*.js | wc -l
-0
-$ grep -oh 'color-mix(in srgb' dist/assets/*.css | wc -l
-228
-```
-
-### 4.4 Deployed CSS — every stylesheet, every route
-
-Collected by loading 26 routes in Chrome and reading every `link[rel=stylesheet]`:
-
-```
-deployed stylesheets: 15 | neon+legacy hex: 0 | hits: none
-color-mix across all deployed CSS: 200
-main css: index-C-nZdB15.css
-```
-
-And at runtime, no legacy hue is actually painted anywhere:
-
-```
-RENDERED legacy-emerald uses across 26 routes: 0
-```
-
-This covers the whole deployed CSS surface, not just the main bundle. The earlier
-"legacy page chunks are out of scope" caveat is no longer true and has been removed
-from this document.
 
 ---
 
-## 5. The grey artifact over the logo strip — found, explained, fixed
+## 5. One gutter for the authenticated shell
 
-It was ours, and it was not an overlay. `.report-header-badge` set
-`color: var(--fig-500)` — a raw palette value instead of a role token — while its
-background is `var(--bg-surface-alt)`; in dark mode `--bg-surface-alt` **is**
-`--fig-500`. Text was therefore painted in its own background and the badge
-rendered as an empty grey pill directly under the logo.
-
-Identity from the live DOM:
+The root cause was structural, not a Reports-only defect. Deleting `App.css`
+earlier in this pass removed `.page-content { padding: 28px 32px }`, and nothing
+replaced it: `.main-content` had no padding rule at all. Measured at `ce47a7a`:
 
 ```
-outerHTML: <div class="report-header-badge"><svg …lucide-file-text…></svg> REPORT CENTER</div>
-text: " REPORT CENTER"    innerTextLen: 13
-rect: { x: 0, y: 64, w: 141.5, h: 26 }
-color: rgb(74, 58, 99)   background: rgb(74, 58, 99)   ratio: 1.00
+1440 /coverage  {"h1":0,"card":0}
+1440 /scans/new {"h1":0,"card":0}
+1440 /reports   {"h1":0,"card":0}
+390  /reports   {"iw":390,"sw":475}      # page scrolled sideways
 ```
 
-A contrast sweep of 11 authenticated pages at 1440x900 found exactly one such node:
+`--gutter: clamp(16px, 2.2vw, 32px)` now drives the shell, the beta wrapper and the
+report page; the nested `page-content` inside `BetaLayout` is zeroed so the gutter
+is never counted twice. After the fix, on the deployed build:
 
 ```
-{"path":"/reports","text":"REPORT CENTER","cls":"report-header-badge","ratio":1}
-DISTINCT invisible text: 1
+1440 /reports        {"iw":1440,"sw":1440,"h1":32,"card":32}
+1440 /coverage       {"iw":1440,"sw":1440,"h1":32}
+1440 /scans/new      {"iw":1440,"sw":1440,"h1":32,"card":32}
+1440 /beta/dashboard {"iw":1440,"sw":1440,"h1":32,"card":32}
+390  /reports        {"iw":390,"sw":390,"h1":16,"card":16}
+390  /coverage       {"iw":390,"sw":390,"h1":16}
+390  /scans/new      {"iw":390,"sw":390,"h1":16,"card":16}
+390  /beta/dashboard {"iw":390,"sw":390,"h1":16,"card":16}
 ```
 
-Fix (`de77eaf`): the text uses the `--text-secondary` role and the border
-`--border-subtle`, as the Coverage badge already did. Layout, markup and copy
-untouched. After the deploy:
+Headings and the first card share the same left edge on every route, and
+`scrollWidth == innerWidth` at 390, so no page scrolls horizontally.
 
-```
-badge={"text":"REPORT CENTER","color":"rgb(201, 197, 255)","bg":"rgb(74, 58, 99)","ratio":6.22}
-FIX_LIVE
+Two documented exceptions:
 
-$ same contrast sweep over the same 11 pages, after the fix
-DISTINCT invisible text: 0
-```
+- `/beta/copilot` is a full-bleed chat: its heading sits at x=607 at 1440 and x=94
+  at 390 because the conversation column is centred inside the gutter. The page
+  itself does not overflow.
+- The beta banner follows the same gutter as the page content; it is not edge to
+  edge.
 
-Crops of exactly that strip (300x48):
-
-| Before | After |
-|---|---|
-| `docs/screenshots/reports-badge-before.png` — empty pill, 16 sampled colours | `docs/screenshots/reports-badge-after.png` — readable label, 22 sampled colours |
+The mobile navbar also stopped widening the page: its link strip scrolls inside the
+navbar (`overflow-x: auto`, `min-width: 0`) instead of pushing the document to
+475px. Every link, including Beta, stays reachable.
 
 ---
 
-## 6. Backend gates (code unchanged, re-run for the record)
+## 6. The grey artifact over the logo strip — fixed earlier in this pass
+
+It was a token-role bug, not an overlay. `.report-header-badge` painted
+`color: var(--fig-500)` on `background: var(--bg-surface-alt)`; in dark mode
+`--bg-surface-alt` **is** `--fig-500`, so the label was invisible (ratio 1.00).
+`de77eaf` moved the text to `--text-secondary` and the border to `--border-subtle`.
+Contrast went to 6.22 and the 11-page sweep found no invisible text afterwards.
+Crops: `docs/screenshots/reports-badge-before.png`, `…-after.png`.
+
+---
+
+## 7. Backend gates (code unchanged, re-run for the record)
 
 ```
 $ python -m mypy app --no-incremental
@@ -218,115 +265,103 @@ All done! ✨ 🍰 ✨
 BLACK_EXIT=0
 ```
 
-```
-$ git diff --stat a20aa3f..HEAD -- backend
-(empty)
-```
-
-Full suite for the shipped backend (`.tmp-mypy/pytest-final.log`):
+Full suite for the shipped backend:
 
 ```
 1090 passed, 2 skipped, 17 deselected, 785 warnings in 1525.57s (0:25:25)
 ```
 
-Not re-run, because nothing under `backend/` changed in this pass; the only later
-backend commit in this repository's history was the annotation-only `_scope`
-declaration in `3c27b66`, which adds no runtime code.
+Not re-run in this pass, because `git diff ce47a7a..HEAD -- backend` is empty — the
+same proof is at the top of this file.
 
 ---
 
-## 7. CI
+## 8. CI
 
-Run [44136881866](https://github.com/shashu123456/SentinelAI/actions/runs/44136881866)
-on `60e0b67`, conclusions straight from the Actions API:
+Run [44149786107](https://github.com/shashu123456/SentinelAI/actions/runs/44149786107)
+on `f0daff2`, conclusions straight from the Actions API:
 
 ```
-success	Backend tests
-success	Secret scanning
-success	CodeQL analysis (python)
-success	Backend lint & type check
-success	CodeQL analysis (javascript)
-success	Frontend test & build
-success	Docker build
-success	Deployment smoke test
+success  Backend tests
+success  Backend lint & type check
+success  Frontend test & build
+success  CodeQL analysis (python)
+success  CodeQL analysis (javascript)
+success  Secret scanning
+success  Docker build
+success  Deployment smoke test
 ```
-
-Docker build and the deployment smoke test both ran and passed — the two jobs that
-were skipped while an earlier lint failure blocked them.
 
 ---
 
-## 8. Deployment
+## 9. Deployment
 
 ```
 $ curl -s https://sentinelai-api.vercel.app/api/v1/version
-{"success":true,"data":{"commit":"60e0b673ffeb2b23fcc49358863e52888a9e4c63","env":"production","build":"60e0b67"},"meta":null}
+{"success":true,"data":{"commit":"f0daff2d7bde0fbec5f328f40fce2653c892db6b",
+ "env":"production","build":"f0daff2"},"meta":null}
 
 $ git rev-parse HEAD
-60e0b673ffeb2b23fcc49358863e52888a9e4c63
+f0daff2d7bde0fbec5f328f40fce2653c892db6b
 ```
 
-The deployed commit is HEAD, byte for byte.
-
 ```
-$ curl -s https://sentinelai-web.vercel.app/
-assets/index-C-nZdB15.css   assets/index-_bNO2RIZ.js
-fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap
 theme-color" content="#211831"
+assets/index-BD3iNsFh.css   assets/index-DtyXdRrK.js
 ```
 
 ---
 
-## 9. Live functional checks
+## 10. Live functional checks
 
 ```
-/security.txt                  -> 200
-/.well-known/security.txt      -> 200
-POST /api/auth/demo-login      -> HTTP 200
+/security.txt               -> 200
+/.well-known/security.txt   -> 200
+POST /api/auth/demo-login   -> 200
 ```
 
 Demo data intact (read through the demo session):
 
 ```
-demo-login: 200 | scans: [
- {"id":6,"name":"demo-code.zip","kind":"code","findings":2},
- {"id":5,"name":"demo-requirements.txt","kind":"deps","findings":74},
- {"id":4,"name":"Demo Petstore API","kind":"spec","findings":12}]
+scans 6, 5, 4   (demo-code.zip, demo-requirements.txt, Demo Petstore API)
 ```
+
+No page error was raised on any of the routes loaded during the verification pass
+(`errors []`).
 
 ---
 
-## 10. Screenshots
+## 11. Screenshots
 
-All captured from `https://sentinelai-web.vercel.app` at device pixel ratio 1 with
-Chrome via Playwright, after the final design deploy. Each file was decoded and
-checked for real content.
+All captured from `https://sentinelai-web.vercel.app` at DPR 1 with Chrome via
+Playwright, **after** the `f0daff2` deploy. Each file was decoded (PNG unfilter)
+and counted for distinct RGB values, so none of them is blank or a placeholder.
 
 | File | Route | Session | Viewport | Distinct colours |
 |---|---|---|---|---|
-| `landing.png` | `/` | anonymous | 1440x900 | 1006 |
-| `landing-mobile.png` | `/` | anonymous | 390x844 | 931 |
-| `login.png` | `/login` | anonymous | 1440x900 | 378 |
-| `coverage.png` | `/coverage` | demo | 1440x900 | 794 |
-| `authorized-use.png` | `/authorized-use` | demo | 1440x900 | 514 |
-| `reports.png` | `/reports` | demo | 1440x900 | 538 |
-| `scans-new.png` | `/scans/new` | demo | 1440x900 | 495 |
-| `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x900 | 548 |
-| `copilot.png` | `/beta/copilot` | demo | 1440x900 | 634 |
+| `landing.png` | `/` | anonymous | 1440x900 | 2434 |
+| `landing-mobile.png` | `/` | anonymous | 390x844 | 2131 |
+| `login.png` | `/login` | anonymous | 1440x900 | 862 |
+| `coverage.png` | `/coverage` | demo | 1440x900 | 2417 |
+| `authorized-use.png` | `/authorized-use` | demo | 1440x900 | 862 |
+| `reports.png` | `/reports` | demo | 1440x900 | 1626 |
+| `scans-new.png` | `/scans/new` | demo | 1440x900 | 1589 |
+| `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x900 | 1587 |
+| `copilot.png` | `/beta/copilot` | demo | 1440x900 | 1932 |
 | `reports-badge-before.png` | crop of `/reports` | — | 300x48 | 16 |
 | `reports-badge-after.png` | crop of `/reports` | — | 300x48 | 22 |
 
 `/coverage`, `/authorized-use` and `/beta/*` sit behind `ProtectedRoute`, so those
-captures use a demo session token held only in the browser's `localStorage`.
-No token was written to a file, a log, or this document.
+captures use a demo session token held only in the browser's `localStorage`. No
+token was written to a file, a log, or this document.
 
-**Correction:** an earlier note described the login screen as "legacy palette". It
-is not — `Login.css` has zero legacy hits and the page uses the volt/fig/bloom
-tokens. The screenshot above is the current build.
+Four of these were also inspected by eye after capture: `reports.png` (gutter and
+badge), `beta-dashboard.png` (banner spacing, charts), `copilot.png` (banner, chat),
+and the two landing captures.
 
 ---
 
-## 11. AgentGuard
+## 12. AgentGuard
 
 Not enabled. The probe is not shipped as a working feature, the Coverage page states
 "AI agent prompt-injection probing is not enabled in this build", and nothing routes
@@ -334,29 +369,29 @@ to it. Runbook P7 remains the only deliberately-off optional item.
 
 ---
 
-## 12. Safe to claim / not safe to claim
+## 13. Safe to claim / not safe to claim
 
 | Safe to claim (evidence above) | Not safe to claim |
 |---|---|
-| CI is 8/8 green on `60e0b67`, including Docker build and Deployment smoke | CI has always been green |
-| mypy is clean under `--no-incremental` (168 files); ruff and black pass | mypy was clean all along |
-| Full suite `1090 passed / 2 skipped / 17 deselected` on the shipped backend | The suite was re-run after every commit in this pass |
-| Zero brand neon and zero legacy emerald in source, in `dist`, and in all 15 deployed stylesheets | Every colour is a token (see residue below) |
-| No legacy hue is rendered on any of 26 audited routes | Every pixel of every page was audited |
-| The report badge defect is fixed; no invisible text remains on 11 audited pages | The whole UI has been contrast-audited |
-| Deployed API commit equals HEAD (`60e0b67`, full SHA match) | Web and API deploy at the same instant |
-| 9 page screenshots plus before/after crops, all from the deployed build | Screenshots cover every page |
-| README counts match the registries (48 rules, API1–API10) | Rule counts prove detection quality |
+| CI is 8/8 green on `f0daff2`, including Docker build and Deployment smoke | CI has always been green |
+| Zero raw colour literals in `src` outside `tokens.css`, including named colours | Every colour in the product is a semantic token |
+| Every CSS chunk in `dist` is free of hex except the token definitions; deployed main CSS brand/emerald = 0 | Third-party assets are tokenised |
+| Headings and cards share one gutter on `/reports`, `/coverage`, `/scans/new`, `/beta/*` at 1440 and 390 | Every page was checked at every breakpoint |
+| No horizontal page scroll at 390 on the audited routes | Mobile has been tested on real devices |
+| Banner `innerText` is exactly "Beta — not part of the core workflow. Back to the app" | The banner is localised |
+| Copy states the Copilot is rule-based; `/ai/*` Ollama is documented as unused and unreachable by default | The `/ai/*` endpoints were exercised end to end |
+| Deployed API commit equals HEAD (`f0daff2`, full SHA match) | Web and API deploy at the same instant |
+| mypy clean (168 files); ruff and black pass; suite 1090/2/17 on unchanged backend | The backend suite was re-run in this pass |
+| 9 page screenshots plus before/after crops, all from the deployed build | Screenshots cover every page and state |
 | AgentGuard is documented as not enabled | AgentGuard works |
 
-### Known cosmetic residue (documented, not defects)
+### Known residue (documented, not defects)
 
-- 273 six-hex literals remain in `src`. They are neutrals — `#ffffff` (26),
-  Tailwind greys such as `#e5e7eb`/`#6b7280`/`#0f172a` — in older surfaces
-  (`Timeline.css`, `ExecutionDetails.css`, legal pages). They are not brand hues and
-  not neon, so they pass the colour rule, but they are not role tokens yet.
-- `/reports` has no horizontal page padding (`.report-page { padding: 0 0 40px }`),
-  so its header sits flush at x=0 while `/scans/new` is inset by 16px. Layout was out
-  of scope for this pass and was deliberately left alone.
-- The beta banner renders "…core workflow.Back to the app" with no space before the
-  link.
+- `tokens.css` holds absolute neutral and semantic values (`--ink-*`, `--state-*`)
+  for older surfaces. They are centralised but are not all role tokens; converting
+  them to roles would change rendering and was out of scope.
+- `/beta/copilot` is intentionally full-bleed; its heading is centred rather than
+  gutter-aligned.
+- `docs/demo-guide.md` still describes running a local Ollama for self-hosted use.
+  That is accurate for `/ai/*` but is not the shipped UI path; `LIMITATIONS.md` is
+  the authority.
