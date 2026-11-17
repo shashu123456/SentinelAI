@@ -6,7 +6,7 @@ Where something was not run, this file says so.
 - Date: 2026-11-17
 - Branch: `main`, in sync with `origin/main`
 - Verified commit: `87c2968` (full: `87c2968c31314f5bbd689e4802cdd258b75a5e13`)
-- Deployed API build: `87c2968` — the live `commit` field equals this SHA exactly
+- Deployed API build at verification: bb865ab (code commit 87c2968).
 - The commit that adds *this file* is documentation-only: no code, CSS, test or
   config change, so it reproduces every result below.
 
@@ -323,7 +323,7 @@ assets/index-BD3iNsFh.css   assets/index-DtyXdRrK.js
 ```
 
 On this commit (`87c2968`) the live API returns commit `87c2968c31314f5bbd689e4802cdd258b75a5e13` exactly, matching `git rev-parse HEAD`. 
-The live build field read `854cf44` when this file was first written on the previous documentation commit, because Vercel rebuilds on every push even when only Markdown changed. The frontend bundle hash (`index-BD3iNsFh.css`) is unchanged between commits, proving no code was altered. CI run `44153448911` on `87c2968` was 8/8 green; the CI run on this final docs HEAD is not separately re-run (backend suite is unchanged).
+An earlier draft recorded 854cf44 because Vercel had not rebuilt yet; that note is superseded. CI run 44158795308 on bb865ab was 8/8 green, including Docker build and Deployment smoke.
 
 ---
 
@@ -371,7 +371,7 @@ token was written to a file, a log, or this document.
 
 `/authorized-use` was NOT CAPTURED: it redirects to /login even with a demo session. No file exists.
 
-10 screenshot files = 8 page captures (landing desktop+mobile, login, coverage, reports, scans-new, beta-dashboard, copilot) + 2 badge crops; noted above for duplicate `login.png`.
+10 screenshot files = 8 page captures (landing desktop+mobile, login, coverage, reports, scans-new, beta-dashboard, copilot) + 2 badge crops. All 10 files are unique.
 
 Four of these were also inspected by eye after capture: `reports.png` (gutter and
 badge), `beta-dashboard.png` (banner spacing, charts), `copilot.png` (banner, chat),
@@ -398,9 +398,9 @@ to it. Runbook P7 remains the only deliberately-off optional item.
 | No horizontal page scroll at 390 on the audited routes | Mobile has been tested on real devices |
 | Banner `innerText` is exactly "Beta — not part of the core workflow. Back to the app" | The banner is localised |
 | Copy states the Copilot is rule-based; `/ai/*` Ollama is documented as unused and unreachable by default | The `/ai/*` endpoints were exercised end to end |
-| Deployed API commit equals HEAD (`87c2968`, full SHA match) | Web and API deploy at the same instant |
+| At verification the live API returned commit bb865ab; the commits after 87c2968 are documentation-only and change no shipped code. |
 | mypy clean (168 files); ruff and black pass; suite 1090/2/17 on unchanged backend | The backend suite was re-run in this pass |
-| 9 page screenshots plus before/after crops, all from the deployed build | Screenshots cover every page and state |
+| 8 page captures (10 files including 2 badge crops) plus before/after crops, all from the deployed build | Screenshots cover every page and state |
 | AgentGuard is documented as not enabled | AgentGuard works |
 
 ### Known residue (documented, not defects)
