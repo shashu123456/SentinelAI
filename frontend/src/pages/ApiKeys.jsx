@@ -131,7 +131,7 @@ export default function ApiKeys() {
                   padding: '8px 12px',
                   borderRadius: 6,
                   border: '1px solid var(--accent-green)',
-                  background: 'rgba(0,255,170,0.08)',
+                  background: 'color-mix(in srgb, var(--volt-400) 8%, transparent)',
                   color: 'var(--accent-green)',
                   cursor: 'pointer',
                   display: 'flex',

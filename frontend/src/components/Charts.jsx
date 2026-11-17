@@ -6,23 +6,35 @@ import {
 } from 'recharts';
 import './Charts.css';
 
-const SEVERITY_COLORS = {
-  Critical: '#ff2244',
-  High: '#ff6622',
-  Medium: '#ffaa00',
-  Low: '#00ff88',
-  Info: '#5a8a80',
-};
+/* Chart colours live in styles/tokens.css. SVG presentation attributes cannot
+   resolve var(), so tokens are resolved to concrete values at render time. */
+function token(name, fallback) {
+  if (typeof window === 'undefined' || !document?.documentElement) return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
 
-const CHART_THEME = {
-  bg: 'transparent',
-  grid: 'rgba(0,255,170,0.04)',
-  axisLine: 'rgba(0,255,170,0.08)',
-  tick: '#6b7a70',
-  tooltipBg: '#0d1210',
-  tooltipBorder: 'rgba(0,255,170,0.15)',
-  tooltipText: '#c8d4cc',
-};
+function severityColors() {
+  return {
+    Critical: token('--severity-critical', '#D92D20'),
+    High: token('--severity-high', '#E8590C'),
+    Medium: token('--severity-medium', '#B54708'),
+    Low: token('--severity-low', '#A9D41C'),
+    Info: token('--text-tertiary', '#B0AAFF'),
+  };
+}
+
+function chartTheme() {
+  return {
+    bg: 'transparent',
+    grid: token('--chart-grid', 'rgba(33,24,49,0.10)'),
+    axisLine: token('--chart-axis', 'rgba(33,24,49,0.18)'),
+    tick: token('--chart-tick', '#4A3A63'),
+    tooltipBg: token('--bg-elevated', '#EAE8FF'),
+    tooltipBorder: token('--border-subtle', '#C9C5FF'),
+    tooltipText: token('--text-primary', '#211831'),
+  };
+}
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -41,6 +53,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export function SeverityDonut({ distribution }) {
+  const SEVERITY_COLORS = severityColors();
   const data = useMemo(() => {
     if (!distribution) return [];
     return Object.entries(distribution)
@@ -77,7 +90,7 @@ export function SeverityDonut({ distribution }) {
             {data.map((entry) => (
               <Cell
                 key={entry.name}
-                fill={SEVERITY_COLORS[entry.name] || '#5a8a80'}
+                fill={SEVERITY_COLORS[entry.name] || SEVERITY_COLORS.Info}
               />
             ))}
           </Pie>
@@ -119,6 +132,7 @@ export function SeverityDonut({ distribution }) {
 }
 
 export function ScanActivityChart({ data }) {
+  const CHART_THEME = chartTheme();
   const chartData = useMemo(() => {
     if (!data?.length) return [];
     return data.map((d) => ({
@@ -156,7 +170,7 @@ export function ScanActivityChart({ data }) {
         <Bar
           dataKey="scans"
           name="Scans"
-          fill="#00d4ff"
+          fill={token('--chart-1', '#A9D41C')}
           radius={[3, 3, 0, 0]}
           animationDuration={800}
         />
@@ -166,6 +180,8 @@ export function ScanActivityChart({ data }) {
 }
 
 export function RiskTrendChart({ data }) {
+  const CHART_THEME = chartTheme();
+  const RISK_COLOR = token('--chart-4', '#E8590C');
   const chartData = useMemo(() => {
     if (!data?.length) return [];
     return data.map((d) => ({
@@ -204,10 +220,10 @@ export function RiskTrendChart({ data }) {
           type="monotone"
           dataKey="score"
           name="Risk Score"
-          stroke="#ff6622"
+          stroke={RISK_COLOR}
           strokeWidth={2}
-          dot={{ fill: '#ff6622', r: 3, strokeWidth: 0 }}
-          activeDot={{ r: 5, stroke: '#ff6622', strokeWidth: 2, fill: '#0d1210' }}
+          dot={{ fill: RISK_COLOR, r: 3, strokeWidth: 0 }}
+          activeDot={{ r: 5, stroke: RISK_COLOR, strokeWidth: 2, fill: token('--bg-elevated', '#EAE8FF') }}
           animationDuration={1000}
         />
       </LineChart>
@@ -216,6 +232,8 @@ export function RiskTrendChart({ data }) {
 }
 
 export function OwaspBarChart({ data }) {
+  const CHART_THEME = chartTheme();
+  const BAR_COLOR = token('--chart-2', '#33264A');
   const chartData = useMemo(() => {
     if (!data?.length) return [];
     return data.slice(0, 6).map((d) => ({
@@ -260,7 +278,7 @@ export function OwaspBarChart({ data }) {
               <div className="chart-tooltip">
                 <div className="chart-tooltip-label">{item.fullName}</div>
                 <div className="chart-tooltip-item">
-                  <span className="chart-tooltip-dot" style={{ background: '#aa66ff' }} />
+                  <span className="chart-tooltip-dot" style={{ background: BAR_COLOR }} />
                   <span className="chart-tooltip-name">Findings:</span>
                   <span className="chart-tooltip-value">{item.count}</span>
                 </div>
@@ -270,7 +288,7 @@ export function OwaspBarChart({ data }) {
         />
         <Bar
           dataKey="count"
-          fill="#aa66ff"
+          fill={BAR_COLOR}
           radius={[0, 3, 3, 0]}
           animationDuration={800}
         />

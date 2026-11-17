@@ -66,11 +66,11 @@
 
 /* Tooltip */
 .chart-tooltip {
-  background: var(--tooltip-bg, #0d1210);
-  border: 1px solid var(--tooltip-border, rgba(0,255,170,0.15));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 10px 14px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: var(--shadow-1);
   min-width: 120px;
 }
 
@@ -83,7 +83,7 @@
   letter-spacing: 0.5px;
   margin-bottom: 6px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .chart-tooltip-item {

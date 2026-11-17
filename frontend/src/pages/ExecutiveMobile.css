@@ -130,7 +130,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 255, 170, 0.08);
+  background: color-mix(in srgb, var(--volt-400) 8%, transparent);
   color: var(--card-accent, var(--accent-cyan));
   flex-shrink: 0;
 }
@@ -176,12 +176,12 @@
 
 .exec-kpi-trend.up {
   color: var(--accent-red);
-  background: rgba(255, 51, 85, 0.1);
+  background: color-mix(in srgb, var(--severity-critical) 10%, transparent);
 }
 
 .exec-kpi-trend.down {
   color: var(--accent-green);
-  background: rgba(0, 255, 170, 0.1);
+  background: color-mix(in srgb, var(--volt-400) 10%, transparent);
 }
 
 /* Dot indicators */
@@ -207,7 +207,7 @@
   width: 20px;
   border-radius: 3px;
   background: var(--accent-cyan);
-  box-shadow: 0 0 8px rgba(0, 255, 170, 0.3);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--volt-400) 30%, transparent);
 }
 
 /* ── Sections ─────────────────────────────────────────────────────── */
@@ -254,7 +254,7 @@
 }
 
 .exec-section-link:hover {
-  background: rgba(0, 255, 170, 0.08);
+  background: color-mix(in srgb, var(--volt-400) 8%, transparent);
 }
 
 /* ── Quick Actions Grid ───────────────────────────────────────────── */
@@ -292,7 +292,7 @@
 }
 
 .exec-action-card:hover {
-  border-color: rgba(0, 255, 170, 0.3);
+  border-color: color-mix(in srgb, var(--volt-400) 30%, transparent);
   color: var(--accent-cyan);
 }
 

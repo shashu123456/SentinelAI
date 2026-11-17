@@ -5,9 +5,9 @@ import { useOrg } from '../context/OrgContext';
 import { enterprise } from '../services/enterprise';
 
 const CATEGORY_COLORS = {
-  security: { bg: 'rgba(0,255,170,0.08)', color: 'var(--accent-cyan)', border: 'rgba(0,255,170,0.2)' },
-  regulatory: { bg: 'rgba(0,212,255,0.08)', color: 'var(--accent-blue)', border: 'rgba(0,212,255,0.2)' },
-  industry: { bg: 'rgba(170,102,255,0.08)', color: 'var(--accent-purple)', border: 'rgba(170,102,255,0.2)' },
+  security: { bg: 'color-mix(in srgb, var(--volt-400) 8%, transparent)', color: 'var(--accent-cyan)', border: 'color-mix(in srgb, var(--volt-400) 20%, transparent)' },
+  regulatory: { bg: 'color-mix(in srgb, var(--link) 8%, transparent)', color: 'var(--accent-blue)', border: 'color-mix(in srgb, var(--link) 20%, transparent)' },
+  industry: { bg: 'color-mix(in srgb, var(--accent-purple) 8%, transparent)', color: 'var(--accent-purple)', border: 'color-mix(in srgb, var(--accent-purple) 20%, transparent)' },
   privacy: { bg: 'rgba(255,136,0,0.08)', color: 'var(--accent-orange)', border: 'rgba(255,136,0,0.2)' },
 };
 

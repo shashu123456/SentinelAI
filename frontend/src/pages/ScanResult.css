@@ -129,9 +129,9 @@
   border: 1px solid;
 }
 
-.threat-level-badge.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: rgba(255,34,68,0.2); }
+.threat-level-badge.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: color-mix(in srgb, var(--severity-critical) 20%, transparent); }
 .threat-level-badge.critical .threat-level-dot { background: var(--severity-critical); box-shadow: 0 0 10px var(--severity-critical); animation: threatBlink 1.5s ease infinite; }
-.threat-level-badge.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: rgba(255,102,34,0.2); }
+.threat-level-badge.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: color-mix(in srgb, var(--severity-high) 20%, transparent); }
 .threat-level-badge.high .threat-level-dot { background: var(--severity-high); box-shadow: 0 0 6px var(--severity-high); }
 .threat-level-badge.medium { background: var(--severity-medium-bg); color: var(--severity-medium); border-color: var(--severity-medium-bg); }
 .threat-level-badge.medium .threat-level-dot { background: var(--severity-medium); box-shadow: 0 0 6px var(--severity-medium); }
@@ -174,7 +174,7 @@
   font-family: var(--font-mono);
 }
 
-.severity-card.critical .sev-count { color: var(--severity-critical); text-shadow: 0 0 15px rgba(255,34,68,0.3); }
+.severity-card.critical .sev-count { color: var(--severity-critical); text-shadow: 0 0 15px color-mix(in srgb, var(--severity-critical) 30%, transparent); }
 .severity-card.high .sev-count { color: var(--severity-high); }
 .severity-card.medium .sev-count { color: var(--severity-medium); }
 .severity-card.low .sev-count { color: var(--severity-low); }

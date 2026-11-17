@@ -78,7 +78,7 @@ export default function ScheduledScans() {
             {scans.map((scan) => (
               <div key={scan.id} className="dash-scan-item">
                 <div className="dash-scan-left">
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(0,255,170,0.08)', border: '1px solid rgba(0,255,170,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'color-mix(in srgb, var(--volt-400) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--volt-400) 15%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)', flexShrink: 0 }}>
                     <Calendar size={16} />
                   </div>
                   <div>

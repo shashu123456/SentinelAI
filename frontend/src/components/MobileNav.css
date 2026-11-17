@@ -57,7 +57,7 @@
   height: 2px;
   background: var(--accent-cyan);
   border-radius: 0 0 2px 2px;
-  box-shadow: 0 0 8px rgba(0, 255, 170, 0.4);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--volt-400) 40%, transparent);
 }
 
 /* ── Show on mobile only ──────────────────────────────────────────── */

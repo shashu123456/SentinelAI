@@ -294,7 +294,7 @@ const FEATURES = [
     icon: Shield,
     title: 'Risk Intelligence Engine',
     description: 'Composite risk scoring combining CVSS, confidence levels, and exposure analysis. Get security grades and prioritized remediation paths.',
-    color: '#ff3355',
+    color: 'var(--severity-critical)',
     tag: 'Scoring',
   },
   {

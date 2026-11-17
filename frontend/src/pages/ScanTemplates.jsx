@@ -75,7 +75,7 @@ export default function ScanTemplates() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-blue)' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'color-mix(in srgb, var(--link) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--link) 12%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-blue)' }}>
                     <Settings size={14} />
                   </div>
                   <div>

@@ -348,9 +348,9 @@ function getRiskLevel(s) {
 }
 
 function getRiskColor(s) {
-  if (s >= 80) return '#ff2244';
-  if (s >= 60) return '#ff6622';
-  if (s >= 30) return '#ffaa00';
-  if (s > 0) return '#00ff88';
-  return '#00d4ff';
+  if (s >= 80) return 'var(--severity-critical)';
+  if (s >= 60) return 'var(--severity-high)';
+  if (s >= 30) return 'var(--severity-medium)';
+  if (s > 0) return 'var(--severity-low)';
+  return 'var(--text-tertiary)';
 }

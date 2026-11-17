@@ -66,6 +66,18 @@
   --severity-info: var(--sev-info-ink);
   --severity-info-bg: var(--sev-info-bg);
 
+  /* ---- Charts (resolved to concrete values in JS via getComputedStyle:
+     SVG presentation attributes cannot resolve var()) ---- */
+  --chart-1: var(--volt-500);
+  --chart-2: var(--fig-700);
+  --chart-3: var(--bloom-400);
+  --chart-4: var(--sev-high-dot);
+  --chart-5: var(--sev-medium-dot);
+  --chart-6: var(--sev-critical-dot);
+  --chart-grid: rgba(33, 24, 49, .10);
+  --chart-axis: rgba(33, 24, 49, .18);
+  --chart-tick: var(--fig-500);
+
   /* ---- Type ---- */
   --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-ui);
@@ -103,6 +115,12 @@
   --text-tertiary: var(--bloom-400);
   --text-inverse: var(--fig-900);
   --link: var(--bloom-300);
+  --chart-1: var(--volt-400);
+  --chart-2: var(--bloom-300);
+  --chart-3: var(--bloom-400);
+  --chart-grid: rgba(201, 197, 255, .10);
+  --chart-axis: rgba(201, 197, 255, .18);
+  --chart-tick: var(--bloom-400);
   --shadow-focus: 0 0 0 3px rgba(198, 241, 53, .25);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px rgba(0, 0, 0, .45);
   --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, .5), 0 0 0 1px var(--fig-500);

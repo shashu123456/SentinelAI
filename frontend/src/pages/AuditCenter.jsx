@@ -10,33 +10,33 @@ import './AuditCenter.css';
 
 /* ── Action configuration ─────────────────────────────────────────── */
 const ACTION_CONFIG = {
-  'auth.register': { icon: User, color: '#00ff88', label: 'Account Created', risk: 'medium' },
-  'auth.login': { icon: LogIn, color: '#00d4ff', label: 'Login', risk: 'medium' },
-  'auth.login_failed': { icon: AlertTriangle, color: '#ff3355', label: 'Failed Login', risk: 'high' },
-  'auth.logout': { icon: LogOut, color: '#7a9a8e', label: 'Logout', risk: 'info' },
-  'auth.logout_all': { icon: LogOut, color: '#ff8800', label: 'Logout All Sessions', risk: 'medium' },
-  'auth.password_reset': { icon: Key, color: '#ffaa00', label: 'Password Reset', risk: 'high' },
-  'auth.password_change': { icon: Key, color: '#ffaa00', label: 'Password Changed', risk: 'high' },
-  'auth.account_locked': { icon: AlertTriangle, color: '#ff3355', label: 'Account Locked', risk: 'high' },
-  'auth.account_unlocked': { icon: CheckCircle2, color: '#00ff88', label: 'Account Unlocked', risk: 'high' },
-  'scan.started': { icon: Upload, color: '#00ffaa', label: 'Scan Started', risk: 'info' },
-  'scan.completed': { icon: CheckCircle2, color: '#00ff88', label: 'Scan Completed', risk: 'medium' },
-  'scan.failed': { icon: AlertCircle, color: '#ff3355', label: 'Scan Failed', risk: 'high' },
-  'scan.deleted': { icon: AlertCircle, color: '#ff3355', label: 'Scan Deleted', risk: 'high' },
-  'report.exported.pdf': { icon: FileText, color: '#aa66ff', label: 'PDF Report Exported', risk: 'medium' },
-  'report.exported.json': { icon: FileText, color: '#aa66ff', label: 'JSON Report Exported', risk: 'medium' },
-  'org.created': { icon: Shield, color: '#00d4ff', label: 'Organization Created', risk: 'medium' },
-  'org.member_added': { icon: User, color: '#00ff88', label: 'Member Added', risk: 'medium' },
-  'org.member_removed': { icon: User, color: '#ff3355', label: 'Member Removed', risk: 'high' },
-  'settings.updated': { icon: Settings, color: '#7a9a8e', label: 'Settings Updated', risk: 'info' },
-  'copilot.chat': { icon: Bot, color: '#aa66ff', label: 'AI Copilot Chat', risk: 'info' },
+  'auth.register': { icon: User, color: 'var(--accent-green)', label: 'Account Created', risk: 'medium' },
+  'auth.login': { icon: LogIn, color: 'var(--accent-cyan)', label: 'Login', risk: 'medium' },
+  'auth.login_failed': { icon: AlertTriangle, color: 'var(--severity-critical)', label: 'Failed Login', risk: 'high' },
+  'auth.logout': { icon: LogOut, color: 'var(--text-muted)', label: 'Logout', risk: 'info' },
+  'auth.logout_all': { icon: LogOut, color: 'var(--severity-high)', label: 'Logout All Sessions', risk: 'medium' },
+  'auth.password_reset': { icon: Key, color: 'var(--severity-medium)', label: 'Password Reset', risk: 'high' },
+  'auth.password_change': { icon: Key, color: 'var(--severity-medium)', label: 'Password Changed', risk: 'high' },
+  'auth.account_locked': { icon: AlertTriangle, color: 'var(--severity-critical)', label: 'Account Locked', risk: 'high' },
+  'auth.account_unlocked': { icon: CheckCircle2, color: 'var(--accent-green)', label: 'Account Unlocked', risk: 'high' },
+  'scan.started': { icon: Upload, color: 'var(--volt-500)', label: 'Scan Started', risk: 'info' },
+  'scan.completed': { icon: CheckCircle2, color: 'var(--accent-green)', label: 'Scan Completed', risk: 'medium' },
+  'scan.failed': { icon: AlertCircle, color: 'var(--severity-critical)', label: 'Scan Failed', risk: 'high' },
+  'scan.deleted': { icon: AlertCircle, color: 'var(--severity-critical)', label: 'Scan Deleted', risk: 'high' },
+  'report.exported.pdf': { icon: FileText, color: 'var(--accent-purple)', label: 'PDF Report Exported', risk: 'medium' },
+  'report.exported.json': { icon: FileText, color: 'var(--accent-purple)', label: 'JSON Report Exported', risk: 'medium' },
+  'org.created': { icon: Shield, color: 'var(--accent-cyan)', label: 'Organization Created', risk: 'medium' },
+  'org.member_added': { icon: User, color: 'var(--accent-green)', label: 'Member Added', risk: 'medium' },
+  'org.member_removed': { icon: User, color: 'var(--severity-critical)', label: 'Member Removed', risk: 'high' },
+  'settings.updated': { icon: Settings, color: 'var(--text-muted)', label: 'Settings Updated', risk: 'info' },
+  'copilot.chat': { icon: Bot, color: 'var(--accent-purple)', label: 'AI Copilot Chat', risk: 'info' },
 };
 
 const RISK_COLORS = {
-  high: { bg: '#ff335515', border: '#ff335540', text: '#ff5577', dot: '#ff3355' },
-  medium: { bg: '#ffaa0015', border: '#ffaa0040', text: '#ffcc44', dot: '#ffaa00' },
-  low: { bg: '#00d4ff15', border: '#00d4ff40', text: '#00d4ff', dot: '#00d4ff' },
-  info: { bg: '#7a9a8e15', border: '#7a9a8e40', text: '#7a9a8e', dot: '#7a9a8e' },
+  high: { bg: 'var(--severity-critical-bg)', border: 'var(--severity-critical)', text: 'var(--severity-critical)', dot: 'var(--severity-critical)' },
+  medium: { bg: 'var(--severity-high-bg)', border: 'var(--severity-high)', text: 'var(--severity-high)', dot: 'var(--severity-high)' },
+  low: { bg: 'var(--severity-low-bg)', border: 'var(--severity-low)', text: 'var(--severity-low)', dot: 'var(--severity-low)' },
+  info: { bg: 'var(--severity-info-bg)', border: 'var(--severity-info)', text: 'var(--severity-info)', dot: 'var(--severity-info)' },
 };
 
 const MODULE_ICONS = {
@@ -94,7 +94,7 @@ function EventDrawer({ event, onClose }) {
       <div className="audit-drawer" onClick={e => e.stopPropagation()}>
         <div className="audit-drawer-header">
           <div className="audit-drawer-title-row">
-            <div className="audit-drawer-icon" style={{ color: config.color, background: `${config.color}15`, borderColor: `${config.color}30` }}>
+            <div className="audit-drawer-icon" style={{ color: config.color, background: `color-mix(in srgb, ${config.color} 8%, transparent)`, borderColor: `color-mix(in srgb, ${config.color} 19%, transparent)` }}>
               <Icon size={18} />
             </div>
             <div>
@@ -384,11 +384,11 @@ export default function AuditCenter() {
                   return (
                     <div key={event.id} className="audit-event" onClick={() => setSelectedEvent(event)}>
                       <div className="audit-event-line">
-                        <div className="audit-event-dot" style={{ background: riskStyle.dot, boxShadow: `0 0 8px ${riskStyle.dot}40` }} />
+                        <div className="audit-event-dot" style={{ background: riskStyle.dot, boxShadow: `0 0 8px color-mix(in srgb, ${riskStyle.dot} 25%, transparent)` }} />
                       </div>
                       <div className="audit-event-content">
                         <div className="audit-event-header">
-                          <div className="audit-event-icon" style={{ color: config.color, background: `${config.color}10`, borderColor: `${config.color}20` }}>
+                          <div className="audit-event-icon" style={{ color: config.color, background: `color-mix(in srgb, ${config.color} 6%, transparent)`, borderColor: `color-mix(in srgb, ${config.color} 12%, transparent)` }}>
                             <Icon size={14} />
                           </div>
                           <div className="audit-event-info">

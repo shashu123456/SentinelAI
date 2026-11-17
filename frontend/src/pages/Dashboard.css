@@ -47,7 +47,7 @@
   gap: 12px;
   padding: 60px 40px;
   background: var(--bg-surface);
-  border: 1px solid rgba(255,51,85,0.2);
+  border: 1px solid color-mix(in srgb, var(--severity-critical) 20%, transparent);
   border-radius: var(--radius-lg);
   text-align: center;
   color: var(--text-muted);
@@ -83,8 +83,8 @@
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  background: rgba(0,255,170,0.06);
-  border: 1px solid rgba(0,255,170,0.15);
+  background: color-mix(in srgb, var(--volt-400) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--volt-400) 15%, transparent);
   border-radius: 3px;
   font-size: 9px;
   font-weight: 700;
@@ -124,7 +124,7 @@
   padding: 10px 24px;
   background: linear-gradient(135deg, #003322, #002218);
   color: var(--accent-cyan);
-  border: 1px solid rgba(0,255,170,0.3);
+  border: 1px solid color-mix(in srgb, var(--volt-400) 30%, transparent);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -136,16 +136,16 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   font-family: var(--font-mono);
-  text-shadow: 0 0 10px rgba(0,255,170,0.3);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--volt-400) 30%, transparent);
 }
 
 .dash-scan-btn:hover {
   background: linear-gradient(135deg, #004433, #003322);
-  border-color: rgba(0,255,170,0.6);
+  border-color: color-mix(in srgb, var(--volt-400) 60%, transparent);
   color: var(--accent-cyan);
   text-decoration: none;
   transform: translateY(-1px);
-  box-shadow: 0 0 30px rgba(0,255,170,0.2);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--volt-400) 20%, transparent);
 }
 
 .dash-scan-btn:active {
@@ -155,7 +155,7 @@
 .dash-scan-btn-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(0,255,170,0.08), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--volt-400) 8%, transparent), transparent);
   transform: translateX(-100%);
   animation: btnGlow 3s ease infinite;
 }
@@ -206,25 +206,25 @@
   left: 0;
   right: 0;
   height: 40%;
-  background: linear-gradient(180deg, transparent, rgba(0,255,170,0.01));
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--volt-400) 1%, transparent));
   pointer-events: none;
 }
 
 .dash-core-card:hover {
-  border-color: rgba(0,255,170,0.2);
+  border-color: color-mix(in srgb, var(--volt-400) 20%, transparent);
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px rgba(0,255,170,0.05);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px color-mix(in srgb, var(--volt-400) 5%, transparent);
 }
 
 .dash-core-card:hover::before { opacity: 1; }
 
 .dash-core-card.danger {
-  border-color: rgba(255,51,85,0.15);
+  border-color: color-mix(in srgb, var(--severity-critical) 15%, transparent);
 }
 
 .dash-core-card.danger:hover {
-  border-color: rgba(255,51,85,0.3);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px rgba(255,51,85,0.08);
+  border-color: color-mix(in srgb, var(--severity-critical) 30%, transparent);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px color-mix(in srgb, var(--severity-critical) 8%, transparent);
 }
 
 .dash-core-icon {
@@ -237,10 +237,10 @@
   flex-shrink: 0;
 }
 
-.dash-core-icon.blue { background: rgba(0,212,255,0.1); color: var(--accent-blue); border: 1px solid rgba(0,212,255,0.15); }
+.dash-core-icon.blue { background: color-mix(in srgb, var(--link) 10%, transparent); color: var(--accent-blue); border: 1px solid color-mix(in srgb, var(--link) 15%, transparent); }
 .dash-core-icon.orange { background: rgba(255,136,0,0.1); color: var(--accent-orange); border: 1px solid rgba(255,136,0,0.15); }
-.dash-core-icon.red { background: rgba(255,51,85,0.1); color: var(--accent-red); border: 1px solid rgba(255,51,85,0.15); }
-.dash-core-icon.cyan { background: rgba(0,255,170,0.1); color: var(--accent-cyan); border: 1px solid rgba(0,255,170,0.15); }
+.dash-core-icon.red { background: color-mix(in srgb, var(--severity-critical) 10%, transparent); color: var(--accent-red); border: 1px solid color-mix(in srgb, var(--severity-critical) 15%, transparent); }
+.dash-core-icon.cyan { background: color-mix(in srgb, var(--volt-400) 10%, transparent); color: var(--accent-cyan); border: 1px solid color-mix(in srgb, var(--volt-400) 15%, transparent); }
 
 .dash-core-data { flex: 1; min-width: 0; }
 
@@ -274,8 +274,8 @@
   flex-shrink: 0;
 }
 
-.dash-core-trend.up { background: rgba(0,255,136,0.1); color: var(--accent-green); }
-.dash-core-trend.down { background: rgba(255,51,85,0.1); color: var(--accent-red); }
+.dash-core-trend.up { background: color-mix(in srgb, var(--severity-low) 10%, transparent); color: var(--accent-green); }
+.dash-core-trend.down { background: color-mix(in srgb, var(--severity-critical) 10%, transparent); color: var(--accent-red); }
 
 .dash-core-badge {
   position: absolute;
@@ -283,13 +283,13 @@
   right: 10px;
   padding: 2px 8px;
   border-radius: 3px;
-  background: rgba(255,51,85,0.15);
+  background: color-mix(in srgb, var(--severity-critical) 15%, transparent);
   color: var(--accent-red);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.8px;
   font-family: var(--font-mono);
-  border: 1px solid rgba(255,51,85,0.2);
+  border: 1px solid color-mix(in srgb, var(--severity-critical) 20%, transparent);
 }
 
 .dash-core-score {
@@ -315,7 +315,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,170,0.12), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--volt-400) 12%, transparent), transparent);
 }
 
 .dash-panel-header {
@@ -436,13 +436,13 @@
   border-radius: 50%;
 }
 
-.dash-threat-level.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: rgba(255,34,68,0.2); }
+.dash-threat-level.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: color-mix(in srgb, var(--severity-critical) 20%, transparent); }
 .dash-threat-level.critical .dash-threat-dot { background: var(--severity-critical); }
-.dash-threat-level.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: rgba(255,102,34,0.2); }
+.dash-threat-level.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: color-mix(in srgb, var(--severity-high) 20%, transparent); }
 .dash-threat-level.high .dash-threat-dot { background: var(--severity-high); }
-.dash-threat-level.medium { background: var(--severity-medium-bg); color: var(--severity-medium); border-color: rgba(255,170,0,0.2); }
+.dash-threat-level.medium { background: var(--severity-medium-bg); color: var(--severity-medium); border-color: color-mix(in srgb, var(--severity-medium) 20%, transparent); }
 .dash-threat-level.medium .dash-threat-dot { background: var(--severity-medium); }
-.dash-threat-level.low { background: var(--severity-low-bg); color: var(--severity-low); border-color: rgba(0,255,136,0.2); }
+.dash-threat-level.low { background: var(--severity-low-bg); color: var(--severity-low); border-color: color-mix(in srgb, var(--severity-low) 20%, transparent); }
 .dash-threat-level.low .dash-threat-dot { background: var(--severity-low); }
 
 /* Severity Matrix */
@@ -491,10 +491,10 @@
 
 .dash-matrix-bar-track {
   height: 6px;
-  background: rgba(0,255,170,0.04);
+  background: color-mix(in srgb, var(--volt-400) 4%, transparent);
   border-radius: 3px;
   overflow: hidden;
-  border: 1px solid rgba(0,255,170,0.06);
+  border: 1px solid color-mix(in srgb, var(--volt-400) 6%, transparent);
 }
 
 .dash-matrix-bar-fill {
@@ -507,7 +507,7 @@
 .dash-matrix-bar-fill.critical { background: linear-gradient(90deg, var(--severity-critical), #ff4466); }
 .dash-matrix-bar-fill.high { background: linear-gradient(90deg, var(--severity-high), #ff7744); }
 .dash-matrix-bar-fill.medium { background: linear-gradient(90deg, var(--severity-medium), #ffcc00); }
-.dash-matrix-bar-fill.low { background: linear-gradient(90deg, var(--severity-low), #00ffaa); }
+.dash-matrix-bar-fill.low { background: linear-gradient(90deg, var(--severity-low), var(--volt-400)); }
 .dash-matrix-bar-fill.info { background: linear-gradient(90deg, var(--severity-info), #5a7a70); }
 
 .dash-matrix-count {
@@ -604,10 +604,10 @@
 
 .dash-action-card:hover .dash-action-icon { transform: scale(1.08); }
 
-.dash-action-icon.blue { background: rgba(0,212,255,0.08); color: var(--accent-blue); border: 1px solid rgba(0,212,255,0.12); }
-.dash-action-icon.purple { background: rgba(170,102,255,0.08); color: var(--accent-purple); border: 1px solid rgba(170,102,255,0.12); }
+.dash-action-icon.blue { background: color-mix(in srgb, var(--link) 8%, transparent); color: var(--accent-blue); border: 1px solid color-mix(in srgb, var(--link) 12%, transparent); }
+.dash-action-icon.purple { background: color-mix(in srgb, var(--accent-purple) 8%, transparent); color: var(--accent-purple); border: 1px solid color-mix(in srgb, var(--accent-purple) 12%, transparent); }
 .dash-action-icon.orange { background: rgba(255,136,0,0.08); color: var(--accent-orange); border: 1px solid rgba(255,136,0,0.12); }
-.dash-action-icon.green { background: rgba(0,255,136,0.08); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.12); }
+.dash-action-icon.green { background: color-mix(in srgb, var(--severity-low) 8%, transparent); color: var(--accent-green); border: 1px solid color-mix(in srgb, var(--severity-low) 12%, transparent); }
 
 .dash-action-text { flex: 1; min-width: 0; }
 
@@ -649,8 +649,8 @@
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: rgba(0,255,170,0.06);
-  border: 1px solid rgba(0,255,170,0.12);
+  background: color-mix(in srgb, var(--volt-400) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--volt-400) 12%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -692,8 +692,8 @@
 }
 
 .dash-onboard-step:hover {
-  border-color: rgba(0,255,170,0.2);
-  background: rgba(0,255,170,0.03);
+  border-color: color-mix(in srgb, var(--volt-400) 20%, transparent);
+  background: color-mix(in srgb, var(--volt-400) 3%, transparent);
   text-decoration: none;
 }
 
@@ -706,8 +706,8 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(0,255,170,0.08);
-  border: 1px solid rgba(0,255,170,0.15);
+  background: color-mix(in srgb, var(--volt-400) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--volt-400) 15%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -826,10 +826,10 @@
   border: 1px solid;
 }
 
-.dash-scan-score.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: rgba(255,34,68,0.2); }
-.dash-scan-score.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: rgba(255,102,34,0.2); }
-.dash-scan-score.medium { background: var(--severity-medium-bg); color: var(--severity-medium); border-color: rgba(255,170,0,0.2); }
-.dash-scan-score.low { background: var(--severity-low-bg); color: var(--severity-low); border-color: rgba(0,255,136,0.2); }
+.dash-scan-score.critical { background: var(--severity-critical-bg); color: var(--severity-critical); border-color: color-mix(in srgb, var(--severity-critical) 20%, transparent); }
+.dash-scan-score.high { background: var(--severity-high-bg); color: var(--severity-high); border-color: color-mix(in srgb, var(--severity-high) 20%, transparent); }
+.dash-scan-score.medium { background: var(--severity-medium-bg); color: var(--severity-medium); border-color: color-mix(in srgb, var(--severity-medium) 20%, transparent); }
+.dash-scan-score.low { background: var(--severity-low-bg); color: var(--severity-low); border-color: color-mix(in srgb, var(--severity-low) 20%, transparent); }
 
 .dash-scan-actions {
   display: flex;
@@ -857,15 +857,15 @@
 .dash-scan-btn-sm:hover {
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
-  background: rgba(0,255,170,0.05);
-  box-shadow: 0 0 10px rgba(0,255,170,0.08);
+  background: color-mix(in srgb, var(--volt-400) 5%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--volt-400) 8%, transparent);
 }
 
 .dash-scan-btn-sm.danger:hover {
   border-color: var(--accent-red);
   color: var(--accent-red);
-  background: rgba(255,51,85,0.05);
-  box-shadow: 0 0 10px rgba(255,51,85,0.08);
+  background: color-mix(in srgb, var(--severity-critical) 5%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--severity-critical) 8%, transparent);
 }
 
 /* === SYSTEM STATUS BAR === */
@@ -888,7 +888,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,170,0.1), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--volt-400) 10%, transparent), transparent);
 }
 
 .dash-status-item {

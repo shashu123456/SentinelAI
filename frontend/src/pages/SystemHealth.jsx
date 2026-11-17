@@ -21,7 +21,7 @@ function StatusDot({ status, size = 14 }) {
 /* ── Metric bar ───────────────────────────────────────────────── */
 function MetricBar({ label, value, max = 100, unit = '%', color }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-  const barColor = color || (pct > 80 ? '#ff3355' : pct > 60 ? '#ffaa00' : '#00ff88');
+  const barColor = color || (pct > 80 ? 'var(--severity-critical)' : pct > 60 ? 'var(--severity-medium)' : 'var(--severity-low)');
   return (
     <div className="sh-metric-bar">
       <div className="sh-metric-bar-header">

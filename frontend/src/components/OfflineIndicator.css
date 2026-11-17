@@ -18,7 +18,7 @@
 }
 
 .offline-banner {
-  background: linear-gradient(135deg, rgba(255, 102, 34, 0.95), rgba(204, 68, 17, 0.95));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--severity-high) 95%, transparent), rgba(204, 68, 17, 0.95));
   color: white;
   backdrop-filter: blur(8px);
 }

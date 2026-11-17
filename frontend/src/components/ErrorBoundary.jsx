@@ -68,7 +68,7 @@ export default class ErrorBoundary extends Component {
               width: '64px',
               height: '64px',
               borderRadius: '16px',
-              background: 'rgba(255,51,85,0.08)',
+              background: 'color-mix(in srgb, var(--severity-critical) 8%, transparent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

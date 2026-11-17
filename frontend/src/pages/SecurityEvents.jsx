@@ -126,7 +126,7 @@ export default function SecurityEvents() {
               }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: '50%',
-                  background: sev === 'critical' ? '#ff2244' : sev === 'high' ? '#ff6622' : sev === 'medium' ? '#ffaa00' : sev === 'low' ? '#00d4ff' : '#666',
+                  background: sev === 'critical' ? 'var(--severity-critical)' : sev === 'high' ? 'var(--severity-high)' : sev === 'medium' ? 'var(--severity-medium)' : sev === 'low' ? 'var(--severity-low)' : 'var(--text-tertiary)',
                 }} />
                 <span style={{ fontSize: 11, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{sev}</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -220,10 +220,10 @@ export default function SecurityEvents() {
               }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0,
-                  background: event.severity === 'critical' ? '#ff2244' :
-                    event.severity === 'high' ? '#ff6622' :
-                    event.severity === 'medium' ? '#ffaa00' :
-                    event.severity === 'low' ? '#00d4ff' : '#666',
+                  background: event.severity === 'critical' ? 'var(--severity-critical)' :
+                    event.severity === 'high' ? 'var(--severity-high)' :
+                    event.severity === 'medium' ? 'var(--severity-medium)' :
+                    event.severity === 'low' ? 'var(--severity-low)' : 'var(--text-tertiary)',
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{event.title}</div>

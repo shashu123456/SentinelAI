@@ -81,7 +81,7 @@ export default function PolicyEngine() {
             {policies.map(p => (
               <div key={p.id} className="dash-scan-item">
                 <div className="dash-scan-left">
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,51,85,0.08)', border: '1px solid rgba(255,51,85,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: severityColors[p.severity] || 'var(--accent-red)', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'color-mix(in srgb, var(--severity-critical) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--severity-critical) 15%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: severityColors[p.severity] || 'var(--accent-red)', flexShrink: 0 }}>
                     <ShieldAlert size={16} />
                   </div>
                   <div>
