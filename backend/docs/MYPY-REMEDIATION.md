@@ -199,6 +199,9 @@ The change is annotation-only, so the full-suite proof in `docs/EVIDENCE-FINAL.m
 
 ## Ignore ledger (final)
 
-Zero `# type: ignore` comments added across all eight waves; `grep -r "type: ignore" app/`
-returns no matches. `pyproject.toml` `[tool.mypy]` is unchanged from baseline
+Zero `# type: ignore` comments added across all eight waves. The 13 that already
+exist are unchanged and confined to three files (`api/errors.py` ×5,
+`core/execution/execution_state.py` ×4, `core/execution/workflow_definition.py` ×4);
+`git log -S"type: ignore" cb36ce7..HEAD -- backend/app` returns no commit that
+changes that count. `pyproject.toml` `[tool.mypy]` is unchanged from baseline
 (`ignore_missing_imports = true`, `check_untyped_defs = false`).
