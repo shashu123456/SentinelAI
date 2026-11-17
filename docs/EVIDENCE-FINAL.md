@@ -15,7 +15,7 @@ A previous session reported Phases 5–12 complete and deployed. That report was
 |---|---|
 | HEAD after all phases | HEAD was `92a05d3` (OSV only); no later commit existed |
 | Coverage / BetaBanner / `/beta` routes | absent; `App.jsx` had 33 top-level routes |
-| Design system done | only an untracked `tokens.css` + 2 CSS colour swaps |
+| Design system done | only an untracked `tokens.css` + 2 CSS colour swaps *(since delivered: `7d4365d`, `93e031b`, `e27a9a7`)* |
 | AgentGuard 40 cases | `agent_guard/` held only `.pyc`; source was not on disk |
 | Demo / trust / honesty | no seed script, no demo-login, no LIMITATIONS/EVIDENCE docs |
 | Deployed SHA matches HEAD | live `/api/v1/version` was `cce6a8e`; HEAD `92a05d3` |
@@ -125,6 +125,17 @@ Same counts as the run at `e2a8590`, now covering the config validator
 (`81021b8`). Zero failures, zero errors.
 
 ---
+
+Final run, on the code that ships (`.tmp-mypy/pytest-final.log`, stderr empty):
+
+```
+1090 passed, 2 skipped, 17 deselected, 785 warnings in 1525.57s (0:25:25)
+```
+
+That run predates exactly one later change: the `BaseAgent._scope` declaration,
+which adds an annotation and a `TYPE_CHECKING` import and no runtime code (proved
+by `hasattr(BaseAgent, "_scope") is False` after the change), so the counts above
+still describe the deployed build.
 
 ## 5. Deployment
 
@@ -375,32 +386,106 @@ $ python -m ruff check app tests
 All checks passed!
 ```
 
-The single remaining red is mypy, and it is pre-existing rather than introduced
-here:
+The last red was mypy, and it is now fixed rather than deferred.
+
+CI run `43920459529` on `4329147` still failed the lint job with exactly one
+error:
 
 ```
-$ python -m mypy app
-Found 129 errors in 30 files (checked 168 source files)
-
-# same step inside CI, whose stub versions differ slightly:
-Found 126 errors in 30 files (checked 168 source files)
+app/core/agent_framework/agent_registry.py:57: error: "BaseAgent" has no attribute "_scope"  [attr-defined]
+Found 1 error in 1 file (checked 168 source files)
 ```
 
-Representative errors (unchanged by this session):
+`AgentRegistry.register` assigns `agent._scope`, but `BaseAgent` never declared
+it. The earlier local "clean" mypy run had reused its incremental cache, which is
+why a fresh CI checkout saw what the local run did not; `--no-incremental` is now
+the proof command.
+
+Fix (`3c27b66`): declare the member annotation-only behind a `TYPE_CHECKING`
+import. No default value — `get_agents_by_scope` resolves scope with
+`getattr(agent, "_scope", RegistryScope.GLOBAL)`, so a `= None` default would drop
+unregistered agents out of GLOBAL queries. No `# type: ignore`, no config change,
+no behaviour change. The full ledger is `backend/docs/MYPY-REMEDIATION.md`.
+
+Final CI run `44121495640` on `e27a9a7` — every job green:
 
 ```
-app/tasks.py:97: error: "ScanTask" has no attribute "transition_history"  [attr-defined]
-app/services/unified_scan.py:257: error: Incompatible types in assignment (expression has type "SASTScanResult", variable has type "DepScanResult")  [assignment]
-app/api/routes/organizations.py:442: error: Item "None" of "Organization | None" has no attribute "max_projects"  [union-attr]
+Backend tests: success
+Frontend test & build: success
+Backend lint & type check: success
+CodeQL analysis (javascript): success
+Secret scanning: success
+CodeQL analysis (python): success
+Docker build: success
+Deployment smoke test: success
 ```
 
-`backend/scripts/mypy_gate.py` and `backend/docs/MYPY_BASELINE.md` exist in the
-tree, but the workflow on the remote branch runs `python -m mypy app` directly
-(`git show origin/main:.github/workflows/ci.yml`, line 30), so the ratchet gate
-is not wired in. `.github/workflows/*` was not edited, the errors were not
-silenced, and no error was fixed in this pass. The lint job therefore stays red
-at mypy until that remediation is done deliberately.
+Docker build and Deployment smoke test now actually run (they were skipped while
+the lint job failed) and both pass.
 
 Earlier state in this session, for contrast: CI was red on *every* recorded
 commit back to 2026-11-12, and the lint job failed at `black` before it ever
 reached ruff or mypy. Both are now resolved.
+
+## 7. Design system and deploy proof
+
+Tokens were committed in `7d4365d` (palette defined once; landing and login
+tokenised) and `93e031b` (scan, report and coverage pages tokenised), with the
+last raw neon values removed in `e27a9a7` (reconnected banner, breadcrumb hover).
+
+Local build:
+
+```
+$ cd frontend && npm run build
+✓ built in 46.78s
+BUILD_EXIT=0
+
+$ grep -o '#00ffaa\|#00d4ff\|#aa66ff' dist/assets/index-*.css | wc -l
+0
+```
+
+The main bundle stylesheet carries no legacy neon. Legacy page chunks
+(AuditCenter, Copilot, Dashboard, Settings, SystemHealth, VulnerabilityExplorer,
+ExecutiveMobile) still use their own palettes; restyling them is deliberately out
+of scope for the golden path.
+
+Live site (`https://sentinelai-web.vercel.app`, build `e27a9a7`):
+
+```
+theme-color      content="#211831"
+fonts            fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap
+assets           assets/index-BNKPRp3U.css, assets/index-DpDDIjiu.js
+```
+
+API version:
+
+```json
+{"success":true,"data":{"commit":"e27a9a7b25b9f932660c9f5556bb3951493b9ffc","env":"production","build":"e27a9a7"},"meta":null}
+```
+
+Screenshots (real captures from the deployed site, `docs/screenshots/`):
+
+| File | Page | Viewport |
+|---|---|---|
+| `landing.png` | `/` (anonymous) | 1440x900 |
+| `landing-mobile.png` | `/` (anonymous) | 390x844 |
+| `coverage.png` | `/coverage` (demo session) | 1440x900 |
+| `authorized-use.png` | `/authorized-use` (demo session) | 1440x900 |
+| `reports.png` | `/reports` (demo session) | 1440x900 |
+| `scans-new.png` | `/scans/new` (demo session) | 1440x900 |
+
+`/coverage` and `/authorized-use` sit behind `ProtectedRoute`, so unauthenticated
+captures redirect to `/login`; the captures above use a demo session token. `/`
+is captured anonymously because `LandingRoute` sends a signed-in visitor to
+`/reports`.
+
+## 8. Safe to claim vs not safe to claim
+
+| Safe to claim (with the evidence above) | Not safe to claim |
+|---|---|
+| CI is green on `e27a9a7`: 8/8 jobs, including Docker build and deployment smoke | CI has always been green |
+| mypy is clean under `--no-incremental` (168 files) | mypy was clean all along |
+| Full suite 1090 passed / 2 skipped / 17 deselected on the shipped code | The suite was run after every commit |
+| The golden path carries no raw neon; main bundle CSS grep is 0 | The whole app is tokenised |
+| Deployed API build equals HEAD (`e27a9a7`) | Web and API deploy at the same instant |
+| AgentGuard is documented as not enabled | AgentGuard works |
