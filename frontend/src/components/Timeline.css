@@ -42,7 +42,7 @@
 
 .status-completed {
   background: #d1e7dd;
-  color: #059669;
+  color: var(--volt-500);
 }
 
 .status-failed {
@@ -124,7 +124,7 @@
 
 .status-completed {
   background: #d1e7dd;
-  color: #059669;
+  color: var(--volt-500);
 }
 
 .status-running {

@@ -60,7 +60,7 @@ execution-details-page {
 
 .status-badge.completed {
   background: #d1e7dd;
-  color: #059669;
+  color: var(--volt-500);
 }
 
 .status-badge.failed {
@@ -164,7 +164,7 @@ execution-details-page {
 
 .status-completed {
   background: #d1e7dd;
-  color: #059669;
+  color: var(--volt-500);
   font-weight: 500;
 }
 
@@ -355,7 +355,7 @@ execution-details-page {
 }
 
 .request-method.get {
-  background: #10b981;
+  background: var(--severity-low);
 }
 
 .request-method.post {
@@ -385,7 +385,7 @@ execution-details-page {
 
 .request-status.ok {
   background: #d1e7dd;
-  color: #059669;
+  color: var(--volt-500);
 }
 
 .request-status.err {

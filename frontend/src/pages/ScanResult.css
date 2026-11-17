@@ -845,7 +845,7 @@
 
 [data-theme="light"] .owasp-badge { background: var(--bg-surface-alt); border-color: var(--bg-surface-alt); color: #7c3aed; }
 
-[data-theme="light"] .cwe-badge { background: var(--severity-low-bg); border-color: var(--severity-low-bg); color: #059669; }
+[data-theme="light"] .cwe-badge { background: var(--severity-low-bg); border-color: var(--severity-low-bg); color: var(--volt-500); }
 
 [data-theme="light"] .confidence-badge { background: var(--bg-surface-alt); border-color: var(--bg-surface-alt); color: #06b6d4; }
 
@@ -865,11 +865,11 @@
 
 [data-theme="light"] .threat-level-badge.medium { background: rgba(202,138,4,0.08); color: #ca8a04; }
 
-[data-theme="light"] .threat-level-badge.low { background: rgba(5,150,105,0.08); color: #059669; }
+[data-theme="light"] .threat-level-badge.low { background: color-mix(in srgb, var(--volt-500) 8%, transparent); color: var(--volt-500); }
 
 [data-theme="light"] .no-findings { background: #ffffff; }
 
-[data-theme="light"] .no-findings-icon { background: rgba(5,150,105,0.06); border-color: rgba(5,150,105,0.1); color: #059669; }
+[data-theme="light"] .no-findings-icon { background: color-mix(in srgb, var(--volt-500) 6%, transparent); border-color: color-mix(in srgb, var(--volt-500) 10%, transparent); color: var(--volt-500); }
 
 [data-theme="light"] .loading-container { color: #64748b; }
 
@@ -885,7 +885,7 @@
 
 [data-theme="light"] .scan-stat.danger strong { color: #ea580c; }
 
-[data-theme="light"] .scan-stat.safe strong { color: #059669; }
+[data-theme="light"] .scan-stat.safe strong { color: var(--volt-500); }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

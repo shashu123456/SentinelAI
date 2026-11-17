@@ -280,7 +280,7 @@ export default function TeamManagement() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: m.role === 'admin' ? 'rgba(0,153,102,0.15)' : 'var(--bg-secondary)', color: m.role === 'admin' ? 'var(--accent-green)' : 'var(--text-tertiary)' }}>{m.role}</span>
+                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: m.role === 'admin' ? 'color-mix(in srgb, var(--volt-500) 15%, transparent)' : 'var(--bg-secondary)', color: m.role === 'admin' ? 'var(--accent-green)' : 'var(--text-tertiary)' }}>{m.role}</span>
                       <button onClick={() => handleRemoveMember(m.user_id)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 2 }}>
                         <Trash2 size={12} />
                       </button>

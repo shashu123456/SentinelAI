@@ -81,10 +81,10 @@
 }
 
 [data-theme="light"] .mobile-nav-item.active {
-  color: #009966;
+  color: var(--volt-500);
 }
 
 [data-theme="light"] .mobile-nav-indicator {
-  background: #009966;
-  box-shadow: 0 0 6px rgba(0, 153, 102, 0.3);
+  background: var(--volt-500);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--volt-500) 30%, transparent);
 }

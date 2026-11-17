@@ -590,13 +590,13 @@
 
 /* Light theme */
 [data-theme="light"] .settings-form {
-  background: rgba(0,100,80,0.03);
-  border-color: rgba(0,100,80,0.1);
+  background: color-mix(in srgb, var(--fig-700) 3%, transparent);
+  border-color: color-mix(in srgb, var(--fig-700) 10%, transparent);
 }
 
 [data-theme="light"] .settings-list-item.selected {
-  background: rgba(0,100,80,0.04);
-  border-color: rgba(0,100,80,0.12);
+  background: color-mix(in srgb, var(--fig-700) 4%, transparent);
+  border-color: color-mix(in srgb, var(--fig-700) 12%, transparent);
 }
 
 [data-theme="light"] .settings-form input,
@@ -607,8 +607,8 @@
 }
 
 [data-theme="light"] .settings-profile-card {
-  background: rgba(0,100,80,0.03);
-  border-color: rgba(0,100,80,0.08);
+  background: color-mix(in srgb, var(--fig-700) 3%, transparent);
+  border-color: color-mix(in srgb, var(--fig-700) 8%, transparent);
 }
 
 [data-theme="light"] .settings-api-info-content code {
@@ -617,7 +617,7 @@
 }
 
 [data-theme="light"] .settings-toast.success {
-  background: rgba(0,128,80,0.08);
+  background: color-mix(in srgb, var(--fig-700) 8%, transparent);
   color: #047857;
-  border-color: rgba(0,128,80,0.2);
+  border-color: color-mix(in srgb, var(--fig-700) 20%, transparent);
 }

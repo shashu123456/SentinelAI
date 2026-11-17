@@ -720,7 +720,7 @@
 }
 
 .copilot-msg.user .copilot-msg-body {
-  background: linear-gradient(135deg, #003322, #002218);
+  background: linear-gradient(135deg, var(--fig-900), var(--fig-900));
   color: var(--accent-cyan);
   border: 1px solid color-mix(in srgb, var(--volt-400) 20%, transparent);
   border-top-right-radius: 4px;
@@ -883,7 +883,7 @@
   height: 36px;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--volt-400) 30%, transparent);
-  background: linear-gradient(135deg, #003322, #002218);
+  background: linear-gradient(135deg, var(--fig-900), var(--fig-900));
   color: var(--accent-cyan);
   cursor: pointer;
   display: flex;
@@ -894,7 +894,7 @@
 }
 
 .copilot-send-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #004433, #003322);
+  background: linear-gradient(135deg, var(--fig-700), var(--fig-900));
   border-color: color-mix(in srgb, var(--volt-400) 50%, transparent);
   box-shadow: 0 0 16px color-mix(in srgb, var(--volt-400) 15%, transparent);
 }

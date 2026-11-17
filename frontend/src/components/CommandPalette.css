@@ -291,12 +291,12 @@
 [data-theme="light"] .cmd-footer { background: #f8f9fc; }
 [data-theme="light"] .cmd-trigger { background: #f0f2f5; }
 [data-theme="light"] .cmd-trigger:hover { background: #e5e7eb; }
-[data-theme="light"] .cmd-item.selected { background: rgba(0, 153, 102, 0.08); }
+[data-theme="light"] .cmd-item.selected { background: color-mix(in srgb, var(--volt-500) 8%, transparent); }
 [data-theme="light"] .cmd-item-icon { background: #f0f2f5; }
 [data-theme="light"] .cmd-item.selected .cmd-item-icon {
-  background: rgba(0, 153, 102, 0.1);
-  color: #009966;
-  border-color: rgba(0, 153, 102, 0.2);
+  background: color-mix(in srgb, var(--volt-500) 10%, transparent);
+  color: var(--volt-500);
+  border-color: color-mix(in srgb, var(--volt-500) 20%, transparent);
 }
 [data-theme="light"] .cmd-clear:hover { background: rgba(0,0,0,0.05); }
 

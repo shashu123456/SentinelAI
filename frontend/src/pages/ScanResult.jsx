@@ -300,7 +300,7 @@ function getRiskColor(score) {
   if (score >= 80) return '#ef4444';
   if (score >= 60) return '#f97316';
   if (score >= 30) return '#eab308';
-  return '#10b981';
+  return 'var(--severity-low)';
 }
 
 function getRiskClass(score) {

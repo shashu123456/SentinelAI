@@ -122,7 +122,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 24px;
-  background: linear-gradient(135deg, #003322, #002218);
+  background: linear-gradient(135deg, var(--fig-900), var(--fig-900));
   color: var(--accent-cyan);
   border: 1px solid color-mix(in srgb, var(--volt-400) 30%, transparent);
   border-radius: 6px;
@@ -140,7 +140,7 @@
 }
 
 .dash-scan-btn:hover {
-  background: linear-gradient(135deg, #004433, #003322);
+  background: linear-gradient(135deg, var(--fig-700), var(--fig-900));
   border-color: color-mix(in srgb, var(--volt-400) 60%, transparent);
   color: var(--accent-cyan);
   text-decoration: none;

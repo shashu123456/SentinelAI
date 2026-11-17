@@ -301,7 +301,7 @@ const FEATURES = [
     icon: Layers,
     title: 'Professional Reports',
     description: 'Generate executive, technical, and compliance reports in PDF and JSON formats. Share findings with stakeholders and track remediation progress.',
-    color: '#10b981',
+    color: 'var(--severity-low)',
     tag: 'Reporting',
   },
 ];
@@ -378,7 +378,7 @@ const STEPS = [
     icon: CheckCircle2,
     title: 'Fix & Remediate',
     description: 'Get remediation guidance, secure code examples, and track progress until all issues are resolved.',
-    color: '#10b981',
+    color: 'var(--severity-low)',
   },
 ];
 

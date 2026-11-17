@@ -89,11 +89,11 @@ function MessageBubble({ msg }) {
   );
 }
 
-const SEVERITY_COLORS = { Critical: '#ef4444', High: '#f97316', Medium: '#eab308', Low: '#10b981', Info: '#64748b' };
+const SEVERITY_COLORS = { Critical: '#ef4444', High: '#f97316', Medium: '#eab308', Low: 'var(--severity-low)', Info: '#64748b' };
 
 function DataContextPanel({ ctx }) {
   if (!ctx || ctx.error || !ctx.total_scans) return null;
-  const riskColor = ctx.risk_score >= 80 ? '#ef4444' : ctx.risk_score >= 60 ? '#f97316' : ctx.risk_score >= 30 ? '#eab308' : '#10b981';
+  const riskColor = ctx.risk_score >= 80 ? '#ef4444' : ctx.risk_score >= 60 ? '#f97316' : ctx.risk_score >= 30 ? '#eab308' : 'var(--severity-low)';
   const latest = ctx.latest_scan;
   const sevEntries = ctx.severity_counts ? Object.entries(ctx.severity_counts).filter(([,v]) => v > 0) : [];
 
@@ -212,7 +212,7 @@ const SUGGESTIONS = [
   { icon: Zap, title: 'Remediation Plan', desc: 'Generate a prioritized fix plan', msg: 'Generate remediation plan', color: '#f97316' },
   { icon: FileText, title: 'Executive Summary', desc: 'Write a leadership-ready report', msg: 'Write executive summary', color: '#8b5cf6' },
   { icon: Target, title: 'Attack Analysis', desc: 'How would an attacker exploit this?', msg: 'How would an attacker exploit this?', color: '#ec4899' },
-  { icon: Lock, title: 'OWASP Mapping', desc: 'Map findings to OWASP Top 10', msg: 'Map findings to OWASP Top 10', color: '#10b981' },
+  { icon: Lock, title: 'OWASP Mapping', desc: 'Map findings to OWASP Top 10', msg: 'Map findings to OWASP Top 10', color: 'var(--severity-low)' },
 ];
 
 const FOLLOW_UPS = [
@@ -267,7 +267,7 @@ export default function Copilot() {
 
   const handleKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 
-  const riskColor = context?.risk_score >= 80 ? '#ef4444' : context?.risk_score >= 60 ? '#f97316' : context?.risk_score >= 30 ? '#eab308' : '#10b981';
+  const riskColor = context?.risk_score >= 80 ? '#ef4444' : context?.risk_score >= 60 ? '#f97316' : context?.risk_score >= 30 ? '#eab308' : 'var(--severity-low)';
 
   return (
     <div className="copilot-layout">

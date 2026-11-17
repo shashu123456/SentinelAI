@@ -94,13 +94,13 @@ body::before {
 /* ═══ LIGHT THEME ═══ */
 [data-theme="light"] body::before {
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,153,102,0.02), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--volt-500) 2%, transparent), transparent 60%),
     radial-gradient(ellipse 60% 40% at 80% 20%, rgba(2,132,199,0.015), transparent 50%);
 }
 
 [data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--bloom-300); }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: var(--bloom-400); }
-[data-theme="light"] ::selection { background: rgba(0,153,102,0.15); }
+[data-theme="light"] ::selection { background: color-mix(in srgb, var(--volt-500) 15%, transparent); }
 
 /* Smooth scrolling */
 html { scroll-behavior: smooth; }

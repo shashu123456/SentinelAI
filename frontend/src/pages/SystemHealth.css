@@ -433,5 +433,5 @@
 }
 
 /* Light theme */
-[data-theme="light"] .sh-banner.healthy { background: rgba(0,128,80,0.04); }
+[data-theme="light"] .sh-banner.healthy { background: color-mix(in srgb, var(--fig-700) 4%, transparent); }
 [data-theme="light"] .sh-banner.degraded { background: rgba(200,150,0,0.04); }
