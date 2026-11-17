@@ -76,8 +76,8 @@
 /* ── Light theme ──────────────────────────────────────────────────── */
 
 [data-theme="light"] .mobile-bottom-nav {
-  background: rgba(255, 255, 255, 0.95);
-  border-top-color: #e5e7eb;
+  background: color-mix(in srgb, var(--ink-0) 95%, transparent);
+  border-top-color: var(--ink-200);
 }
 
 [data-theme="light"] .mobile-nav-item.active {

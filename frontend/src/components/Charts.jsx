@@ -8,7 +8,7 @@ import './Charts.css';
 
 /* Chart colours live in styles/tokens.css. SVG presentation attributes cannot
    resolve var(), so tokens are resolved to concrete values at render time. */
-function token(name, fallback) {
+function token(name, fallback = 'currentColor') {
   if (typeof window === 'undefined' || !document?.documentElement) return fallback;
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return value || fallback;
@@ -16,23 +16,23 @@ function token(name, fallback) {
 
 function severityColors() {
   return {
-    Critical: token('--severity-critical', '#D92D20'),
-    High: token('--severity-high', '#E8590C'),
-    Medium: token('--severity-medium', '#B54708'),
-    Low: token('--severity-low', '#A9D41C'),
-    Info: token('--text-tertiary', '#B0AAFF'),
+    Critical: token('--severity-critical'),
+    High: token('--severity-high'),
+    Medium: token('--severity-medium'),
+    Low: token('--severity-low'),
+    Info: token('--text-tertiary'),
   };
 }
 
 function chartTheme() {
   return {
     bg: 'transparent',
-    grid: token('--chart-grid', 'rgba(33,24,49,0.10)'),
-    axisLine: token('--chart-axis', 'rgba(33,24,49,0.18)'),
-    tick: token('--chart-tick', '#4A3A63'),
-    tooltipBg: token('--bg-elevated', '#EAE8FF'),
-    tooltipBorder: token('--border-subtle', '#C9C5FF'),
-    tooltipText: token('--text-primary', '#211831'),
+    grid: token('--chart-grid'),
+    axisLine: token('--chart-axis'),
+    tick: token('--chart-tick'),
+    tooltipBg: token('--bg-elevated'),
+    tooltipBorder: token('--border-subtle'),
+    tooltipText: token('--text-primary'),
   };
 }
 
@@ -170,7 +170,7 @@ export function ScanActivityChart({ data }) {
         <Bar
           dataKey="scans"
           name="Scans"
-          fill={token('--chart-1', '#A9D41C')}
+          fill={token('--chart-1')}
           radius={[3, 3, 0, 0]}
           animationDuration={800}
         />
@@ -181,7 +181,7 @@ export function ScanActivityChart({ data }) {
 
 export function RiskTrendChart({ data }) {
   const CHART_THEME = chartTheme();
-  const RISK_COLOR = token('--chart-4', '#E8590C');
+  const RISK_COLOR = token('--chart-4');
   const chartData = useMemo(() => {
     if (!data?.length) return [];
     return data.map((d) => ({
@@ -223,7 +223,7 @@ export function RiskTrendChart({ data }) {
           stroke={RISK_COLOR}
           strokeWidth={2}
           dot={{ fill: RISK_COLOR, r: 3, strokeWidth: 0 }}
-          activeDot={{ r: 5, stroke: RISK_COLOR, strokeWidth: 2, fill: token('--bg-elevated', '#EAE8FF') }}
+          activeDot={{ r: 5, stroke: RISK_COLOR, strokeWidth: 2, fill: token('--bg-elevated') }}
           animationDuration={1000}
         />
       </LineChart>
@@ -233,7 +233,7 @@ export function RiskTrendChart({ data }) {
 
 export function OwaspBarChart({ data }) {
   const CHART_THEME = chartTheme();
-  const BAR_COLOR = token('--chart-2', '#33264A');
+  const BAR_COLOR = token('--chart-2');
   const chartData = useMemo(() => {
     if (!data?.length) return [];
     return data.slice(0, 6).map((d) => ({

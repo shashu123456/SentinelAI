@@ -61,7 +61,7 @@
   color: var(--accent-cyan);
 }
 .audit-filter-count {
-  background: var(--accent-cyan); color: #000; border-radius: 10px;
+  background: var(--accent-cyan); color: var(--scrim); border-radius: 10px;
   padding: 1px 6px; font-size: 10px; font-weight: 700;
 }
 .audit-refresh-btn { padding: 9px 10px; }
@@ -133,7 +133,7 @@
   border-radius: 8px; padding: 12px 14px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.audit-event:hover { border-color: color-mix(in srgb, var(--volt-400) 20%, transparent); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.audit-event:hover { border-color: color-mix(in srgb, var(--volt-400) 20%, transparent); box-shadow: 0 2px 8px color-mix(in srgb, var(--scrim) 10%, transparent); }
 
 .audit-event-header { display: flex; align-items: center; gap: 10px; }
 
@@ -208,7 +208,7 @@
 
 /* ── Event Detail Drawer ─────────────────────────────────────── */
 .audit-drawer-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  position: fixed; inset: 0; background: color-mix(in srgb, var(--scrim) 50%, transparent);
   z-index: 1000; display: flex; justify-content: flex-end;
   animation: fadeIn 0.15s ease;
 }
@@ -305,11 +305,11 @@
 }
 
 /* ═══ LIGHT THEME ═══ */
-[data-theme="light"] .audit-event-content { background: #ffffff; }
-[data-theme="light"] .audit-filter-toggle, [data-theme="light"] .audit-export-btn { background: #ffffff; }
-[data-theme="light"] .audit-advanced-filters { background: #ffffff; }
-[data-theme="light"] .audit-filter-select, [data-theme="light"] .audit-filter-date { background: #f8f9fb; }
-[data-theme="light"] .audit-drawer { background: #f8f9fb; }
-[data-theme="light"] .audit-drawer-header { background: #ffffff; }
-[data-theme="light"] .audit-drawer-json { background: #f0f2f5; }
-[data-theme="light"] .audit-date-label { color: #666; }
+[data-theme="light"] .audit-event-content { background: var(--ink-0); }
+[data-theme="light"] .audit-filter-toggle, [data-theme="light"] .audit-export-btn { background: var(--ink-0); }
+[data-theme="light"] .audit-advanced-filters { background: var(--ink-0); }
+[data-theme="light"] .audit-filter-select, [data-theme="light"] .audit-filter-date { background: var(--ink-25); }
+[data-theme="light"] .audit-drawer { background: var(--ink-25); }
+[data-theme="light"] .audit-drawer-header { background: var(--ink-0); }
+[data-theme="light"] .audit-drawer-json { background: var(--ink-50); }
+[data-theme="light"] .audit-date-label { color: var(--ink-500); }

@@ -102,7 +102,7 @@ export default function ScanResult() {
         <div className="threat-assessment">
           <div className="threat-gauge-wrap">
             <svg viewBox="0 0 200 120" className="threat-gauge-svg">
-              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(59,130,246,0.08)" strokeWidth="10" strokeLinecap="round" />
+              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="color-mix(in srgb, var(--state-blue) 8%, transparent)" strokeWidth="10" strokeLinecap="round" />
               <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#scanGaugeGrad)" strokeWidth="10" strokeLinecap="round"
                 strokeDasharray={`${(scan.risk_score / 100) * 251.2} 251.2`} className="threat-gauge-arc" />
               <defs>
@@ -119,7 +119,7 @@ export default function ScanResult() {
                 const y1 = 100 + 72 * Math.sin(rad);
                 const x2 = 100 + 82 * Math.cos(rad);
                 const y2 = 100 + 82 * Math.sin(rad);
-                return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(59,130,246,0.15)" strokeWidth="1.5" />;
+                return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="color-mix(in srgb, var(--state-blue) 15%, transparent)" strokeWidth="1.5" />;
               })}
             </svg>
             <div className="threat-gauge-center">
@@ -297,9 +297,9 @@ export default function ScanResult() {
 }
 
 function getRiskColor(score) {
-  if (score >= 80) return '#ef4444';
-  if (score >= 60) return '#f97316';
-  if (score >= 30) return '#eab308';
+  if (score >= 80) return 'var(--state-critical)';
+  if (score >= 60) return 'var(--state-high)';
+  if (score >= 30) return 'var(--state-yellow)';
   return 'var(--severity-low)';
 }
 

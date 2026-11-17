@@ -53,7 +53,7 @@ export default function TiltCard({ children, className = '', intensity = 10, gla
           style={{
             position: 'absolute',
             inset: 0,
-            background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(255,255,255,${glarePos.opacity}), transparent 60%)`,
+            background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, color-mix(in srgb, var(--ink-0) ${Math.round(Math.min(1, glarePos.opacity) * 100)}%, transparent), transparent 60%)`,
             pointerEvents: 'none',
             transition: 'opacity 0.3s ease',
             borderRadius: 'inherit',

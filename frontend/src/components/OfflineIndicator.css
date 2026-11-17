@@ -18,7 +18,7 @@
 }
 
 .offline-banner {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--severity-high) 95%, transparent), rgba(204, 68, 17, 0.95));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--severity-high) 95%, transparent), color-mix(in srgb, var(--state-orange-700) 95%, transparent));
   color: white;
   backdrop-filter: blur(8px);
 }
@@ -52,7 +52,7 @@
 /* ── Light theme ──────────────────────────────────────────────────── */
 
 [data-theme="light"] .offline-banner {
-  background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(220, 38, 38, 0.95));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--state-orange-600) 95%, transparent), color-mix(in srgb, var(--state-red-strong) 95%, transparent));
   color: white;
 }
 

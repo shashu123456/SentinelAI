@@ -213,7 +213,7 @@
 .dash-core-card:hover {
   border-color: color-mix(in srgb, var(--volt-400) 20%, transparent);
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px color-mix(in srgb, var(--volt-400) 5%, transparent);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--scrim) 30%, transparent), 0 0 15px color-mix(in srgb, var(--volt-400) 5%, transparent);
 }
 
 .dash-core-card:hover::before { opacity: 1; }
@@ -224,7 +224,7 @@
 
 .dash-core-card.danger:hover {
   border-color: color-mix(in srgb, var(--severity-critical) 30%, transparent);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px color-mix(in srgb, var(--severity-critical) 8%, transparent);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--scrim) 30%, transparent), 0 0 15px color-mix(in srgb, var(--severity-critical) 8%, transparent);
 }
 
 .dash-core-icon {
@@ -238,7 +238,7 @@
 }
 
 .dash-core-icon.blue { background: color-mix(in srgb, var(--link) 10%, transparent); color: var(--accent-blue); border: 1px solid color-mix(in srgb, var(--link) 15%, transparent); }
-.dash-core-icon.orange { background: rgba(255,136,0,0.1); color: var(--accent-orange); border: 1px solid rgba(255,136,0,0.15); }
+.dash-core-icon.orange { background: color-mix(in srgb, var(--state-orange) 10%, transparent); color: var(--accent-orange); border: 1px solid color-mix(in srgb, var(--state-orange) 15%, transparent); }
 .dash-core-icon.red { background: color-mix(in srgb, var(--severity-critical) 10%, transparent); color: var(--accent-red); border: 1px solid color-mix(in srgb, var(--severity-critical) 15%, transparent); }
 .dash-core-icon.cyan { background: color-mix(in srgb, var(--volt-400) 10%, transparent); color: var(--accent-cyan); border: 1px solid color-mix(in srgb, var(--volt-400) 15%, transparent); }
 
@@ -504,11 +504,11 @@
   box-shadow: 0 0 8px currentColor;
 }
 
-.dash-matrix-bar-fill.critical { background: linear-gradient(90deg, var(--severity-critical), #ff4466); }
-.dash-matrix-bar-fill.high { background: linear-gradient(90deg, var(--severity-high), #ff7744); }
-.dash-matrix-bar-fill.medium { background: linear-gradient(90deg, var(--severity-medium), #ffcc00); }
+.dash-matrix-bar-fill.critical { background: linear-gradient(90deg, var(--severity-critical), var(--state-critical)); }
+.dash-matrix-bar-fill.high { background: linear-gradient(90deg, var(--severity-high), var(--state-high)); }
+.dash-matrix-bar-fill.medium { background: linear-gradient(90deg, var(--severity-medium), var(--state-medium)); }
 .dash-matrix-bar-fill.low { background: linear-gradient(90deg, var(--severity-low), var(--volt-400)); }
-.dash-matrix-bar-fill.info { background: linear-gradient(90deg, var(--severity-info), #5a7a70); }
+.dash-matrix-bar-fill.info { background: linear-gradient(90deg, var(--severity-info), var(--ink-muted)); }
 
 .dash-matrix-count {
   font-size: 14px;
@@ -606,7 +606,7 @@
 
 .dash-action-icon.blue { background: color-mix(in srgb, var(--link) 8%, transparent); color: var(--accent-blue); border: 1px solid color-mix(in srgb, var(--link) 12%, transparent); }
 .dash-action-icon.purple { background: color-mix(in srgb, var(--accent-purple) 8%, transparent); color: var(--accent-purple); border: 1px solid color-mix(in srgb, var(--accent-purple) 12%, transparent); }
-.dash-action-icon.orange { background: rgba(255,136,0,0.08); color: var(--accent-orange); border: 1px solid rgba(255,136,0,0.12); }
+.dash-action-icon.orange { background: color-mix(in srgb, var(--state-orange) 8%, transparent); color: var(--accent-orange); border: 1px solid color-mix(in srgb, var(--state-orange) 12%, transparent); }
 .dash-action-icon.green { background: color-mix(in srgb, var(--severity-low) 8%, transparent); color: var(--accent-green); border: 1px solid color-mix(in srgb, var(--severity-low) 12%, transparent); }
 
 .dash-action-text { flex: 1; min-width: 0; }

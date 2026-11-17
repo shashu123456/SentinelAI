@@ -291,7 +291,7 @@
 .sh-card-icon.api { background: color-mix(in srgb, var(--severity-medium) 8%, transparent); color: var(--accent-orange); border: 1px solid color-mix(in srgb, var(--severity-medium) 12%, transparent); }
 .sh-card-icon.frontend { background: color-mix(in srgb, var(--severity-low) 8%, transparent); color: var(--accent-green); border: 1px solid color-mix(in srgb, var(--severity-low) 12%, transparent); }
 .sh-card-icon.scanner { background: color-mix(in srgb, var(--volt-400) 8%, transparent); color: var(--accent-cyan); border: 1px solid color-mix(in srgb, var(--volt-400) 12%, transparent); }
-.sh-card-icon.ai { background: rgba(255,136,0,0.08); color: var(--accent-orange); border: 1px solid rgba(255,136,0,0.12); }
+.sh-card-icon.ai { background: color-mix(in srgb, var(--state-orange) 8%, transparent); color: var(--accent-orange); border: 1px solid color-mix(in srgb, var(--state-orange) 12%, transparent); }
 
 .sh-card-info {
   flex: 1;
@@ -434,4 +434,4 @@
 
 /* Light theme */
 [data-theme="light"] .sh-banner.healthy { background: color-mix(in srgb, var(--fig-700) 4%, transparent); }
-[data-theme="light"] .sh-banner.degraded { background: rgba(200,150,0,0.04); }
+[data-theme="light"] .sh-banner.degraded { background: color-mix(in srgb, var(--state-amber) 4%, transparent); }

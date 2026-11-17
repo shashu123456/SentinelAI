@@ -3,9 +3,9 @@
   margin: 0 auto;
   padding: 2rem;
   font-family: system-ui, -apple-system, sans-serif;
-  background: #fff;
+  background: var(--ink-0);
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--scrim) 5%, transparent);
 }
 
 .mission-header {
@@ -14,13 +14,13 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ink-200);
 }
 
 .mission-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ink-800);
 }
 
 .mission-status {
@@ -31,35 +31,35 @@
 }
 
 .status-idle {
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--ink-200);
+  color: var(--ink-500);
 }
 
 .status-running {
-  background: #fffbeb;
-  color: #f59e0b;
+  background: var(--tint-amber);
+  color: var(--state-medium);
 }
 
 .status-completed {
-  background: #d1e7dd;
+  background: var(--tint-green);
   color: var(--volt-500);
 }
 
 .status-failed {
-  background: #fecaca;
-  color: #b91c1c;
+  background: var(--tint-red);
+  color: var(--state-critical);
 }
 
 .status-pending {
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--ink-200);
+  color: var(--ink-500);
 }
 
 /* Progress Bar */
 .progress-bar-container {
   width: 100%;
   height: 8px;
-  background: #f3f4f6;
+  background: var(--ink-50);
   border-radius: 9999px;
   overflow: hidden;
   margin: 1rem 0;
@@ -67,7 +67,7 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: #3b82f6;
+  background: var(--state-blue);
   width: 0%;
   transition: width 0.3s ease;
 }
@@ -76,7 +76,7 @@
   position: absolute;
   right: 1rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--ink-500);
   top: 50%;
   transform: translateY(-50%);
 }
@@ -105,13 +105,13 @@
   flex: 0 0 6px;
   height: 6px;
   border-radius: 50%;
-  background: #9ca3af;
+  background: var(--ink-400);
   margin-right: 0.25rem;
 }
 
 .step-label {
   flex: 1;
-  color: #6b7280;
+  color: var(--ink-500);
 }
 
 .step-status {
@@ -123,26 +123,26 @@
 }
 
 .status-completed {
-  background: #d1e7dd;
+  background: var(--tint-green);
   color: var(--volt-500);
 }
 
 .status-running {
-  background: #fffbeb;
-  color: #f59e0b;
+  background: var(--tint-amber);
+  color: var(--state-medium);
 }
 
 .status-pending {
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--ink-200);
+  color: var(--ink-500);
   opacity: 0.5;
 }
 
 /* AI Explainability */
 .mission-results {
-  background: #f8fafc;
+  background: var(--ink-25);
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ink-200);
   padding: 1.5rem;
   margin-top: 2rem;
 }
@@ -153,18 +153,18 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--ink-200);
 }
 
 .results-title {
   font-size: 1rem;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--ink-800);
 }
 
 .results-confidence {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--ink-500);
 }
 
 .results-content {
@@ -181,13 +181,13 @@
 .result-section h4 {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--ink-700);
   margin-bottom: 0.25rem;
 }
 
 .result-section p {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--ink-600);
   line-height: 1.4;
 }
 
@@ -199,5 +199,5 @@
 .result-section li {
   margin-bottom: 0.25rem;
   font-size: 0.8rem;
-  color: #4b5563;
+  color: var(--ink-600);
 }

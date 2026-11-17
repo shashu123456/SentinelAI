@@ -37,7 +37,7 @@
   border: 1px solid;
 }
 
-.status-badge.connecting { background: var(--severity-info-bg); color: var(--severity-info); border-color: rgba(74,106,96,0.2); }
+.status-badge.connecting { background: var(--severity-info-bg); color: var(--severity-info); border-color: color-mix(in srgb, var(--ink-muted) 20%, transparent); }
 .status-badge.queued { background: var(--bg-surface-alt); color: var(--link); border-color: var(--border); }
 .status-badge.running { background: var(--accent-orange-light); color: var(--accent-orange); border-color: var(--severity-high-bg); animation: borderGlow 2s ease-in-out infinite; }
 .status-badge.completed { background: var(--severity-low-bg); color: var(--severity-low); border-color: var(--border); }
@@ -80,7 +80,7 @@
 
 /* Terminal */
 .terminal {
-  background: #050a10;
+  background: var(--ink-900);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -104,7 +104,7 @@
   align-items: center;
   gap: 14px;
   padding: 12px 18px;
-  background: #080d14;
+  background: var(--ink-900);
   border-bottom: 1px solid var(--border);
 }
 
@@ -139,7 +139,7 @@
   line-height: 1.8;
 }
 
-.terminal-body::-webkit-scrollbar-thumb { background: #1a2a3a; }
+.terminal-body::-webkit-scrollbar-thumb { background: var(--ink-950); }
 
 .terminal-line {
   display: flex;

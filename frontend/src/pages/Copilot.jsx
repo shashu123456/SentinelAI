@@ -89,11 +89,11 @@ function MessageBubble({ msg }) {
   );
 }
 
-const SEVERITY_COLORS = { Critical: '#ef4444', High: '#f97316', Medium: '#eab308', Low: 'var(--severity-low)', Info: '#64748b' };
+const SEVERITY_COLORS = { Critical: 'var(--state-critical)', High: 'var(--state-high)', Medium: 'var(--state-yellow)', Low: 'var(--severity-low)', Info: 'var(--ink-500)' };
 
 function DataContextPanel({ ctx }) {
   if (!ctx || ctx.error || !ctx.total_scans) return null;
-  const riskColor = ctx.risk_score >= 80 ? '#ef4444' : ctx.risk_score >= 60 ? '#f97316' : ctx.risk_score >= 30 ? '#eab308' : 'var(--severity-low)';
+  const riskColor = ctx.risk_score >= 80 ? 'var(--state-critical)' : ctx.risk_score >= 60 ? 'var(--state-high)' : ctx.risk_score >= 30 ? 'var(--state-yellow)' : 'var(--severity-low)';
   const latest = ctx.latest_scan;
   const sevEntries = ctx.severity_counts ? Object.entries(ctx.severity_counts).filter(([,v]) => v > 0) : [];
 
@@ -199,7 +199,7 @@ function DataContextPanel({ ctx }) {
         {/* Why */}
         <div className="copilot-dc-why">
           <Eye size={12} />
-          <span>This data is pulled from your SQLite database via the <strong>SecurityContext</strong> engine. Every question you ask is answered against these real findings, CVEs, and risk scores.</span>
+          <span>This data is pulled from your scan database (PostgreSQL in production) via the <strong>SecurityContext</strong> engine. Every question you ask is answered against these real findings, CVEs, and risk scores.</span>
         </div>
       </div>
     </div>
@@ -207,11 +207,11 @@ function DataContextPanel({ ctx }) {
 }
 
 const SUGGESTIONS = [
-  { icon: BarChart3, title: 'Security Status', desc: 'What is my current security posture?', msg: 'What is my security status?', color: '#3b82f6' },
-  { icon: AlertTriangle, title: 'Highest Risk', desc: 'Show me the most critical findings', msg: 'What is my highest risk issue?', color: '#ef4444' },
-  { icon: Zap, title: 'Remediation Plan', desc: 'Generate a prioritized fix plan', msg: 'Generate remediation plan', color: '#f97316' },
-  { icon: FileText, title: 'Executive Summary', desc: 'Write a leadership-ready report', msg: 'Write executive summary', color: '#8b5cf6' },
-  { icon: Target, title: 'Attack Analysis', desc: 'How would an attacker exploit this?', msg: 'How would an attacker exploit this?', color: '#ec4899' },
+  { icon: BarChart3, title: 'Security Status', desc: 'What is my current security posture?', msg: 'What is my security status?', color: 'var(--state-blue)' },
+  { icon: AlertTriangle, title: 'Highest Risk', desc: 'Show me the most critical findings', msg: 'What is my highest risk issue?', color: 'var(--state-critical)' },
+  { icon: Zap, title: 'Remediation Plan', desc: 'Generate a prioritized fix plan', msg: 'Generate remediation plan', color: 'var(--state-high)' },
+  { icon: FileText, title: 'Executive Summary', desc: 'Write a leadership-ready report', msg: 'Write executive summary', color: 'var(--state-violet)' },
+  { icon: Target, title: 'Attack Analysis', desc: 'How would an attacker exploit this?', msg: 'How would an attacker exploit this?', color: 'var(--state-pink)' },
   { icon: Lock, title: 'OWASP Mapping', desc: 'Map findings to OWASP Top 10', msg: 'Map findings to OWASP Top 10', color: 'var(--severity-low)' },
 ];
 
@@ -267,7 +267,7 @@ export default function Copilot() {
 
   const handleKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 
-  const riskColor = context?.risk_score >= 80 ? '#ef4444' : context?.risk_score >= 60 ? '#f97316' : context?.risk_score >= 30 ? '#eab308' : 'var(--severity-low)';
+  const riskColor = context?.risk_score >= 80 ? 'var(--state-critical)' : context?.risk_score >= 60 ? 'var(--state-high)' : context?.risk_score >= 30 ? 'var(--state-yellow)' : 'var(--severity-low)';
 
   return (
     <div className="copilot-layout">

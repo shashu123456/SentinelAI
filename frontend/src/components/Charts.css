@@ -130,20 +130,20 @@
 
 /* Light theme overrides */
 [data-theme="light"] .chart-tooltip {
-  background: #ffffff;
-  border-color: rgba(0,0,0,0.1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  background: var(--ink-0);
+  border-color: color-mix(in srgb, var(--scrim) 10%, transparent);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--scrim) 12%, transparent);
 }
 
 [data-theme="light"] .chart-tooltip-label {
-  color: #64748b;
-  border-bottom-color: rgba(0,0,0,0.06);
+  color: var(--ink-500);
+  border-bottom-color: color-mix(in srgb, var(--scrim) 6%, transparent);
 }
 
 [data-theme="light"] .chart-tooltip-name {
-  color: #64748b;
+  color: var(--ink-500);
 }
 
 [data-theme="light"] .chart-tooltip-value {
-  color: #0f172a;
+  color: var(--ink-900);
 }

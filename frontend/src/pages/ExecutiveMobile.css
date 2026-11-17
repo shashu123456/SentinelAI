@@ -388,21 +388,21 @@
 /* ── Light theme ──────────────────────────────────────────────────── */
 
 [data-theme="light"] .exec-mobile-kpi-card {
-  background: #ffffff;
-  border-color: #e5e7eb;
+  background: var(--ink-0);
+  border-color: var(--ink-200);
 }
 
 [data-theme="light"] .exec-action-card {
-  background: #ffffff;
-  border-color: #e5e7eb;
+  background: var(--ink-0);
+  border-color: var(--ink-200);
 }
 
 [data-theme="light"] .exec-alert-card {
-  background: #ffffff;
-  border-color: #e5e7eb;
+  background: var(--ink-0);
+  border-color: var(--ink-200);
 }
 
 [data-theme="light"] .exec-mobile-refresh {
-  background: #f8f9fa;
-  border-color: #e5e7eb;
+  background: var(--ink-25);
+  border-color: var(--ink-200);
 }

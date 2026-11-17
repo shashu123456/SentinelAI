@@ -43,7 +43,7 @@
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #002211, #001a0d);
+  background: linear-gradient(135deg, var(--state-dark), var(--state-dark-deep));
   border: 1px solid color-mix(in srgb, var(--volt-400) 25%, transparent);
   display: flex;
   align-items: center;
@@ -273,7 +273,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(0,0,0,0.3);
+  background: color-mix(in srgb, var(--scrim) 30%, transparent);
 }
 
 .copilot-dc-risk-num {
@@ -771,7 +771,7 @@
 }
 
 .copilot-code-block {
-  background: #050a10;
+  background: var(--ink-900);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 14px;

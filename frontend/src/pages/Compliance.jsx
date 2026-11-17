@@ -8,7 +8,7 @@ const CATEGORY_COLORS = {
   security: { bg: 'color-mix(in srgb, var(--volt-400) 8%, transparent)', color: 'var(--accent-cyan)', border: 'color-mix(in srgb, var(--volt-400) 20%, transparent)' },
   regulatory: { bg: 'color-mix(in srgb, var(--link) 8%, transparent)', color: 'var(--accent-blue)', border: 'color-mix(in srgb, var(--link) 20%, transparent)' },
   industry: { bg: 'color-mix(in srgb, var(--accent-purple) 8%, transparent)', color: 'var(--accent-purple)', border: 'color-mix(in srgb, var(--accent-purple) 20%, transparent)' },
-  privacy: { bg: 'rgba(255,136,0,0.08)', color: 'var(--accent-orange)', border: 'rgba(255,136,0,0.2)' },
+  privacy: { bg: 'color-mix(in srgb, var(--state-orange) 8%, transparent)', color: 'var(--accent-orange)', border: 'color-mix(in srgb, var(--state-orange) 20%, transparent)' },
 };
 
 export default function Compliance() {

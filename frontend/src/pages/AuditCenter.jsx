@@ -77,9 +77,9 @@ function getActionConfig(action) {
   if (ACTION_CONFIG[action]) return ACTION_CONFIG[action];
   const prefix = action?.split('.')[0];
   if (prefix && MODULE_ICONS[prefix]) {
-    return { icon: MODULE_ICONS[prefix] || Clock, color: '#7a9a8e', label: action, risk: 'info' };
+    return { icon: MODULE_ICONS[prefix] || Clock, color: 'var(--ink-muted)', label: action, risk: 'info' };
   }
-  return { icon: Clock, color: '#7a9a8e', label: action, risk: 'info' };
+  return { icon: Clock, color: 'var(--ink-muted)', label: action, risk: 'info' };
 }
 
 /* ── Event Details Drawer ─────────────────────────────────────────── */

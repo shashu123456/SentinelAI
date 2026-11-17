@@ -442,7 +442,7 @@
 .remediation-block h4 { color: var(--severity-low); }
 
 .evidence {
-  background: #050a10;
+  background: var(--ink-900);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 12px;
@@ -643,7 +643,7 @@
 
 .scan-finding-detail pre {
   grid-column: 1 / -1;
-  background: #050a10;
+  background: var(--ink-900);
   border: 1px solid var(--border);
   padding: 12px;
   border-radius: 6px;
@@ -826,64 +826,64 @@
 [data-theme="light"] .back-link:hover { color: var(--link) !important; }
 
 [data-theme="light"] .threat-assessment {
-  background: #ffffff;
-  border-color: #e2e5ea;
-  color: #0f172a;
+  background: var(--ink-0);
+  border-color: var(--ink-200);
+  color: var(--ink-900);
 }
 
 [data-theme="light"] .threat-gauge-score { text-shadow: none; }
 
 [data-theme="light"] .meta-info {
-  background: #ffffff;
-  border-color: #e2e5ea;
-  color: #0f172a;
+  background: var(--ink-0);
+  border-color: var(--ink-200);
+  color: var(--ink-900);
 }
 
-[data-theme="light"] .finding-card { background: #ffffff; }
+[data-theme="light"] .finding-card { background: var(--ink-0); }
 
 [data-theme="light"] .severity-indicator { text-shadow: none; }
 
-[data-theme="light"] .owasp-badge { background: var(--bg-surface-alt); border-color: var(--bg-surface-alt); color: #7c3aed; }
+[data-theme="light"] .owasp-badge { background: var(--bg-surface-alt); border-color: var(--bg-surface-alt); color: var(--state-violet); }
 
 [data-theme="light"] .cwe-badge { background: var(--severity-low-bg); border-color: var(--severity-low-bg); color: var(--volt-500); }
 
-[data-theme="light"] .confidence-badge { background: var(--bg-surface-alt); border-color: var(--bg-surface-alt); color: #06b6d4; }
+[data-theme="light"] .confidence-badge { background: var(--bg-surface-alt); border-color: var(--bg-surface-alt); color: var(--state-cyan); }
 
-[data-theme="light"] .evidence { background: #f8fafc; color: #0f172a; }
+[data-theme="light"] .evidence { background: var(--ink-25); color: var(--ink-900); }
 
-[data-theme="light"] .detail-block p { color: #475569; }
+[data-theme="light"] .detail-block p { color: var(--ink-600); }
 
-[data-theme="light"] .sev-count { color: #0f172a; }
+[data-theme="light"] .sev-count { color: var(--ink-900); }
 
-[data-theme="light"] .sev-label { color: #64748b; }
+[data-theme="light"] .sev-label { color: var(--ink-500); }
 
-[data-theme="light"] .threat-level-badge { border-color: rgba(255,255,255,0.1); }
+[data-theme="light"] .threat-level-badge { border-color: color-mix(in srgb, var(--ink-0) 10%, transparent); }
 
-[data-theme="light"] .threat-level-badge.critical { background: rgba(220,38,38,0.08); color: #dc2626; }
+[data-theme="light"] .threat-level-badge.critical { background: color-mix(in srgb, var(--state-red-strong) 8%, transparent); color: var(--state-red-strong); }
 
-[data-theme="light"] .threat-level-badge.high { background: rgba(234,88,12,0.08); color: #ea580c; }
+[data-theme="light"] .threat-level-badge.high { background: color-mix(in srgb, var(--state-orange-600) 8%, transparent); color: var(--state-orange-600); }
 
-[data-theme="light"] .threat-level-badge.medium { background: rgba(202,138,4,0.08); color: #ca8a04; }
+[data-theme="light"] .threat-level-badge.medium { background: color-mix(in srgb, var(--state-amber-strong) 8%, transparent); color: var(--state-amber-strong); }
 
 [data-theme="light"] .threat-level-badge.low { background: color-mix(in srgb, var(--volt-500) 8%, transparent); color: var(--volt-500); }
 
-[data-theme="light"] .no-findings { background: #ffffff; }
+[data-theme="light"] .no-findings { background: var(--ink-0); }
 
 [data-theme="light"] .no-findings-icon { background: color-mix(in srgb, var(--volt-500) 6%, transparent); border-color: color-mix(in srgb, var(--volt-500) 10%, transparent); color: var(--volt-500); }
 
-[data-theme="light"] .loading-container { color: #64748b; }
+[data-theme="light"] .loading-container { color: var(--ink-500); }
 
-[data-theme="light"] .scan-page-card { background: #ffffff; }
+[data-theme="light"] .scan-page-card { background: var(--ink-0); }
 
-[data-theme="light"] .scan-dropzone { border-color: #e2e5ea; }
+[data-theme="light"] .scan-dropzone { border-color: var(--ink-200); }
 
-[data-theme="light"] .scan-dropzone.has-file { border-color: #38bdf8; background: #eff6ff; }
+[data-theme="light"] .scan-dropzone.has-file { border-color: var(--state-sky); background: var(--tint-blue); }
 
-[data-theme="light"] .scan-file-selected svg { color: #0891b2; }
+[data-theme="light"] .scan-file-selected svg { color: var(--state-cyan-strong); }
 
-[data-theme="light"] .scan-stats { background: #f1f5f9; }
+[data-theme="light"] .scan-stats { background: var(--ink-50); }
 
-[data-theme="light"] .scan-stat.danger strong { color: #ea580c; }
+[data-theme="light"] .scan-stat.danger strong { color: var(--state-orange-600); }
 
 [data-theme="light"] .scan-stat.safe strong { color: var(--volt-500); }
 

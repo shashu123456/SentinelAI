@@ -384,7 +384,7 @@
 }
 
 .settings-badge.inactive {
-  background: rgba(255,255,255,0.04);
+  background: color-mix(in srgb, var(--ink-0) 4%, transparent);
   color: var(--text-muted);
   border: 1px solid var(--border);
 }
@@ -483,7 +483,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--bg-surface-hover, rgba(255,255,255,0.02));
+  background: var(--bg-surface-hover, color-mix(in srgb, var(--ink-0) 2%, transparent));
   border: 1px solid var(--border);
   border-radius: 8px;
 }
@@ -558,7 +558,7 @@
 .settings-api-info-content code {
   display: block;
   padding: 8px 12px;
-  background: rgba(0,0,0,0.3);
+  background: color-mix(in srgb, var(--scrim) 30%, transparent);
   border: 1px solid color-mix(in srgb, var(--volt-400) 8%, transparent);
   border-radius: 4px;
   font-size: 11px;
@@ -601,9 +601,9 @@
 
 [data-theme="light"] .settings-form input,
 [data-theme="light"] .settings-form select {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  color: #0f172a;
+  background: var(--ink-0);
+  border-color: var(--ink-200);
+  color: var(--ink-900);
 }
 
 [data-theme="light"] .settings-profile-card {
@@ -612,12 +612,12 @@
 }
 
 [data-theme="light"] .settings-api-info-content code {
-  background: #f1f5f9;
-  color: #0f766e;
+  background: var(--ink-50);
+  color: var(--state-teal);
 }
 
 [data-theme="light"] .settings-toast.success {
   background: color-mix(in srgb, var(--fig-700) 8%, transparent);
-  color: #047857;
+  color: var(--state-low);
   border-color: color-mix(in srgb, var(--fig-700) 20%, transparent);
 }

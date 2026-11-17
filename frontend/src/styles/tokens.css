@@ -66,6 +66,51 @@
   --severity-info: var(--sev-info-ink);
   --severity-info-bg: var(--sev-info-bg);
 
+  /* ---- Legacy neutrals and semantic values.
+     Absolute (theme-independent) values kept so pages written before the role
+     tokens render exactly as before. New UI must use the role tokens above;
+     these exist so no component file carries a raw colour. ---- */
+  --ink-0: #ffffff;
+  --ink-25: #f8f9fb;
+  --ink-50: #f1f3f7;
+  --ink-200: #e4e6ea;
+  --ink-300: #cbd5e1;
+  --ink-400: #9ca3af;
+  --ink-500: #6b7280;
+  --ink-600: #4b5563;
+  --ink-700: #374151;
+  --ink-800: #1f2937;
+  --ink-900: #0f172a;
+  --ink-950: #1a2a3a;
+  --ink-muted: #7a9a8e;
+  --scrim: #000000;
+  --tint-green: #d1e7dd;
+  --tint-green-soft: #ecfdf5;
+  --tint-amber: #fffbeb;
+  --tint-red: #fecaca;
+  --tint-blue: #eff6ff;
+  --state-critical: #ef4444;
+  --state-red-strong: #dc2626;
+  --state-high: #f97316;
+  --state-orange: #ff8800;
+  --state-orange-600: #ea580c;
+  --state-orange-700: #cc4411;
+  --state-medium: #f59e0b;
+  --state-yellow: #eab308;
+  --state-amber: #c89600;
+  --state-amber-strong: #ca8a04;
+  --state-low: #00b377;
+  --state-teal: #0f766e;
+  --state-blue: #3b82f6;
+  --state-blue-strong: #0284c7;
+  --state-cyan: #06b6d4;
+  --state-cyan-strong: #0891b2;
+  --state-sky: #38bdf8;
+  --state-violet: #8b5cf6;
+  --state-pink: #ec4899;
+  --state-dark: #002211;
+  --state-dark-deep: #001a0d;
+
   /* ---- Charts (resolved to concrete values in JS via getComputedStyle:
      SVG presentation attributes cannot resolve var()) ---- */
   --chart-1: var(--volt-500);
@@ -89,6 +134,9 @@
   /* ---- Space / shape / motion ---- */
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
   --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+
+  /* Single horizontal gutter for authenticated pages (shell-level). */
+  --gutter: clamp(16px, 2.2vw, 32px);
   --r-sm: 8px; --r-md: 12px; --r-pill: 999px;
   --shadow-1: 0 1px 2px rgba(33, 24, 49, .06), 0 8px 24px rgba(33, 24, 49, .08);
   --shadow-card-hover: 0 8px 32px rgba(33, 24, 49, .10), 0 0 0 1px var(--bloom-300);
