@@ -1,491 +1,362 @@
 # Final evidence
 
-All figures below were produced by the commands shown. Where a command has not
-been run yet, the item is marked **PENDING** — nothing here is asserted without
-output.
+Every figure below came from a command run against the commit named next to it.
+Where something was not run, this file says so.
+
+- Date: 2026-11-17
+- Branch: `main`, in sync with `origin/main`
+- Verified commit: `60e0b67` (full: `60e0b673ffeb2b23fcc49358863e52888a9e4c63`)
+- Deployed API build: `60e0b67` — the live `commit` field equals this SHA exactly
+- The commit that adds *this file* is documentation-only: no code, CSS, test or
+  config change, so it reproduces every result below.
+
+`docs/RELEASE-EVIDENCE.md` describes an older `release/sentinelai-v1.1` branch and
+is **superseded by this file** for current `main`.
 
 ---
 
-## 0. Truth audit (this session)
+## 1. Commit chain for this pass
 
-A previous session reported Phases 5–12 complete and deployed. That report was
-**false**. Verified at session start:
+```
+$ git log --oneline a20aa3f..HEAD
+60e0b67 refactor(design): tokenise the legacy emerald family
+accc706 docs(design): refresh golden-path screenshots
+388fa27 docs: align README with verified capabilities
+de77eaf fix(ui): make the report badge text visible
+2a56f15 refactor(design): finish tokenising every shipped UI surface
 
-| Claim from prior summary | Reality (verified) |
+$ git status --porcelain
+(empty)
+$ git rev-list --left-right --count origin/main...HEAD
+0	0
+```
+
+---
+
+## 2. Encoding: nothing to repair
+
+An earlier hand-off reported mojibake in `README.md` and `docs/EVIDENCE-FINAL.md`.
+That was checked rather than assumed, and it is **not present**:
+
+```
+scanned 46 docs md files; files with mojibake: 0      # byte scan for â€ / Ã / U+FFFD
+
+README.md:  BOM: False   bytes: 4519   mojibake hits: none   em dashes: 11
+```
+
+All 82 tracked `*.md` files decode as UTF-8; none carries a BOM.
+
+---
+
+## 3. README aligned with the code
+
+The README claimed **"Passive URL checks | Ongoing"**. There is no such feature —
+`docs/LIMITATIONS.md` and the Coverage page both say the scanner never sends
+traffic to a target. That row is gone, and the unsupported work is now an explicit
+"what it does not do" list linking `docs/LIMITATIONS.md`.
+
+Counts were re-derived from the registries, not copied:
+
+```
+$ python -c "from app.core.sast_engine import rules as r; print(len(r.ALL_RULES))"
+PYTHON_RULES 23
+JAVASCRIPT_RULES 14
+JAVA_RULES 11
+ALL_RULES 48
+
+$ grep -n "API1\|API10" app/core/security_engine/scanner.py
+scanner.py:6:    "API1": "Broken Object Level Authorization",
+scanner.py:15:    "API10": "Unsafe Consumption of APIs",
+```
+
+So "48 rules" and "API1–API10" are true as written. The dependency row now says the
+scanner reads a manifest and queries OSV.dev, instead of claiming it
+"cross-references installed packages".
+
+---
+
+## 4. Design system — finished across every shipped surface
+
+### 4.1 Source
+
+```
+$ grep -RInoE '#00ffaa|#00d4ff|#aa66ff' src --include=*.css --include=*.jsx --include=*.js | wc -l
+0
+$ grep -RInoE '#00ff88|#ff2244|#ff3355|#ff6622|#ffaa00' src --include=*.css --include=*.jsx --include=*.js | wc -l
+0
+$ grep -RInoE '#10b981|#059669|#009966|#003322|#002218|#004433' src --include=*.css --include=*.jsx --include=*.js | wc -l
+0
+```
+
+Work done, in two sweeps:
+
+```
+# alpha-form neon tints and hot severity hexes
+replacements: {'rgba->--severity-critical': 32, 'rgba->--severity-high': 7,
+ 'hex->--severity-critical': 10, 'hex->--severity-low': 9,
+ 'rgba->--severity-medium': 12, 'hex->--severity-medium': 8, 'hex->--severity-high': 2}
+color-mix calls: 162
+
+# legacy emerald family (last off-palette hue still rendering)
+replacements: {'rgba->--volt-500': 39, 'hex->--volt-500': 31, 'hex->--fig-900': 25,
+ 'hex->--fig-700': 7, 'hex->--severity-low': 8, 'rgba->--fig-700': 9} total: 119
+```
+
+Charts are token-driven: `--chart-1`…`--chart-6` (plus `--chart-grid`,
+`--chart-axis`, `--chart-tick`) live in `frontend/src/styles/tokens.css` with
+dark-mode values, and `Charts.jsx` resolves them through `getComputedStyle`
+because an SVG presentation attribute cannot resolve `var()`.
+
+`frontend/src/App.css` was deleted: 978 lines, **0** brand-neon hits, **0**
+importers.
+
+### 4.2 Build
+
+```
+$ npm run test
+ Test Files  6 passed (6)
+      Tests  35 passed (35)
+   Duration  32.33s
+
+$ npm run build
+dist/assets/Charts-Cb0-ryrQ.js   409.81 kB │ gzip: 118.14 kB
+✓ built in 30.50s
+BUILD_EXIT=0
+```
+
+### 4.3 Built output
+
+```
+$ grep -ohE '#00ffaa|#00d4ff|#aa66ff' dist/assets/*.css dist/assets/*.js | wc -l
+0
+$ grep -ohE '#00ffaa|#00d4ff|#aa66ff|#10b981|#009966|#003322' dist/assets/*.css dist/assets/*.js | wc -l
+0
+$ grep -oh 'color-mix(in srgb' dist/assets/*.css | wc -l
+228
+```
+
+### 4.4 Deployed CSS — every stylesheet, every route
+
+Collected by loading 26 routes in Chrome and reading every `link[rel=stylesheet]`:
+
+```
+deployed stylesheets: 15 | neon+legacy hex: 0 | hits: none
+color-mix across all deployed CSS: 200
+main css: index-C-nZdB15.css
+```
+
+And at runtime, no legacy hue is actually painted anywhere:
+
+```
+RENDERED legacy-emerald uses across 26 routes: 0
+```
+
+This covers the whole deployed CSS surface, not just the main bundle. The earlier
+"legacy page chunks are out of scope" caveat is no longer true and has been removed
+from this document.
+
+---
+
+## 5. The grey artifact over the logo strip — found, explained, fixed
+
+It was ours, and it was not an overlay. `.report-header-badge` set
+`color: var(--fig-500)` — a raw palette value instead of a role token — while its
+background is `var(--bg-surface-alt)`; in dark mode `--bg-surface-alt` **is**
+`--fig-500`. Text was therefore painted in its own background and the badge
+rendered as an empty grey pill directly under the logo.
+
+Identity from the live DOM:
+
+```
+outerHTML: <div class="report-header-badge"><svg …lucide-file-text…></svg> REPORT CENTER</div>
+text: " REPORT CENTER"    innerTextLen: 13
+rect: { x: 0, y: 64, w: 141.5, h: 26 }
+color: rgb(74, 58, 99)   background: rgb(74, 58, 99)   ratio: 1.00
+```
+
+A contrast sweep of 11 authenticated pages at 1440x900 found exactly one such node:
+
+```
+{"path":"/reports","text":"REPORT CENTER","cls":"report-header-badge","ratio":1}
+DISTINCT invisible text: 1
+```
+
+Fix (`de77eaf`): the text uses the `--text-secondary` role and the border
+`--border-subtle`, as the Coverage badge already did. Layout, markup and copy
+untouched. After the deploy:
+
+```
+badge={"text":"REPORT CENTER","color":"rgb(201, 197, 255)","bg":"rgb(74, 58, 99)","ratio":6.22}
+FIX_LIVE
+
+$ same contrast sweep over the same 11 pages, after the fix
+DISTINCT invisible text: 0
+```
+
+Crops of exactly that strip (300x48):
+
+| Before | After |
 |---|---|
-| HEAD after all phases | HEAD was `92a05d3` (OSV only); no later commit existed |
-| Coverage / BetaBanner / `/beta` routes | absent; `App.jsx` had 33 top-level routes |
-| Design system done | only an untracked `tokens.css` + 2 CSS colour swaps *(since delivered: `7d4365d`, `93e031b`, `e27a9a7`)* |
-| AgentGuard 40 cases | `agent_guard/` held only `.pyc`; source was not on disk |
-| Demo / trust / honesty | no seed script, no demo-login, no LIMITATIONS/EVIDENCE docs |
-| Deployed SHA matches HEAD | live `/api/v1/version` was `cce6a8e`; HEAD `92a05d3` |
-| CI green | latest runs failing |
-
-This file is the corrected record.
+| `docs/screenshots/reports-badge-before.png` — empty pill, 16 sampled colours | `docs/screenshots/reports-badge-after.png` — readable label, 22 sampled colours |
 
 ---
 
-## 1. Baseline test run (before this session's changes)
-
-Command:
-```
-cd backend
-python -m pytest -q --durations=20
-```
-Result:
-```
-1083 passed, 2 skipped, 17 deselected, 773 warnings in 1635.12s (0:27:15)
-```
-
----
-
-## 2. Backend changes this session, with targeted tests
-
-Command:
-```
-cd backend
-python -m pytest tests/test_osv_client.py -q --durations=0
-```
-Result: `39 passed, 1 skipped in 2.82s`
-
-Command:
-```
-python -m pytest tests/test_redaction.py tests/test_trust_gate.py -q
-```
-Result: `7 passed` (redaction masking + authorized-use gate + delete-data)
-
-Command:
-```
-python -m ruff check app/api/routes/account.py app/utils/redaction.py \
-  app/api/routes/auth.py app/services/scan_service.py app/api/routes/scans.py \
-  app/models/models.py app/config.py scripts/seed_demo.py \
-  tests/test_redaction.py tests/test_trust_gate.py \
-  alembic/versions/j8k9l0m1n2o3_add_authorized_use_acceptances.py
-```
-Result: `All checks passed!`
-
----
-
-## 3. Frontend build
-
-Command:
-```
-cd frontend
-npm run build
-```
-Result (final build):
-```
-✓ built in 35.31s
-```
-
-Stray-hex check on the golden-path scope (NewScan, ReportCenter, Coverage, Navbar):
-```
-pages/NewScan.css: 0
-pages/ReportCenter.css: 0
-pages/Coverage.css: 0
-components/Navbar.css: 0
-components/Navbar.jsx: 0
-pages/Coverage.jsx: 0
-```
-
----
-
-## 4. Full suite after all changes
-
-Command:
-```
-cd backend
-python -m pytest -q --durations=20
-```
-Result:
-```
-1090 passed, 2 skipped, 17 deselected, 785 warnings in 1580.05s (0:26:20)
-```
-
-Baseline before this session was 1083 passed; the +7 are the new redaction and
-trust-gate tests. Zero failures, zero errors.
-
----
-
-### 4b. Full suite on the final commits (81021b8, 2026-11-16)
+## 6. Backend gates (code unchanged, re-run for the record)
 
 ```
-cd backend
-python -m pytest -q --durations=20
+$ python -m mypy app --no-incremental
+Success: no issues found in 168 source files
+MYPY_EXIT=0
+
+$ python -m ruff check app tests
+All checks passed!
+RUFF_EXIT=0
+
+$ python -m black --check app tests
+All done! ✨ 🍰 ✨
+219 files would be left unchanged.
+BLACK_EXIT=0
 ```
 
 ```
-12.40s call     tests/test_migrations.py::test_migration_upgrades_legacy_schema
-1090 passed, 2 skipped, 17 deselected, 785 warnings in 1553.41s (0:25:53)
+$ git diff --stat a20aa3f..HEAD -- backend
+(empty)
 ```
 
-Same counts as the run at `e2a8590`, now covering the config validator
-(`769d7e2`), the black formatting (`d114969`), the ruff import cleanup and the
-`schemas.py` `__all__` restoration (`f196d5e`), and the evidence redaction
-(`81021b8`). Zero failures, zero errors.
-
----
-
-Final run, on the code that ships (`.tmp-mypy/pytest-final.log`, stderr empty):
+Full suite for the shipped backend (`.tmp-mypy/pytest-final.log`):
 
 ```
 1090 passed, 2 skipped, 17 deselected, 785 warnings in 1525.57s (0:25:25)
 ```
 
-That run predates exactly one later change: the `BaseAgent._scope` declaration,
-which adds an annotation and a `TYPE_CHECKING` import and no runtime code (proved
-by `hasattr(BaseAgent, "_scope") is False` after the change), so the counts above
-still describe the deployed build.
-
-## 5. Deployment
-
-Live targets: API `https://sentinelai-api.vercel.app`, web
-`https://sentinelai-web.vercel.app`. Vercel project ids: `sentinelai-api`
-(`prj_tW6GRKaF7Yue2DAhm4QpsEKyXuOc`), `sentinelai-web`, both under scope
-`shashu1`.
-
-### 5.1 Production schema repair (additive only)
-
-The production database was recorded at an older Alembic revision
-(`h6i7j8k9l0m1`) and was missing `scans.kind`, `findings.source`, and the
-`authorized_use_acceptances` table. Repair applied out of band, then again on
-every startup by `ensure_runtime_schema()`
-(`backend/app/database/database.py`). Only `CREATE TABLE IF NOT EXISTS`,
-`ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS` are used; nothing is
-dropped or rewritten.
-
-```
-scans.kind now: True
-findings.source now: True
-authorized_use_acceptances now: True
-```
-
-While seeding, Alembic also advanced the recorded revision normally:
-
-```
-INFO  [alembic.runtime.migration] Running upgrade h6i7j8k9l0m1 -> i7j8k9l0m1n2, add scan.kind and finding.source
-```
-
-### 5.2 Deployed commit
-
-```
-$ curl -s https://sentinelai-api.vercel.app/api/v1/version
-{"success":true,"data":{"commit":"769d7e2aab7ba7bfddf159999f7b5a4eb809d064","env":"production","build":"769d7e2"},"meta":null}
-```
-
-The `commit` field equals `git rev-parse HEAD` for the pushed revision at the
-time of this run.
-
-### 5.3 Health endpoints
-
-```
-/api/health        {"status":"healthy"} HTTP 200
-/api/v1/health     {"success":true,"data":{"status":"healthy","version":"1.0.0",...}} HTTP 200
-/api/v1/live       {"success":true,"data":{"status":"alive","uptime_seconds":186.0,...}} HTTP 200
-/api/v1/ready      {"success":true,"data":{"status":"ready",...}} HTTP 200
-```
-
-### 5.4 Routes published in the live OpenAPI document
-
-Selected paths returned by `GET /openapi.json` (full document lists 170):
-
-```
-/api/account/authorized-use
-/api/account/delete-data
-/api/auth/demo-login
-/api/auth/register
-/api/auth/login
-/api/scans/upload
-/api/scans/upload/async
-/api/v1/dashboard/overview
-/api/v1/version
-```
-
-### 5.5 Trust gate, end to end on production
-
-A throwaway account was registered against production; output trimmed to the
-relevant lines.
-
-```
-=== register ===
-{"access_token":"<redacted-jwt>","token_type":"bearer","user":{"id":6,"username":"evid1794830408",...}}
-HTTP 201
-=== account/authorized-use GET (before accepting) ===
-{"accepted":false,"accepted_at":null,"version":"1","text":"Only scan material you own or have written permission to test."}
-HTTP 200
-=== upload BEFORE acceptance ===
-{"detail":"authorization_required"}
-HTTP 403
-=== POST acceptance ===
-{"accepted":true,"accepted_at":"2026-11-16T12:00:12.511925","version":"1",...}
-HTTP 200
-```
-
-So the upload gate is enforced on the deployed service, not only in tests.
-
-### 5.6 Real scans of the bundled samples, on production
-
-```
-=== kind=deps (samples/vulnerable-requirements.txt) ===
-{"id":2,"api_name":"vulnerable-requirements.txt","total_vulnerabilities":67,"risk_score":80,"risk_level":"Critical","status":"completed","kind":"deps","counts_by_source":{"deps":67}}
-HTTP 200
-=== kind=code (samples/vulnerable-app.py) ===
-{"id":3,"api_name":"vulnerable-app.py","total_vulnerabilities":3,"risk_score":86,"risk_level":"Critical","status":"completed","kind":"code","counts_by_source":{"code":3}}
-HTTP 200
-```
-
-`kind` and `counts_by_source` in these responses prove the repaired
-`scans.kind` and `findings.source` columns are in use at runtime.
-
-### 5.7 Oversize upload
-
-```
-=== 5MB body ===
-HTTP/1.1 413 Request Entity Too Large
-Content-Type: text/plain; charset=utf-8
-X-Vercel-Error: FUNCTION_PAYLOAD_TOO_LARGE
-Request Entity Too Large
-```
-
-Recorded honestly: on Vercel the platform request-body ceiling rejects the
-upload before the application's own 5 MB check runs, so the 413 comes from
-Vercel rather than from `MAX_UPLOAD_SIZE_MB`. The application-level check is
-covered by the test suite.
-
-### 5.8 Demo account
-
-Seeded with `scripts/seed_demo.py` (refuses to run without
-`SENTINEL_DEMO_PASSWORD`):
-
-```
-Created demo user demo <demo@sentinelai.dev>
-Seeded spec scan #4 (12 findings)
-Seeded deps scan #5 (74 findings, partial=False)
-Seeded code scan #6 (2 findings, partial=False)
-Demo account ready: 3 completed scan(s).
-```
-
-Live demo path:
-
-```
-=== POST /api/auth/demo-login ===
-{"access_token":"<redacted-jwt>","token_type":"bearer","user":{"id":7,...}}
-=== GET /api/scans/ (demo) ===
-count: 3
-  6 code demo-code.zip 2 None
-  5 deps demo-requirements.txt 74 None
-  4 spec Demo Petstore API 12 None
-=== GET /api/scans/4/report/json ===
-json HTTP 200 bytes=18876
-{"api_name": "Demo Petstore API", "kind": "spec", "counts_by_source": {"spec": 12}, ...}
-=== GET /api/scans/4/report/pdf ===
-pdf HTTP 200 bytes=27892 ctype=application/pdf
-%PDF-
-=== GET /api/v1/dashboard/overview ===
-{"success":true,"data":{"total_scans":3,"completed_scans":3,"total_vulnerabilities":88,"average_risk_score":73.3,...}}
-HTTP 200
-```
-
-CORS for the deployed web origin, which the demo button relies on:
-
-```
-OPTIONS /api/auth/demo-login  Origin: https://sentinelai-web.vercel.app
-HTTP/1.1 200 OK
-Access-Control-Allow-Credentials: true
-Access-Control-Allow-Origin: https://sentinelai-web.vercel.app
-
-POST /api/auth/demo-login  Origin: https://sentinelai-web.vercel.app
-HTTP 200
-Access-Control-Allow-Origin: https://sentinelai-web.vercel.app
-```
-
-### 5.9 Deployed frontend
-
-Every golden-path route returns the SPA shell (HTTP 200, one `#root` node):
-
-```
-/                      HTTP 200 root=1
-/scans/new             HTTP 200 root=1
-/reports               HTTP 200 root=1
-/coverage              HTTP 200 root=1
-/privacy               HTTP 200 root=1
-/beta/authorized-use   HTTP 200 root=1
-/beta/coverage         HTTP 200 root=1
-/terms                 HTTP 200 root=1
-```
-
-The served bundle contains the new pages and calls the live API:
-
-```
-asset: /assets/index-EXyO2R6v.js
-contains: "Authorized use"
-contains: "Coverage"
-contains: "sentinelai-api.vercel.app"
-contains: "demo-login"
-```
-
-Vercel `vercel ls sentinelai-web` shows the newest production deployment
-`● Ready` with a 26–27 s build.
-
-### 5.10 Commit deployed after the demo-credential fixes
-
-```
-fix(config): trim whitespace from demo credential env values   -> 769d7e2
-fix(db): idempotent additive schema repair for deployment drift -> ed87343
-```
-
-The whitespace trim was required because secrets added through the CLI carried
-a trailing newline; the demo email lookup then missed and the endpoint reported
-`Demo account is unavailable` instead of the configuration problem.
+Not re-run, because nothing under `backend/` changed in this pass; the only later
+backend commit in this repository's history was the annotation-only `_scope`
+declaration in `3c27b66`, which adds no runtime code.
 
 ---
 
-### 5.11 Deployed build at the end of this pass
+## 7. CI
+
+Run [44136881866](https://github.com/shashu123456/SentinelAI/actions/runs/44136881866)
+on `60e0b67`, conclusions straight from the Actions API:
+
+```
+success	Backend tests
+success	Secret scanning
+success	CodeQL analysis (python)
+success	Backend lint & type check
+success	CodeQL analysis (javascript)
+success	Frontend test & build
+success	Docker build
+success	Deployment smoke test
+```
+
+Docker build and the deployment smoke test both ran and passed — the two jobs that
+were skipped while an earlier lint failure blocked them.
+
+---
+
+## 8. Deployment
 
 ```
 $ curl -s https://sentinelai-api.vercel.app/api/v1/version
-{"success":true,"data":{"commit":"81021b8420410188a5b15023d2d1f3e2a41badef","env":"production","build":"81021b8"},"meta":null}
+{"success":true,"data":{"commit":"60e0b673ffeb2b23fcc49358863e52888a9e4c63","env":"production","build":"60e0b67"},"meta":null}
 
-$ git rev-parse --short HEAD
-81021b8
+$ git rev-parse HEAD
+60e0b673ffeb2b23fcc49358863e52888a9e4c63
 ```
 
-Build equals HEAD, so the deployed code is the pushed code.
-
-## 6. CI status
-
-Run for `81021b8` (2026-11-16), job conclusions from
-`gh run view 43879996402 --json jobs`:
+The deployed commit is HEAD, byte for byte.
 
 ```
-Backend lint & type check   failure   failing step: Run python -m mypy app
-Backend tests               success
-Frontend test & build       success
-CodeQL analysis (python)    success
-CodeQL analysis (javascript) success
-Secret scanning             success
-Docker build                skipped   (needs the lint job)
-Deployment smoke test       skipped   (needs the lint job)
+$ curl -s https://sentinelai-web.vercel.app/
+assets/index-C-nZdB15.css   assets/index-_bNO2RIZ.js
+fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap
+theme-color" content="#211831"
 ```
 
-Inside the lint job, every gate before mypy now passes:
+---
+
+## 9. Live functional checks
 
 ```
-Run python -m black --check app tests   success
-Run python -m ruff check app tests      success
-Run python -m mypy app                  failure
+/security.txt                  -> 200
+/.well-known/security.txt      -> 200
+POST /api/auth/demo-login      -> HTTP 200
 ```
 
-Local equivalents:
+Demo data intact (read through the demo session):
 
 ```
-$ python -m black --check app tests
-All done! 219 files would be left unchanged.        (black_exit=0)
-
-$ python -m ruff check app tests
-All checks passed!
+demo-login: 200 | scans: [
+ {"id":6,"name":"demo-code.zip","kind":"code","findings":2},
+ {"id":5,"name":"demo-requirements.txt","kind":"deps","findings":74},
+ {"id":4,"name":"Demo Petstore API","kind":"spec","findings":12}]
 ```
 
-The last red was mypy, and it is now fixed rather than deferred.
+---
 
-CI run `43920459529` on `4329147` still failed the lint job with exactly one
-error:
+## 10. Screenshots
 
-```
-app/core/agent_framework/agent_registry.py:57: error: "BaseAgent" has no attribute "_scope"  [attr-defined]
-Found 1 error in 1 file (checked 168 source files)
-```
+All captured from `https://sentinelai-web.vercel.app` at device pixel ratio 1 with
+Chrome via Playwright, after the final design deploy. Each file was decoded and
+checked for real content.
 
-`AgentRegistry.register` assigns `agent._scope`, but `BaseAgent` never declared
-it. The earlier local "clean" mypy run had reused its incremental cache, which is
-why a fresh CI checkout saw what the local run did not; `--no-incremental` is now
-the proof command.
+| File | Route | Session | Viewport | Distinct colours |
+|---|---|---|---|---|
+| `landing.png` | `/` | anonymous | 1440x900 | 1006 |
+| `landing-mobile.png` | `/` | anonymous | 390x844 | 931 |
+| `login.png` | `/login` | anonymous | 1440x900 | 378 |
+| `coverage.png` | `/coverage` | demo | 1440x900 | 794 |
+| `authorized-use.png` | `/authorized-use` | demo | 1440x900 | 514 |
+| `reports.png` | `/reports` | demo | 1440x900 | 538 |
+| `scans-new.png` | `/scans/new` | demo | 1440x900 | 495 |
+| `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x900 | 548 |
+| `copilot.png` | `/beta/copilot` | demo | 1440x900 | 634 |
+| `reports-badge-before.png` | crop of `/reports` | — | 300x48 | 16 |
+| `reports-badge-after.png` | crop of `/reports` | — | 300x48 | 22 |
 
-Fix (`3c27b66`): declare the member annotation-only behind a `TYPE_CHECKING`
-import. No default value — `get_agents_by_scope` resolves scope with
-`getattr(agent, "_scope", RegistryScope.GLOBAL)`, so a `= None` default would drop
-unregistered agents out of GLOBAL queries. No `# type: ignore`, no config change,
-no behaviour change. The full ledger is `backend/docs/MYPY-REMEDIATION.md`.
+`/coverage`, `/authorized-use` and `/beta/*` sit behind `ProtectedRoute`, so those
+captures use a demo session token held only in the browser's `localStorage`.
+No token was written to a file, a log, or this document.
 
-Final CI run `44121495640` on `e27a9a7` — every job green:
+**Correction:** an earlier note described the login screen as "legacy palette". It
+is not — `Login.css` has zero legacy hits and the page uses the volt/fig/bloom
+tokens. The screenshot above is the current build.
 
-```
-Backend tests: success
-Frontend test & build: success
-Backend lint & type check: success
-CodeQL analysis (javascript): success
-Secret scanning: success
-CodeQL analysis (python): success
-Docker build: success
-Deployment smoke test: success
-```
+---
 
-Docker build and Deployment smoke test now actually run (they were skipped while
-the lint job failed) and both pass.
+## 11. AgentGuard
 
-Earlier state in this session, for contrast: CI was red on *every* recorded
-commit back to 2026-11-12, and the lint job failed at `black` before it ever
-reached ruff or mypy. Both are now resolved.
+Not enabled. The probe is not shipped as a working feature, the Coverage page states
+"AI agent prompt-injection probing is not enabled in this build", and nothing routes
+to it. Runbook P7 remains the only deliberately-off optional item.
 
-## 7. Design system and deploy proof
+---
 
-Tokens were committed in `7d4365d` (palette defined once; landing and login
-tokenised) and `93e031b` (scan, report and coverage pages tokenised), with the
-last raw neon values removed in `e27a9a7` (reconnected banner, breadcrumb hover).
+## 12. Safe to claim / not safe to claim
 
-Local build:
-
-```
-$ cd frontend && npm run build
-✓ built in 46.78s
-BUILD_EXIT=0
-
-$ grep -o '#00ffaa\|#00d4ff\|#aa66ff' dist/assets/index-*.css | wc -l
-0
-```
-
-The main bundle stylesheet carries no legacy neon. Legacy page chunks
-(AuditCenter, Copilot, Dashboard, Settings, SystemHealth, VulnerabilityExplorer,
-ExecutiveMobile) still use their own palettes; restyling them is deliberately out
-of scope for the golden path.
-
-Live site (`https://sentinelai-web.vercel.app`, build `e27a9a7`):
-
-```
-theme-color      content="#211831"
-fonts            fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap
-assets           assets/index-BNKPRp3U.css, assets/index-DpDDIjiu.js
-```
-
-API version:
-
-```json
-{"success":true,"data":{"commit":"e27a9a7b25b9f932660c9f5556bb3951493b9ffc","env":"production","build":"e27a9a7"},"meta":null}
-```
-
-Screenshots (real captures from the deployed site, `docs/screenshots/`):
-
-| File | Page | Viewport |
-|---|---|---|
-| `landing.png` | `/` (anonymous) | 1440x900 |
-| `landing-mobile.png` | `/` (anonymous) | 390x844 |
-| `coverage.png` | `/coverage` (demo session) | 1440x900 |
-| `authorized-use.png` | `/authorized-use` (demo session) | 1440x900 |
-| `reports.png` | `/reports` (demo session) | 1440x900 |
-| `scans-new.png` | `/scans/new` (demo session) | 1440x900 |
-
-`/coverage` and `/authorized-use` sit behind `ProtectedRoute`, so unauthenticated
-captures redirect to `/login`; the captures above use a demo session token. `/`
-is captured anonymously because `LandingRoute` sends a signed-in visitor to
-`/reports`.
-
-## 8. Safe to claim vs not safe to claim
-
-| Safe to claim (with the evidence above) | Not safe to claim |
+| Safe to claim (evidence above) | Not safe to claim |
 |---|---|
-| CI is green on `e27a9a7`: 8/8 jobs, including Docker build and deployment smoke | CI has always been green |
-| mypy is clean under `--no-incremental` (168 files) | mypy was clean all along |
-| Full suite 1090 passed / 2 skipped / 17 deselected on the shipped code | The suite was run after every commit |
-| The golden path carries no raw neon; main bundle CSS grep is 0 | The whole app is tokenised |
-| Deployed API build equals HEAD (`e27a9a7`) | Web and API deploy at the same instant |
+| CI is 8/8 green on `60e0b67`, including Docker build and Deployment smoke | CI has always been green |
+| mypy is clean under `--no-incremental` (168 files); ruff and black pass | mypy was clean all along |
+| Full suite `1090 passed / 2 skipped / 17 deselected` on the shipped backend | The suite was re-run after every commit in this pass |
+| Zero brand neon and zero legacy emerald in source, in `dist`, and in all 15 deployed stylesheets | Every colour is a token (see residue below) |
+| No legacy hue is rendered on any of 26 audited routes | Every pixel of every page was audited |
+| The report badge defect is fixed; no invisible text remains on 11 audited pages | The whole UI has been contrast-audited |
+| Deployed API commit equals HEAD (`60e0b67`, full SHA match) | Web and API deploy at the same instant |
+| 9 page screenshots plus before/after crops, all from the deployed build | Screenshots cover every page |
+| README counts match the registries (48 rules, API1–API10) | Rule counts prove detection quality |
 | AgentGuard is documented as not enabled | AgentGuard works |
+
+### Known cosmetic residue (documented, not defects)
+
+- 273 six-hex literals remain in `src`. They are neutrals — `#ffffff` (26),
+  Tailwind greys such as `#e5e7eb`/`#6b7280`/`#0f172a` — in older surfaces
+  (`Timeline.css`, `ExecutionDetails.css`, legal pages). They are not brand hues and
+  not neon, so they pass the colour rule, but they are not role tokens yet.
+- `/reports` has no horizontal page padding (`.report-page { padding: 0 0 40px }`),
+  so its header sits flush at x=0 while `/scans/new` is inset by 16px. Layout was out
+  of scope for this pass and was deliberately left alone.
+- The beta banner renders "…core workflow.Back to the app" with no space before the
+  link.

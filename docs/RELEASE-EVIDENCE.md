@@ -1,5 +1,10 @@
 # Release evidence — SentinelAI v1.1.0
 
+> **Superseded for current `main`:** see [`EVIDENCE-FINAL.md`](EVIDENCE-FINAL.md).
+> This file records the older `release/sentinelai-v1.1` branch (2026-11-10); its
+> numbers do not describe current `main`.
+
+
 Everything below was produced by a command in this repository on the branch
 `release/sentinelai-v1.1`. Items that could not be run are listed under
 [Not verified](#not-verified) instead of being asserted.
