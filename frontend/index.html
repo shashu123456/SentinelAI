@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="/icon-192.png" />
 
     <!-- SEO -->
-    <meta name="description" content="SentinelAI — AI-Powered Application Security Platform. Discover, analyze, and remediate security risks across your entire application stack." />
+    <meta name="description" content="SentinelAI scans an OpenAPI spec, a dependency manifest, or source code with deterministic rules and returns findings with a fix instruction." />
     <meta name="keywords" content="security, application security, SAST, API security, vulnerability scanning, DevSecOps, OWASP" />
     <meta name="author" content="SentinelAI" />
     <meta name="robots" content="index, follow" />
@@ -21,7 +21,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="SentinelAI — Application Security Intelligence" />
-    <meta property="og:description" content="AI-Powered Application Security Platform for enterprise teams" />
+    <meta property="og:description" content="Three scanners, one upload box: OpenAPI, dependencies, and source code." />
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="SentinelAI — Application Security Intelligence" />
@@ -38,6 +38,21 @@
 
 
     <title>SentinelAI — Application Security Intelligence</title>
+
+    <!-- Theme is resolved before first paint so there is no light/dark flash. -->
+    <script>
+      (function () {
+        var theme = 'light';
+        try {
+          var stored = localStorage.getItem('sentinelai-theme');
+          if (stored === 'light' || stored === 'dark') theme = stored;
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.classList.add(theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#211831' : '#F4F3FF');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

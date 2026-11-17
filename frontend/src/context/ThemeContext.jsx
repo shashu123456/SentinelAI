@@ -4,12 +4,23 @@ const ThemeContext = createContext(undefined);
 
 const THEME_KEY = 'sentinelai-theme';
 
+/* The product is bloom-first: 60% of the surface is Periwinkle Bloom, so light
+   is the default. Only an explicit stored choice switches to dark. */
 function getInitialTheme() {
   try {
     const stored = localStorage.getItem(THEME_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
   } catch {}
-  return 'dark';
+  return 'light';
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', theme);
+  root.classList.remove('dark', 'light');
+  root.classList.add(theme);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', theme === 'dark' ? '#211831' : '#F4F3FF');
 }
 
 export function ThemeProvider({ children }) {
@@ -17,20 +28,19 @@ export function ThemeProvider({ children }) {
 
   const setTheme = useCallback((newTheme) => {
     setThemeState(newTheme);
+    // Apply synchronously so a click never paints the previous theme.
+    applyTheme(newTheme);
     try {
       localStorage.setItem(THEME_KEY, newTheme);
     } catch {}
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, [setTheme]);
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [setTheme, theme]);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', theme);
-    root.classList.remove('dark', 'light');
-    root.classList.add(theme);
+    applyTheme(theme);
   }, [theme]);
 
   return (

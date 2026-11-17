@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useToast } from './ui/Toast';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, LogOut, Sun, Moon, FlaskConical } from 'lucide-react';
@@ -15,21 +16,10 @@ const PRIMARY_LINKS = [
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
-
-  useEffect(() => {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const stored = localStorage.getItem('sentinelai-dark-mode');
-    setDarkMode(stored === 'true' || (!stored && prefersDark));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('sentinelai-dark-mode', darkMode ? 'true' : 'false');
-    document.documentElement.classList.toggle('dark', darkMode);
-  }, [darkMode]);
 
   const handleLogout = () => {
     logout();
@@ -74,10 +64,11 @@ export default function Navbar() {
       <div className="navbar-right">
         <button
           className="navbar-icon-btn"
-          onClick={() => setDarkMode((v) => !v)}
-          aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         >
-          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {isAuthenticated && user && (

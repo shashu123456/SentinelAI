@@ -1,31 +1,30 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  LayoutDashboard, Upload, AlertTriangle, Bot, FileText,
-} from 'lucide-react';
+import { Upload, FileText, ShieldCheck, FlaskConical } from 'lucide-react';
 import './MobileNav.css';
 
+// The golden path only: three primary destinations plus the quarantined Beta area.
 const MOBILE_NAV_ITEMS = [
-  { path: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { path: '/new-scan', label: 'Scan', icon: Upload },
-  { path: '/vulnerabilities', label: 'Alerts', icon: AlertTriangle },
-  { path: '/copilot', label: 'AI', icon: Bot },
+  { path: '/scans/new', label: 'New Scan', icon: Upload, match: 'exact' },
   { path: '/reports', label: 'Reports', icon: FileText },
+  { path: '/coverage', label: 'Coverage', icon: ShieldCheck },
+  { path: '/beta/dashboard', label: 'Beta', icon: FlaskConical, match: 'prefix' },
 ];
 
 export default function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isActive = (path) => {
-    if (path === '/dashboard') return location.pathname === '/' || location.pathname === '/dashboard';
-    return location.pathname.startsWith(path);
+  const isActive = (item) => {
+    if (item.match === 'exact') return location.pathname === item.path;
+    if (item.match === 'prefix') return location.pathname.startsWith('/beta');
+    return location.pathname.startsWith(item.path);
   };
 
   return (
     <nav className="mobile-bottom-nav" role="navigation" aria-label="Mobile navigation">
       {MOBILE_NAV_ITEMS.map(item => {
         const Icon = item.icon;
-        const active = isActive(item.path);
+        const active = isActive(item);
         return (
           <button
             key={item.path}

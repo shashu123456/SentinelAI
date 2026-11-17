@@ -67,7 +67,7 @@ graph TD
     Engine -->|Dep scan| Package index
     Engine -->|Report generation| Markdown/HTML
   end
-  subgraph "Data (local SQLite)"
+  subgraph "Data (Postgres in production; SQLite in dev/test)"
     Engine -->|Results| DB
   end
 ```
@@ -88,7 +88,7 @@ graph TD
 - **Trust gate** — scanning requires accepting the authorized-use terms: only scan
   material you own or have written permission to test.
 
-Deploy: see [docs/DEPLOY.md](docs/DEPLOY.md)  
+Deploy: see [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md)  
 Verification record for the current build: [docs/EVIDENCE-FINAL.md](docs/EVIDENCE-FINAL.md)
 
 ---

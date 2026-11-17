@@ -124,17 +124,10 @@
 .navbar-dropdown-item:hover { background: var(--bg-surface-alt); }
 .navbar-dropdown-logout { color: var(--sev-critical-ink); }
 
-@media (max-width: 768px) {
-  /* Links stay reachable but scroll inside the navbar instead of widening the page. */
-  .navbar-center {
-    justify-content: flex-start;
-    margin: 0 var(--s-2);
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .navbar-center::-webkit-scrollbar { display: none; }
-  .navbar-links { gap: 0; }
-  .navbar-link { padding: var(--s-2); font-size: var(--fs-12); }
+/* Below this width the mobile bottom nav owns primary navigation. The link
+   strip is removed instead of scrolling, so nothing wraps or clips. */
+@media (max-width: 900px) {
+  .navbar-center { display: none; }
   .navbar-user-name { display: none; }
+  .navbar { padding: 0 var(--s-4); }
 }

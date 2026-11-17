@@ -39,6 +39,7 @@ const KINDS = {
   },
   code: {
     label: 'Source Code',
+    tile: 'SAST · Source Code',
     icon: Code,
     extensions: ['.py', '.js', '.jsx', '.ts', '.tsx', '.java', '.go', '.rb', '.php', '.zip'],
     accept: '.py,.js,.jsx,.ts,.tsx,.java,.go,.rb,.php,.zip',
@@ -221,7 +222,7 @@ export default function NewScan() {
       <div className="new-scan-header">
         <h1>New Security Scan</h1>
         <p className="subtitle">
-          One upload box, three scanners — the file decides which engine runs
+          These are the three scanners: API spec, dependencies, SAST. The file decides which engine runs.
         </p>
       </div>
 
@@ -242,7 +243,7 @@ export default function NewScan() {
                   <div className="mode-card">
                     <Icon size={18} />
                     <div>
-                      <strong>{KINDS[key].label}</strong>
+                      <strong>{KINDS[key].tile || KINDS[key].label}</strong>
                       <span>{KINDS[key].hint}</span>
                     </div>
                   </div>

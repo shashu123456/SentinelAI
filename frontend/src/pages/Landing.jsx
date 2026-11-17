@@ -151,16 +151,15 @@ function HeroSection() {
 
         <FadeIn delay={100}>
           <h1 className="hero-title">
-            Detect. Analyze.
+            Detect. Analyze.{' '}
             <span className="gradient-text">Remediate.</span>
           </h1>
         </FadeIn>
 
         <FadeIn delay={200}>
           <p className="hero-subtitle">
-            The complete application security platform that identifies vulnerabilities
-            across your API surface, source code, and dependencies — then explains
-            exactly how to fix them using Automated Security Analysis.
+            One upload. Three scanners. A prioritized list of real vulnerabilities
+            with the exact fix — for your API spec, dependencies, or source code.
           </p>
         </FadeIn>
 
@@ -189,12 +188,12 @@ function HeroSection() {
         <FadeIn delay={400}>
           <div className="hero-trust">
             <div className="hero-trust-engines">
-              {['OWASP API Top 10', 'SAST', 'Dependency CVE', 'Automated Analysis'].map((name) => (
+              {['OWASP API Top 10', 'SAST', 'Dependency CVE'].map((name) => (
                 <span key={name} className="hero-trust-chip">{name}</span>
               ))}
             </div>
             <div className="hero-trust-text">
-              One platform, <strong>four engines</strong>
+              <strong>Three scanners</strong>, one upload box
             </div>
           </div>
         </FadeIn>
@@ -285,8 +284,8 @@ const FEATURES = [
   },
   {
     icon: Bot,
-    title: 'AI Security Copilot',
-    description: 'Ask natural language questions about your security posture. The shipped Copilot is rule-based: it answers from your own scan data with no external model call.',
+    title: 'Security Copilot',
+    description: 'Ask questions about your results and get clear, data-grounded answers with remediation steps you can act on.',
     color: 'var(--volt-400)',
     tag: 'Intelligence',
   },
@@ -299,8 +298,8 @@ const FEATURES = [
   },
   {
     icon: Layers,
-    title: 'Professional Reports',
-    description: 'Generate executive, technical, and compliance reports in PDF and JSON formats. Share findings with stakeholders and track remediation progress.',
+    title: 'Reports and Exports',
+    description: 'Export each scan as a PDF or a JSON file. Share findings with stakeholders and track remediation progress.',
     color: 'var(--severity-low)',
     tag: 'Reporting',
   },
@@ -316,12 +315,12 @@ function FeaturesSection() {
             <span>PLATFORM CAPABILITIES</span>
           </div>
           <h2 className="section-title">
-            Everything you need to
+            Everything you need to{' '}
             <span className="gradient-text">secure your applications</span>
           </h2>
           <p className="section-subtitle">
-            A unified security platform that covers the entire attack surface —
-            from API endpoints to source code to third-party dependencies.
+            Three deterministic scanners, one upload box — from API endpoints to
+            source code to third-party dependencies.
           </p>
         </FadeIn>
 
@@ -355,15 +354,15 @@ const STEPS = [
   {
     step: '01',
     icon: Upload,
-    title: 'Upload Your Spec',
-    description: 'Drop your OpenAPI/Swagger specification, source code files, or dependency manifests. We support JSON, YAML, and all major formats.',
+    title: 'Upload One File',
+    description: 'Drop an OpenAPI/Swagger specification, a dependency manifest, or source files. JSON, YAML and the common manifest formats are read directly.',
     color: 'var(--bloom-300)',
   },
   {
     step: '02',
     icon: Cpu,
     title: 'Security Analysis',
-    description: 'Our engines scan for OWASP Top 10 vulnerabilities, static code issues, and known CVEs. Analysis is deterministic and runs immediately; no external LLM is called.',
+    description: 'OWASP Top 10, static code issues, and known CVEs are checked the moment you upload. Analysis is deterministic, so every result is reproducible and explainable.',
     color: 'var(--volt-400)',
   },
   {
@@ -392,7 +391,7 @@ function HowItWorksSection() {
             <span>HOW IT WORKS</span>
           </div>
           <h2 className="section-title">
-            From upload to remediation
+            From upload to remediation{' '}
             <span className="gradient-text">in four steps</span>
           </h2>
         </FadeIn>
@@ -430,7 +429,7 @@ function StatsSection() {
             <span>PLATFORM COVERAGE</span>
           </div>
           <h2 className="section-title">
-            Built to cover
+            Built to cover{' '}
             <span className="gradient-text">every layer</span>
           </h2>
         </FadeIn>
@@ -469,7 +468,7 @@ function TestimonialsSection() {
             <span>TRUSTED BY TEAMS</span>
           </div>
           <h2 className="section-title">
-            Security teams
+            Security teams{' '}
             <span className="gradient-text">trust SentinelAI</span>
           </h2>
         </FadeIn>
@@ -504,7 +503,7 @@ function CTASection() {
           <div className="cta-card">
             <div className="cta-glow" />
             <h2 className="cta-title">
-              Ready to secure your
+              Ready to secure your{' '}
               <span className="gradient-text">applications?</span>
             </h2>
             <p className="cta-subtitle">
@@ -554,7 +553,7 @@ function Footer() {
             <a href="#features">API Scanner</a>
             <a href="#features">SAST Analysis</a>
             <a href="#features">Dependency Scan</a>
-            <a href="#features">AI Copilot</a>
+            <a href="#features">Copilot</a>
           </div>
           <div className="footer-col">
             <h4>Access</h4>

@@ -60,16 +60,18 @@
   box-shadow: 0 0 8px color-mix(in srgb, var(--volt-400) 40%, transparent);
 }
 
-/* ── Show on mobile only ──────────────────────────────────────────── */
+/* ── Show when the desktop link strip is hidden ───────────────────── */
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .mobile-bottom-nav {
     display: flex;
   }
 
   /* Add bottom padding to page content so it doesn't hide behind nav */
-  .page-content {
-    padding-bottom: 80px !important;
+  .page-content,
+  .report-page,
+  .execution-details-page {
+    padding-bottom: 88px !important;
   }
 }
 
@@ -80,8 +82,9 @@
   border-top-color: var(--ink-200);
 }
 
+/* On bloom a volt pill would vanish: use fig ink for the active label. */
 [data-theme="light"] .mobile-nav-item.active {
-  color: var(--volt-500);
+  color: var(--text-primary);
 }
 
 [data-theme="light"] .mobile-nav-indicator {
