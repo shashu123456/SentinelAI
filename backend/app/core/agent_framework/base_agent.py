@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.agent_framework.shared_models import (
     AgentContext,
@@ -16,6 +16,9 @@ from app.core.agent_framework.shared_models import (
     AgentStatus,
     EventType,
 )
+
+if TYPE_CHECKING:
+    from app.core.agent_framework.agent_registry import RegistryScope
 
 
 class BaseAgent(abc.ABC):
@@ -44,6 +47,11 @@ class BaseAgent(abc.ABC):
         - Custom event handling
         - Additional analysis methods
     """
+
+    # Registry scope, assigned by AgentRegistry.register(). Annotation only: an
+    # agent that was never registered has no _scope attribute, and the registry
+    # reads it with getattr(agent, "_scope", RegistryScope.GLOBAL).
+    _scope: RegistryScope | str
 
     # Class-level default metadata
     _metadata: AgentMetadata = AgentMetadata(id="", display_name="BaseAgent")

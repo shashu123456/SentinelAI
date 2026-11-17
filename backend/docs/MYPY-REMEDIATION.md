@@ -112,3 +112,93 @@ silently changing an API.
   referenced at construction but defined nowhere in the class; it is annotated
   as an optional attribute so runtime behaviour is untouched. Wiring a real
   handler is still open design work.
+
+## Wave 8 — the CI-only error (`_scope`)
+
+The local run above was green, but CI run `43920459529` on `4329147` still
+failed `backend-lint` with exactly one error:
+
+```
+app/core/agent_framework/agent_registry.py:57: error: "BaseAgent" has no attribute "_scope"  [attr-defined]
+Found 1 error in 1 file (checked 168 source files)
+```
+
+Why CI saw it and the local run did not: the earlier local pass reused mypy's
+incremental cache, so the already-cached modules were not re-checked. A fresh
+checkout has no cache. **`--no-incremental` is therefore the proof command**, and
+no local "clean" result counts without it.
+
+The error was real, not a version mismatch: `AgentRegistry.register` assigns the
+registry scope onto the agent (`agent._scope = scope`), but `BaseAgent` never
+declared the attribute, so mypy treated `agent._scope` as an undeclared member of
+the base class rather than a typed one.
+
+Fix (`app/core/agent_framework/base_agent.py`): declare the member **annotation
+only**, with the `RegistryScope` import guarded so no runtime import cycle is
+created.
+
+```python
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.core.agent_framework.agent_registry import RegistryScope
+
+
+class BaseAgent(abc.ABC):
+    """...unchanged class docstring..."""
+
+    # Registry scope, assigned by AgentRegistry.register(). Annotation only: an
+    # agent that was never registered has no _scope attribute, and the registry
+    # reads it with getattr(agent, "_scope", RegistryScope.GLOBAL).
+    _scope: RegistryScope | str
+```
+
+There is deliberately **no `= None` default**. `AgentRegistry.get_agents_by_scope`
+reads the scope with `getattr(agent, "_scope", RegistryScope.GLOBAL)`, so an
+unregistered agent is treated as GLOBAL. A `None` default would give the attribute
+a value before registration and silently drop that agent out of GLOBAL scope
+queries — a typing change that alters runtime behaviour. An annotation-only
+declaration adds no attribute, so `hasattr(BaseAgent, "_scope")` stays `False` and
+the fallback still returns `RegistryScope.GLOBAL`.
+
+The annotation needs no quotes because the module already uses
+`from __future__ import annotations`; the `if TYPE_CHECKING` guard keeps
+`agent_registry` out of the runtime import graph. No `setattr`, no `cast`, no
+`# type: ignore`, and no relaxation of `pyproject.toml`.
+
+Proof on the committed file (`base_agent.py` at the fix commit):
+
+```
+$ python -c "hasattr/getattr check"
+has _scope attr: False
+getattr fallback: RegistryScope.GLOBAL
+
+$ python -m mypy app --no-incremental
+Success: no issues found in 168 source files
+MYPY_EXIT=0
+
+$ python -m ruff check app tests
+All checks passed!
+RUFF_EXIT=0
+
+$ python -m black --check app tests
+219 files would be left unchanged.
+BLACK_EXIT=0
+
+$ python -m pytest -q app/core/agent_framework/tests
+86 passed in 0.69s
+
+$ python -m pytest -q app/core/agent_framework/tests/test_agent_registry.py \
+    app/core/agent_framework/tests/test_agent_factory.py \
+    app/core/agent_framework/tests/test_plugin_loader.py
+50 passed in 0.29s
+```
+
+The change is annotation-only, so the full-suite proof in `docs/EVIDENCE-FINAL.md`
+(`1090 passed, 2 skipped, 17 deselected`) still describes this code.
+
+## Ignore ledger (final)
+
+Zero `# type: ignore` comments added across all eight waves; `grep -r "type: ignore" app/`
+returns no matches. `pyproject.toml` `[tool.mypy]` is unchanged from baseline
+(`ignore_missing_imports = true`, `check_untyped_defs = false`).
