@@ -116,7 +116,7 @@ export default class ErrorBoundary extends Component {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
                   padding: '10px 24px', background: 'var(--accent-blue)',
-                  color: 'white', border: 'none', borderRadius: '8px',
+                  color: 'var(--ink-0)', border: 'none', borderRadius: '8px',
                   fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                 }}
               >

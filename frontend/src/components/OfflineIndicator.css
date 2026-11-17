@@ -19,7 +19,7 @@
 
 .offline-banner {
   background: linear-gradient(135deg, color-mix(in srgb, var(--severity-high) 95%, transparent), color-mix(in srgb, var(--state-orange-700) 95%, transparent));
-  color: white;
+  color: var(--ink-0);
   backdrop-filter: blur(8px);
 }
 
@@ -53,7 +53,7 @@
 
 [data-theme="light"] .offline-banner {
   background: linear-gradient(135deg, color-mix(in srgb, var(--state-orange-600) 95%, transparent), color-mix(in srgb, var(--state-red-strong) 95%, transparent));
-  color: white;
+  color: var(--ink-0);
 }
 
 [data-theme="light"] .reconnected-banner {

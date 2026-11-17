@@ -11,7 +11,7 @@ execution-details-page {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: white;
+  background: var(--ink-0);
   border-bottom: 1px solid var(--ink-200);
   margin-bottom: 1rem;
 }
@@ -38,7 +38,7 @@ execution-details-page {
 
 .status-bar {
   padding: 0 2rem 1rem;
-  background: white;
+  background: var(--ink-0);
   border-bottom: 1px solid var(--ink-200);
   margin-bottom: 1rem;
 }
@@ -80,7 +80,7 @@ execution-details-page {
   float: left;
   width: 65%;
   min-height: 500px;
-  background: white;
+  background: var(--ink-0);
   border-radius: 8px;
   padding: 1.5rem;
   margin-right: 1rem;
@@ -91,7 +91,7 @@ execution-details-page {
   float: right;
   width: 35%;
   min-height: 500px;
-  background: white;
+  background: var(--ink-0);
   border-radius: 8px;
   padding: 1.5rem;
 }
@@ -351,7 +351,7 @@ execution-details-page {
   border-radius: 4px;
   font-size: 0.65rem;
   font-weight: 500;
-  color: white;
+  color: var(--ink-0);
 }
 
 .request-method.get {
@@ -446,7 +446,7 @@ execution-details-page {
   padding: 0.5rem 1rem;
   border: 1px solid var(--ink-300);
   border-radius: 4px;
-  background: white;
+  background: var(--ink-0);
   font-size: 0.8rem;
   color: var(--ink-600);
   cursor: pointer;

@@ -313,13 +313,13 @@
 
 [data-theme="light"] .login-tab.active {
   background: linear-gradient(135deg, var(--volt-500), var(--state-low));
-  color: white;
+  color: var(--ink-0);
   border-color: var(--volt-500);
 }
 
 [data-theme="light"] .login-btn {
   background: linear-gradient(135deg, var(--volt-500), var(--state-low));
-  color: white;
+  color: var(--ink-0);
   border-color: var(--volt-500);
   text-shadow: none;
 }

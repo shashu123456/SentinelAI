@@ -137,7 +137,7 @@
 /* ═══ LIGHT THEME ═══ */
 [data-theme="light"] .report-card { background: var(--bloom-50); }
 [data-theme="light"] .report-card-actions { background: var(--bloom-100); border-top-color: var(--bloom-200); }
-[data-theme="light"] .report-empty-btn { background: var(--volt-500); color: white; border-color: var(--volt-500); }
+[data-theme="light"] .report-empty-btn { background: var(--volt-500); color: var(--ink-0); border-color: var(--volt-500); }
 [data-theme="light"] .report-empty-btn:hover { background: var(--volt-400); }
 
 .demo-banner {

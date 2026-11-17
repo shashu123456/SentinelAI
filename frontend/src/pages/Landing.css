@@ -244,7 +244,7 @@
   background-image:
     radial-gradient(circle 1px at center, var(--bg-surface-alt) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: radial-gradient(ellipse 70% 50% at 50% 40%, black 20%, transparent 70%);
+  mask-image: radial-gradient(ellipse 70% 50% at 50% 40%, var(--scrim) 20%, transparent 70%);
   opacity: 0.4;
   animation: subtleDrift 20s linear infinite;
 }
@@ -1208,7 +1208,7 @@
 
 [data-theme="light"] .landing-nav-cta {
   background: linear-gradient(135deg, var(--volt-500), var(--state-low));
-  color: white;
+  color: var(--ink-0);
   border-color: var(--volt-500);
   text-shadow: none;
 }
@@ -1247,7 +1247,7 @@
 
 [data-theme="light"] .hero-btn-primary {
   background: linear-gradient(135deg, var(--volt-500), var(--state-low));
-  color: white;
+  color: var(--ink-0);
   border-color: var(--volt-500);
   text-shadow: none;
 }
@@ -1325,7 +1325,7 @@
 
 [data-theme="light"] .cta-btn-primary {
   background: linear-gradient(135deg, var(--volt-500), var(--state-low));
-  color: white;
+  color: var(--ink-0);
   border-color: var(--volt-500);
   text-shadow: none;
 }
