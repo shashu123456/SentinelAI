@@ -8,8 +8,8 @@
 .report-header-badge {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 12px; background: var(--bg-surface-alt);
-  border: 1px solid var(--bg-surface-alt); border-radius: 3px;
-  font-size: 10px; font-weight: 700; color: var(--fig-500);
+  border: 1px solid var(--border-subtle); border-radius: 3px;
+  font-size: 10px; font-weight: 700; color: var(--text-secondary);
   letter-spacing: 1.5px; font-family: var(--font-mono); margin-bottom: 12px;
 }
 .report-header-title {
