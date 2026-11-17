@@ -292,6 +292,20 @@ success  Docker build
 success  Deployment smoke test
 ```
 
+Re-run on the documentation commit that carries this file, run
+[44151979164](https://github.com/shashu123456/SentinelAI/actions/runs/44151979164):
+
+```
+success  Frontend test & build
+success  Secret scanning
+success  CodeQL analysis (python)
+success  Backend tests
+success  Backend lint & type check
+success  CodeQL analysis (javascript)
+success  Docker build
+success  Deployment smoke test
+```
+
 ---
 
 ## 9. Deployment
@@ -309,6 +323,12 @@ f0daff2d7bde0fbec5f328f40fce2653c892db6b
 theme-color" content="#211831"
 assets/index-BD3iNsFh.css   assets/index-DtyXdRrK.js
 ```
+
+At the time of writing the live build field read `854cf44` — the documentation commit
+whose content this file describes — because Vercel rebuilds on every push even when
+only Markdown changed. The frontend bundle hash (`index-BD3iNsFh.css`) is unchanged
+between the two commits, which is the proof that the documentation commit altered
+no shipped code.
 
 ---
 
