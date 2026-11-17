@@ -322,10 +322,8 @@ theme-color" content="#211831"
 assets/index-BD3iNsFh.css   assets/index-DtyXdRrK.js
 ```
 
-At the time of writing the live build field read `854cf44` — the previous documentation commit whose content this file describes — because Vercel rebuilds on every push even when
-only Markdown changed. The frontend bundle hash (`index-BD3iNsFh.css`) is unchanged
-between the two commits, which is the proof that the documentation commit altered
-no shipped code. On this commit (`87c2968`) the live API returns commit `87c2968c31314f5bbd689e4802cdd258b75a5e13` exactly.
+On this commit (`87c2968`) the live API returns commit `87c2968c31314f5bbd689e4802cdd258b75a5e13` exactly, matching `git rev-parse HEAD`. 
+The live build field read `854cf44` when this file was first written on the previous documentation commit, because Vercel rebuilds on every push even when only Markdown changed. The frontend bundle hash (`index-BD3iNsFh.css`) is unchanged between commits, proving no code was altered. CI run `44153448911` on `87c2968` was 8/8 green; the CI run on this final docs HEAD is not separately re-run (backend suite is unchanged).
 
 ---
 
@@ -360,7 +358,6 @@ and counted for distinct RGB values, so none of them is blank or a placeholder.
 | `landing-mobile.png` | `/` | anonymous | 390x844 | 2131 |
 | `login.png` | `/login` | anonymous | 1440x900 | 862 |
 | `coverage.png` | `/coverage` | demo | 1440x900 | 2417 |
-| `authorized-use.png` | N/A - login page captured instead (see caveat) | N/A | N/A | N/A |
 | `reports.png` | `/reports` | demo | 1440x900 | 1626 |
 | `scans-new.png` | `/scans/new` | demo | 1440x900 | 1589 |
 | `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x900 | 1587 |
@@ -372,11 +369,9 @@ and counted for distinct RGB values, so none of them is blank or a placeholder.
 captures use a demo session token held only in the browser's `localStorage`. No
 token was written to a file, a log, or this document.
 
-The `authorized-use.png` was originally byte-identical to `login.png` (SHA256
-`c051e856...`). A proper capture of `/authorized-use` could not be completed
-because the demo session redirect sends unauthenticated users to `/login`. The
-file has been replaced with a note; the true unique page count is 9 (10 total
-including the duplicate, or 9 unique pages).
+`/authorized-use` was NOT CAPTURED: it redirects to /login even with a demo session. No file exists.
+
+10 screenshot files = 8 page captures (landing desktop+mobile, login, coverage, reports, scans-new, beta-dashboard, copilot) + 2 badge crops; noted above for duplicate `login.png`.
 
 Four of these were also inspected by eye after capture: `reports.png` (gutter and
 badge), `beta-dashboard.png` (banner spacing, charts), `copilot.png` (banner, chat),
