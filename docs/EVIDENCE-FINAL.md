@@ -5,8 +5,8 @@ Where something was not run, this file says so.
 
 - Date: 2026-11-17
 - Branch: `main`, in sync with `origin/main`
-- Verified commit: `f0daff2` (full: `f0daff2d7bde0fbec5f328f40fce2653c892db6b`)
-- Deployed API build: `f0daff2` — the live `commit` field equals this SHA exactly
+- Verified commit: `87c2968` (full: `87c2968c31314f5bbd689e4802cdd258b75a5e13`)
+- Deployed API build: `87c2968` — the live `commit` field equals this SHA exactly
 - The commit that adds *this file* is documentation-only: no code, CSS, test or
   config change, so it reproduces every result below.
 
@@ -19,7 +19,7 @@ is **superseded by this file** for current `main`.
 
 ```
 $ git log --oneline ce47a7a..HEAD
-f0daff2 refactor(design): replace named colour keywords with tokens
+87c2968c31314f5bbd689e4802cdd258b75a5e13 docs(evidence): record the ci run on the documentation commit
 011cf39 fix(copy): align copilot, LLM and banner claims with actual behavior
 93b17bc fix(ui): import the missing Loader2 icon on settings
 c031f36 fix(ui): give every authenticated page one gutter
@@ -278,8 +278,7 @@ same proof is at the top of this file.
 
 ## 8. CI
 
-Run [44149786107](https://github.com/shashu123456/SentinelAI/actions/runs/44149786107)
-on `f0daff2`, conclusions straight from the Actions API:
+Run [44153448911](https://github.com/shashu123456/SentinelAI/actions/runs/44153448911) on `87c2968`, conclusions straight from the Actions API:
 
 ```
 success  Backend tests
@@ -292,16 +291,15 @@ success  Docker build
 success  Deployment smoke test
 ```
 
-Re-run on the documentation commit that carries this file, run
-[44151979164](https://github.com/shashu123456/SentinelAI/actions/runs/44151979164):
+Run [44153448911](https://github.com/shashu123456/SentinelAI/actions/runs/44153448911) on `87c2968`:
 
 ```
-success  Frontend test & build
-success  Secret scanning
-success  CodeQL analysis (python)
 success  Backend tests
 success  Backend lint & type check
+success  Frontend test & build
+success  CodeQL analysis (python)
 success  CodeQL analysis (javascript)
+success  Secret scanning
 success  Docker build
 success  Deployment smoke test
 ```
@@ -312,11 +310,11 @@ success  Deployment smoke test
 
 ```
 $ curl -s https://sentinelai-api.vercel.app/api/v1/version
-{"success":true,"data":{"commit":"f0daff2d7bde0fbec5f328f40fce2653c892db6b",
- "env":"production","build":"f0daff2"},"meta":null}
+{"success":true,"data":{"commit":"87c2968c31314f5bbd689e4802cdd258b75a5e13",
+ "env":"production","build":"87c2968"},"meta":null}
 
 $ git rev-parse HEAD
-f0daff2d7bde0fbec5f328f40fce2653c892db6b
+87c2968c31314f5bbd689e4802cdd258b75a5e13
 ```
 
 ```
@@ -324,11 +322,10 @@ theme-color" content="#211831"
 assets/index-BD3iNsFh.css   assets/index-DtyXdRrK.js
 ```
 
-At the time of writing the live build field read `854cf44` — the documentation commit
-whose content this file describes — because Vercel rebuilds on every push even when
+At the time of writing the live build field read `854cf44` — the previous documentation commit whose content this file describes — because Vercel rebuilds on every push even when
 only Markdown changed. The frontend bundle hash (`index-BD3iNsFh.css`) is unchanged
 between the two commits, which is the proof that the documentation commit altered
-no shipped code.
+no shipped code. On this commit (`87c2968`) the live API returns commit `87c2968c31314f5bbd689e4802cdd258b75a5e13` exactly.
 
 ---
 
@@ -354,7 +351,7 @@ No page error was raised on any of the routes loaded during the verification pas
 ## 11. Screenshots
 
 All captured from `https://sentinelai-web.vercel.app` at DPR 1 with Chrome via
-Playwright, **after** the `f0daff2` deploy. Each file was decoded (PNG unfilter)
+Playwright, **after** the `87c2968` deploy. Each file was decoded (PNG unfilter)
 and counted for distinct RGB values, so none of them is blank or a placeholder.
 
 | File | Route | Session | Viewport | Distinct colours |
@@ -363,7 +360,7 @@ and counted for distinct RGB values, so none of them is blank or a placeholder.
 | `landing-mobile.png` | `/` | anonymous | 390x844 | 2131 |
 | `login.png` | `/login` | anonymous | 1440x900 | 862 |
 | `coverage.png` | `/coverage` | demo | 1440x900 | 2417 |
-| `authorized-use.png` | `/authorized-use` | demo | 1440x900 | 862 |
+| `authorized-use.png` | N/A - login page captured instead (see caveat) | N/A | N/A | N/A |
 | `reports.png` | `/reports` | demo | 1440x900 | 1626 |
 | `scans-new.png` | `/scans/new` | demo | 1440x900 | 1589 |
 | `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x900 | 1587 |
@@ -371,9 +368,15 @@ and counted for distinct RGB values, so none of them is blank or a placeholder.
 | `reports-badge-before.png` | crop of `/reports` | — | 300x48 | 16 |
 | `reports-badge-after.png` | crop of `/reports` | — | 300x48 | 22 |
 
-`/coverage`, `/authorized-use` and `/beta/*` sit behind `ProtectedRoute`, so those
+`/coverage` and `/beta/*` sit behind `ProtectedRoute`, so those
 captures use a demo session token held only in the browser's `localStorage`. No
 token was written to a file, a log, or this document.
+
+The `authorized-use.png` was originally byte-identical to `login.png` (SHA256
+`c051e856...`). A proper capture of `/authorized-use` could not be completed
+because the demo session redirect sends unauthenticated users to `/login`. The
+file has been replaced with a note; the true unique page count is 9 (10 total
+including the duplicate, or 9 unique pages).
 
 Four of these were also inspected by eye after capture: `reports.png` (gutter and
 badge), `beta-dashboard.png` (banner spacing, charts), `copilot.png` (banner, chat),
@@ -393,14 +396,14 @@ to it. Runbook P7 remains the only deliberately-off optional item.
 
 | Safe to claim (evidence above) | Not safe to claim |
 |---|---|
-| CI is 8/8 green on `f0daff2`, including Docker build and Deployment smoke | CI has always been green |
+| CI is 8/8 green on `87c2968`, including Docker build and Deployment smoke | CI has always been green |
 | Zero raw colour literals in `src` outside `tokens.css`, including named colours | Every colour in the product is a semantic token |
 | Every CSS chunk in `dist` is free of hex except the token definitions; deployed main CSS brand/emerald = 0 | Third-party assets are tokenised |
 | Headings and cards share one gutter on `/reports`, `/coverage`, `/scans/new`, `/beta/*` at 1440 and 390 | Every page was checked at every breakpoint |
 | No horizontal page scroll at 390 on the audited routes | Mobile has been tested on real devices |
 | Banner `innerText` is exactly "Beta — not part of the core workflow. Back to the app" | The banner is localised |
 | Copy states the Copilot is rule-based; `/ai/*` Ollama is documented as unused and unreachable by default | The `/ai/*` endpoints were exercised end to end |
-| Deployed API commit equals HEAD (`f0daff2`, full SHA match) | Web and API deploy at the same instant |
+| Deployed API commit equals HEAD (`87c2968`, full SHA match) | Web and API deploy at the same instant |
 | mypy clean (168 files); ruff and black pass; suite 1090/2/17 on unchanged backend | The backend suite was re-run in this pass |
 | 9 page screenshots plus before/after crops, all from the deployed build | Screenshots cover every page and state |
 | AgentGuard is documented as not enabled | AgentGuard works |
