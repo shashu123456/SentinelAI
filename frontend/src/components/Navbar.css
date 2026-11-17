@@ -125,7 +125,15 @@
 .navbar-dropdown-logout { color: var(--sev-critical-ink); }
 
 @media (max-width: 768px) {
-  .navbar-center { justify-content: flex-end; }
+  /* Links stay reachable but scroll inside the navbar instead of widening the page. */
+  .navbar-center {
+    justify-content: flex-start;
+    margin: 0 var(--s-2);
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .navbar-center::-webkit-scrollbar { display: none; }
   .navbar-links { gap: 0; }
   .navbar-link { padding: var(--s-2); font-size: var(--fs-12); }
   .navbar-user-name { display: none; }

@@ -51,15 +51,15 @@
   --accent-purple: var(--fig-500);
   --accent-purple-light: var(--bg-surface-alt);
   --accent-yellow: var(--sev-medium-dot);
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .35);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .4);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, .35);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, .4);
-  --shadow-xl: 0 20px 40px rgba(0, 0, 0, .5);
-  --glow-blue: 0 0 20px rgba(201, 197, 255, .18);
-  --glow-cyan: 0 0 20px rgba(198, 241, 53, .18);
-  --glow-green: 0 0 20px rgba(169, 212, 28, .18);
-  --glow-red: 0 0 20px rgba(217, 45, 32, .18);
+  --shadow-xs: 0 1px 2px color-mix(in srgb, var(--scrim) 35%, transparent);
+  --shadow-sm: 0 1px 3px color-mix(in srgb, var(--scrim) 40%, transparent);
+  --shadow-md: 0 4px 6px color-mix(in srgb, var(--scrim) 35%, transparent);
+  --shadow-lg: 0 10px 15px color-mix(in srgb, var(--scrim) 40%, transparent);
+  --shadow-xl: 0 20px 40px color-mix(in srgb, var(--scrim) 50%, transparent);
+  --glow-blue: 0 0 20px color-mix(in srgb, var(--bloom-300) 18%, transparent);
+  --glow-cyan: 0 0 20px color-mix(in srgb, var(--volt-400) 18%, transparent);
+  --glow-green: 0 0 20px color-mix(in srgb, var(--volt-500) 18%, transparent);
+  --glow-red: 0 0 20px color-mix(in srgb, var(--severity-critical) 18%, transparent);
 }
 
 /* ═══ RESET ═══ */
@@ -84,9 +84,9 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(198,241,53,0.03), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(201,197,255,0.04), transparent 50%),
-    radial-gradient(ellipse 50% 50% at 20% 80%, rgba(176,170,255,0.03), transparent 50%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--volt-400) 3%, transparent), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, color-mix(in srgb, var(--bloom-300) 4%, transparent), transparent 50%),
+    radial-gradient(ellipse 50% 50% at 20% 80%, color-mix(in srgb, var(--bloom-400) 3%, transparent), transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -95,7 +95,7 @@ body::before {
 [data-theme="light"] body::before {
   background:
     radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--volt-500) 2%, transparent), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(2,132,199,0.015), transparent 50%);
+    radial-gradient(ellipse 60% 40% at 80% 20%, color-mix(in srgb, var(--state-blue-strong) 1.5%, transparent), transparent 50%);
 }
 
 [data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--bloom-300); }
@@ -352,10 +352,10 @@ a:focus-visible,
 
 /* Light theme toasts */
 [data-theme="light"] .toast {
-  background: rgba(255,255,255,0.97);
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(0,0,0,0.05);
+  background: color-mix(in srgb, var(--ink-0) 97%, transparent);
+  box-shadow: var(--shadow-xl), 0 0 0 1px color-mix(in srgb, var(--scrim) 5%, transparent);
 }
-[data-theme="light"] .toast-close:hover { background: rgba(0,0,0,0.05); }
+[data-theme="light"] .toast-close:hover { background: color-mix(in srgb, var(--scrim) 5%, transparent); }
 [data-theme="light"] .toast-action-btn { background: var(--bg-hover); border-color: var(--border); }
 
 /* ═══ PAGE LOADER ═══ */
@@ -552,6 +552,16 @@ a:focus-visible,
   line-height: 1.5;
 }
 
+/* ---- Authenticated shell gutter ---- */
+/* One gutter for every authenticated page. Pages must not add their own outer
+   horizontal padding; only inner card padding belongs to the page. */
+.page-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1400px;
+  padding: var(--s-6) var(--gutter);
+}
+
 /* ---- App shell footer (golden path) ---- */
 .app-footer {
   display: flex;
@@ -570,4 +580,6 @@ a:focus-visible,
 .app-footer-links a:hover { text-decoration: underline; }
 
 /* ---- Beta quarantine wrapper ---- */
-.beta-layout { padding: var(--s-4) var(--s-5); }
+.beta-layout { padding: var(--s-4) var(--gutter); }
+/* BetaLayout already owns the gutter; pages inside it must not repeat it. */
+.beta-layout .page-content { padding-left: 0; padding-right: 0; }

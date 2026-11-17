@@ -2,7 +2,7 @@
    REPORT CENTER
    ═══════════════════════════════════════════════════════════════ */
 
-.report-page { padding: 0 0 40px; }
+.report-page {   padding: 0 var(--gutter) 40px; }
 
 .report-header { margin-bottom: 24px; }
 .report-header-badge {
