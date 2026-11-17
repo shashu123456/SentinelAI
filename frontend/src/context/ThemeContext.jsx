@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useLayoutEffect, useCallback } from 'react';
 
 const ThemeContext = createContext(undefined);
 
@@ -26,22 +26,21 @@ function applyTheme(theme) {
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(getInitialTheme);
 
-  const setTheme = useCallback((newTheme) => {
-    setThemeState(newTheme);
-    // Apply synchronously so a click never paints the previous theme.
-    applyTheme(newTheme);
+  // Runs before paint, so a toggle never shows the previous theme.
+  useLayoutEffect(() => {
+    applyTheme(theme);
     try {
-      localStorage.setItem(THEME_KEY, newTheme);
+      localStorage.setItem(THEME_KEY, theme);
     } catch {}
+  }, [theme]);
+
+  const setTheme = useCallback((newTheme) => {
+    setThemeState(newTheme === 'dark' ? 'dark' : 'light');
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [setTheme, theme]);
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
