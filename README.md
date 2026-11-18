@@ -7,6 +7,14 @@ An OpenAPI, dependency, and source-file security scanner with deterministic rule
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/download/releases/3.11/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+## Preview
+
+![SentinelAI landing page](docs/screenshots/landing.png)
+
+A one-page recruiter walkthrough — live links, the 60-second demo path, screenshots,
+architecture and the honest boundaries — is in
+[docs/PROJECT-PREVIEW.md](docs/PROJECT-PREVIEW.md).
+
 ## Try it
 
 1. **Demo** — the landing page starts a read-only demo session with three seeded
