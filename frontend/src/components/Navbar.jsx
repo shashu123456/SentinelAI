@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from './ui/Toast';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, Sun, Moon, FlaskConical } from 'lucide-react';
+import { Menu, LogOut, Sun, Moon, FlaskConical, Shield } from 'lucide-react';
 import './Navbar.css';
 
 // Exactly three primary destinations. Everything else lives under /beta.
@@ -32,7 +32,10 @@ export default function Navbar() {
   return (
     <nav className="navbar" aria-label="Primary">
       <div className="navbar-left">
-        <NavLink to="/reports" className="navbar-logo">SentinelAI</NavLink>
+        <NavLink to="/reports" className="navbar-logo">
+          <span className="navbar-mark" aria-hidden="true"><Shield size={15} /></span>
+          <span>Sentinel<span className="navbar-logo-accent">AI</span></span>
+        </NavLink>
       </div>
 
       <div className="navbar-center">

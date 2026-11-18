@@ -40,7 +40,7 @@ export default function Login() {
           <div className="login-brand-icon"><Shield size={24} /></div>
           <div>
             <div className="login-brand-name">SentinelAI</div>
-            <div className="login-brand-tag">SOC Command Center</div>
+            <div className="login-brand-tag">Application security console</div>
           </div>
         </div>
         <div className="login-hero">
@@ -65,12 +65,20 @@ export default function Login() {
 
       <div className="login-right">
         <div className="login-card">
+          <div className="login-intro">
+            <h2>{isRegister ? 'Create your account' : 'Welcome back'}</h2>
+            <p>
+              {isRegister
+                ? 'Use an address you can access — password recovery is sent there.'
+                : 'Sign in to run a scan, read a report, or ask the Copilot.'}
+            </p>
+          </div>
           <div className="login-tabs">
             <button className={`login-tab ${!isRegister ? 'active' : ''}`} onClick={() => { setIsRegister(false); setError(''); }}>Sign In</button>
             <button className={`login-tab ${isRegister ? 'active' : ''}`} onClick={() => { setIsRegister(true); setError(''); }}>Register</button>
           </div>
 
-          {error && <div className="login-error">[ERR] {error}</div>}
+          {error && <div className="login-error">{error}</div>}
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
@@ -112,7 +120,7 @@ export default function Login() {
             </div>
 
             <button type="submit" className="login-btn" disabled={loading}>
-              {loading ? '[ AUTHENTICATING... ]' : isRegister ? '[ CREATE ACCOUNT ]' : '[ AUTHENTICATE ]'}
+              {loading ? 'Signing in…' : isRegister ? 'Create account' : 'Sign in'}
             </button>
           </form>
         </div>

@@ -78,6 +78,13 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Headings carry the display face; components that need a different face set
+   their own font-family and win on specificity. */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.022em;
+}
+
 /* Ambient glow — subtle radial gradients for depth */
 body::before {
   content: '';

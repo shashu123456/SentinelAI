@@ -125,7 +125,7 @@
 
   /* ---- Type ---- */
   --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-ui);
+  --font-display: "Space Grotesk", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-sans: var(--font-ui);
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   --fs-12: 0.75rem; --fs-14: 0.875rem; --fs-16: 1rem;

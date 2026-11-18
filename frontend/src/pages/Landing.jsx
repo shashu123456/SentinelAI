@@ -173,15 +173,16 @@ function HeroSection() {
               See How It Works
               <ChevronDown size={16} />
             </a>
-            <button
-              type="button"
-              className="hero-btn-secondary"
-              onClick={handleDemo}
-              disabled={demoLoading}
-            >
-              {demoLoading ? 'Loading demo…' : 'Try the demo'}
-            </button>
           </div>
+          <button
+            type="button"
+            className="hero-demo-btn"
+            onClick={handleDemo}
+            disabled={demoLoading}
+          >
+            {demoLoading ? 'Loading demo…' : 'Or open the seeded demo'}
+            <ArrowUpRight size={15} />
+          </button>
           {demoError && <p className="hero-demo-error" role="alert">{demoError}</p>}
         </FadeIn>
 
@@ -319,13 +320,37 @@ function FeaturesSection() {
           {FEATURES.map((feature, i) => (
             <FadeIn key={feature.title} delay={i * 80}>
               <TiltCard intensity={6} glare>
-                <div className="feature-card">
-                  <div className="feature-icon">
-                    <feature.icon size={22} />
+                <div className={`feature-card${i === 0 ? ' feature-card--featured' : ''}`}>
+                  <div className="feature-card-head">
+                    <div className="feature-icon">
+                      <feature.icon size={22} />
+                    </div>
+                    <div className="feature-tag">{feature.tag}</div>
                   </div>
-                  <div className="feature-tag">{feature.tag}</div>
                   <h3 className="feature-title">{feature.title}</h3>
                   <p className="feature-desc">{feature.description}</p>
+                  {i === 0 && (
+                    <ul className="feature-points">
+                      {[
+                        'Reads OpenAPI 3.x and Swagger 2.0 in JSON or YAML',
+                        'Maps every finding to a CWE and a CVSS-style score',
+                        'Returns one remediation instruction per finding',
+                        'Exports the result as PDF or JSON',
+                      ].map((point) => (
+                        <li key={point}>
+                          <CheckCircle2 size={14} aria-hidden="true" />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {i === 0 && (
+                    <ul className="feature-checks">
+                      {['API1 BOLA', 'API2 Auth', 'API6 Mass assignment', 'API7 SSRF', 'API8 Misconfiguration', 'API9 Inventory'].map((check) => (
+                        <li key={check}>{check}</li>
+                      ))}
+                    </ul>
+                  )}
                   <div className="feature-arrow">
                     <ArrowUpRight size={16} />
                   </div>
@@ -421,10 +446,10 @@ function StatsSection() {
         </FadeIn>
 
         <div className="stats-grid">
-          <FadeIn delay={0}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><Scan size={24} /></div><div className="stat-label">OWASP API Top 10</div><div className="stat-sub">Endpoint-by-endpoint coverage</div></div></TiltCard></FadeIn>
-          <FadeIn delay={100}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><AlertTriangle size={24} /></div><div className="stat-label">SAST Rules</div><div className="stat-sub">CWE-mapped, multi-language</div></div></TiltCard></FadeIn>
-          <FadeIn delay={200}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><CheckCircle2 size={24} /></div><div className="stat-label">CVE Intelligence</div><div className="stat-sub">Python, JavaScript, Java</div></div></TiltCard></FadeIn>
-          <FadeIn delay={300}><TiltCard intensity={4}><div className="stat-card"><div className="stat-icon"><Globe size={24} /></div><div className="stat-label">PDF + JSON Reports</div><div className="stat-sub">Executive and technical views</div></div></TiltCard></FadeIn>
+          <FadeIn delay={0}><TiltCard intensity={3}><div className="stat-card"><div className="stat-value">10</div><div className="stat-label">OWASP API checks</div><div className="stat-sub">API1–API10, endpoint by endpoint</div><div className="stat-icon"><Scan size={18} /></div></div></TiltCard></FadeIn>
+          <FadeIn delay={90}><TiltCard intensity={3}><div className="stat-card"><div className="stat-value">48</div><div className="stat-label">SAST rules</div><div className="stat-sub">Python, JavaScript, Java</div><div className="stat-icon"><AlertTriangle size={18} /></div></div></TiltCard></FadeIn>
+          <FadeIn delay={180}><TiltCard intensity={3}><div className="stat-card"><div className="stat-value">3</div><div className="stat-label">Package ecosystems</div><div className="stat-sub">PyPI, npm, Maven via OSV.dev</div><div className="stat-icon"><CheckCircle2 size={18} /></div></div></TiltCard></FadeIn>
+          <FadeIn delay={270}><TiltCard intensity={3}><div className="stat-card"><div className="stat-value">2</div><div className="stat-label">Export formats</div><div className="stat-sub">PDF and JSON, per scan</div><div className="stat-icon"><Globe size={18} /></div></div></TiltCard></FadeIn>
         </div>
       </div>
     </section>
@@ -488,6 +513,7 @@ function CTASection() {
         <FadeIn>
           <div className="cta-card">
             <div className="cta-glow" />
+            <span className="cta-eyebrow">// AUTHORIZED USE ONLY</span>
             <h2 className="cta-title">
               Ready to secure your{' '}
               <span className="gradient-text">applications?</span>
