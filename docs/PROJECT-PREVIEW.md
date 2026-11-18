@@ -10,7 +10,7 @@ prioritized, reproducible findings with a fix instruction for each.
 | API health | https://sentinelai-api.vercel.app/api/health — HTTP 200 |
 | API version | https://sentinelai-api.vercel.app/api/v1/version |
 | Source | https://github.com/shashu123456/SentinelAI |
-| CI | [run 44347054492](https://github.com/shashu123456/SentinelAI/actions/runs/44347054492) — 8/8 jobs green |
+| CI | [run 44354201085](https://github.com/shashu123456/SentinelAI/actions/runs/44354201085) — 8/8 jobs green |
 
 > The health route is `/api/health` (or `/api/v1/health`). `/health` returns 404.
 
@@ -52,7 +52,7 @@ engine.
 
 ## Screenshots
 
-All captured from the deployed site at DPR 1, after the `a38693e` build.
+All captured from the deployed site at DPR 1, after the `70c6fef` build.
 
 **Landing — desktop**
 
@@ -69,6 +69,10 @@ All captured from the deployed site at DPR 1, after the `a38693e` build.
 **Reports — mobile**: stacked cards, bottom navigation.
 
 ![Reports page, mobile](screenshots/reports-mobile.png)
+
+**Landing — dark theme**: the same page after toggling the theme; the choice persists.
+
+![Landing page, dark theme](screenshots/landing-dark.png)
 
 **Scan detail**: summary and severity breakdown above the findings, fix instruction
 visible, technical detail collapsed.
@@ -109,12 +113,12 @@ a Docker build, and a post-deploy smoke test.
 
 | Evidence | Value |
 |---|---|
-| CI run | 44347054492 on `6faabf3` — 8/8 jobs green (backend tests, backend lint & type check, frontend test & build, CodeQL python, CodeQL javascript, secret scanning, Docker build, deployment smoke) |
+| CI run | 44354201085 on `70c6fef` — 8/8 jobs green (backend tests, backend lint & type check, frontend test & build, CodeQL python, CodeQL javascript, secret scanning, Docker build, deployment smoke) |
 | Backend tests | 1,090 passed / 2 skipped in the last full local run (`docs/EVIDENCE-FINAL.md` §7); the CI `Backend tests` job is green |
 | Frontend tests | 35 passed / 35 (`npm test` in `frontend`) |
-| Live API | `/api/v1/version` returned commit `6faabf3` at the time of this file |
+| Live API | `/api/v1/version` returned commit `70c6fef` at the time of this file |
 | HTTP surface | 182 route decorators (`@router.get|post|put|patch|delete`) across the routers in `backend/app/api` |
-| Screenshots | 13 files in `docs/screenshots`; the 11 page captures are listed in `docs/EVIDENCE-FINAL.md` §11 with pixel dimensions and colour counts |
+| Screenshots | 15 files in `docs/screenshots`; the 12 current page captures are listed in `docs/EVIDENCE-FINAL.md` §11 with pixel dimensions and colour counts |
 
 ## Honest boundaries
 
@@ -143,5 +147,5 @@ text column, so the page read as a single faint column.
 
 ![Landing after, bloom-first light theme](screenshots/landing.png)
 
-*After — capture from the deployed `a38693e` build, full page at 1440px: two-column
+*After — capture from the deployed `70c6fef` build, full page at 1440px: two-column
 hero with a 480px radar panel, white cards on bloom surfaces, volt only on actions.*

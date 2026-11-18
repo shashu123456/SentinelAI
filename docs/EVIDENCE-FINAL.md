@@ -348,41 +348,46 @@ No page error was raised on any of the routes loaded during the verification pas
 
 ## 11. Screenshots
 
-All 11 page captures were taken from `https://sentinelai-web.vercel.app` at DPR 1
-with the Playwright-installed Chromium (driven over CDP), **after** the `a38693e`
-deploy. The live site served that build at capture time: its `index.html` referenced
-`/assets/index-CAZqVTQI.js` and `/assets/index-DlkA6sry.css`, byte-identical to the
-local `frontend/dist` from the same commit. Every capture is full-page; `login.png`
+All page captures were taken from `https://sentinelai-web.vercel.app` at DPR 1
+with the Playwright-installed Chromium (driven over CDP), **after** the `70c6fef`
+deploy. The live `index.html` served `/assets/index-0z65gU5H.js`, byte-identical to
+the local `frontend/dist` from that commit. Every capture is full-page; `login.png`
 is the full 900px login page. Each file was decoded with Pillow and counted for
 distinct RGB values, so none is blank or a placeholder.
 
 | File | Route | Session | Pixels | Distinct colours |
 |---|---|---|---|---|
-| `landing.png` | `/` | anonymous | 1440x3567 | 8951 |
-| `landing-mobile.png` | `/` | anonymous | 390x6952 | 9302 |
+| `landing.png` | `/` | anonymous, light | 1440x3291 | 8974 |
+| `landing-mobile.png` | `/` | anonymous, light | 390x6708 | 9334 |
+| `landing-dark.png` | `/` | anonymous, dark | 1440x3291 | 10085 |
 | `reports.png` | `/reports` | demo | 1440x1021 | 6172 |
 | `reports-mobile.png` | `/reports` | demo | 390x1423 | 7254 |
 | `scan-detail.png` | `/scan/4` | demo | 1440x3328 | 12713 |
 | `scan-detail-mobile.png` | `/scan/4` | demo | 390x5587 | 17009 |
 | `coverage.png` | `/coverage` | demo | 1440x1455 | 7053 |
 | `scans-new.png` | `/scans/new` | demo | 1440x1185 | 6956 |
-| `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x1690 | 8308 |
+| `beta-dashboard.png` | `/beta/dashboard` | demo | 1440x1690 | 8401 |
 | `copilot.png` | `/beta/copilot` | demo | 1440x1099 | 8607 |
 | `login.png` | `/login` | signed out | 1440x900 | 5274 |
 
-`reports-badge-before.png` and `reports-badge-after.png` are the 300x48 contrast
-crops from section 6. They are evidence for that earlier fix, not captures of this
-build.
+`landing-before-dark.png` (1440x900, 6891 colours) is the historical landing capture
+from commit `87c2968`, kept for the before/after comparison in
+`docs/PROJECT-PREVIEW.md`; it is not a capture of this build. The two
+`reports-badge-*.png` files are the 300x48 contrast crops from section 6.
 
 Measured in the same session, from the live page:
 
 ```
 1440x900  /            data-theme="light"; body background rgb(244, 243, 255)
                        h1 innerText "Detect. Analyze. Remediate."
+                       .hero-content and .hero-visual share a parent (siblings=true)
                        .hero-content x=144 w=571 h=478, .hero-visual x=779 w=517 h=480
-                       siblings=true, boxes intersect=false, radar 480x480
-                       hero content bottom -> features badge top = 161px
+                       boxes intersect=false, radar 480x480
+                       hero content bottom -> features badge top = 143px
+                       document height = 3291px
                        .fade-in elements with opacity<1 = 0; section opacity = 1,1,1,1,1
+1440x900  / dark       data-theme="dark"; body rgb(33, 24, 49)
+                       feature card rgb(55, 42, 78); ring border bloom at 22%
 390x844   /            scrollWidth 390 === innerWidth 390
                        brand innerText "SentinelAI", right edge 144, not clipped
                        nav CTA height 40px, white-space nowrap, right edge 374
@@ -401,11 +406,17 @@ file, a log, or this document.
 
 `/authorized-use` was NOT captured: it redirects to `/login` even with a demo session.
 
-13 files = 11 page captures + 2 historical crops. All 11 page captures are unique.
+15 files = 12 page captures of this build + 1 historical landing + 2 contrast crops.
+All 12 current page captures are unique.
 
-Seven were inspected by eye after capture: `landing.png`, `landing-mobile.png`,
-`reports.png`, `reports-mobile.png`, `scan-detail.png`, `scan-detail-mobile.png`,
-`scans-new.png`.
+Inspected by eye after capture: `landing.png`, `landing-dark.png`,
+`landing-mobile.png`, `reports.png`, `reports-mobile.png`, `scan-detail.png`,
+`scan-detail-mobile.png`, `scans-new.png`.
+
+The recruiter-facing summary of this evidence is
+[`docs/PROJECT-PREVIEW.md`](PROJECT-PREVIEW.md); CV wording is checked claim by claim
+against the product in
+[`docs/CV-SENTINELAI-ALIGNMENT.md`](CV-SENTINELAI-ALIGNMENT.md).
 
 ---
 
@@ -421,16 +432,16 @@ to it. Runbook P7 remains the only deliberately-off optional item.
 
 | Safe to claim (evidence above) | Not safe to claim |
 |---|---|
-| CI is 8/8 green on `a38693e`, including Docker build and Deployment smoke | CI has always been green |
+| CI is 8/8 green on `70c6fef` (run 44354201085), including Docker build and Deployment smoke | CI has always been green |
 | Zero raw colour literals in `src` outside `tokens.css`, including named colours | Every colour in the product is a semantic token |
 | Every CSS chunk in `dist` is free of hex except the token definitions; deployed main CSS brand/emerald = 0 | Third-party assets are tokenised |
 | Headings and cards share one gutter on `/reports`, `/coverage`, `/scans/new`, `/beta/*` at 1440 and 390 | Every page was checked at every breakpoint |
 | No horizontal page scroll at 390 on the audited routes | Mobile has been tested on real devices |
 | Banner `innerText` is exactly "Beta — not part of the core workflow. Back to the app" | The banner is localised |
 | Copy states the Copilot is rule-based; `/ai/*` Ollama is documented as unused and unreachable by default | The `/ai/*` endpoints were exercised end to end |
-| At verification the live API returned commit a38693e, the same commit the live web build served. |
+| At verification the live API returned commit `70c6fef`, the same commit the live web build served. |
 | mypy clean (168 files); ruff and black pass; suite 1090/2/17 on unchanged backend | The backend suite was re-run in this pass |
-| 11 page captures (+2 historical contrast crops) from the deployed a38693e build | Screenshots cover every page and state |
+| 12 page captures (including light and dark landing) from the deployed `70c6fef` build | Screenshots cover every page and state |
 | AgentGuard is documented as not enabled | AgentGuard works |
 
 ### Known residue (documented, not defects)
