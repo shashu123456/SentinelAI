@@ -56,7 +56,7 @@ function LandingNav() {
           <div className="landing-nav-logo">
             <Shield size={20} />
           </div>
-          <span className="landing-nav-name">SENTINEL<span className="accent">AI</span></span>
+          <span className="landing-nav-name">Sentinel<span className="accent">AI</span></span>
         </Link>
 
         <div className="landing-nav-links">
@@ -198,62 +198,59 @@ function HeroSection() {
           </div>
         </FadeIn>
 
-        <div className="hero-visual">
-          <FadeIn delay={500}>
-            <div className="hero-radar">
-              <div className="radar-rings">
-                <div className="radar-ring ring-1" />
-                <div className="radar-ring ring-2" />
-                <div className="radar-ring ring-3" />
-                <div className="radar-ring ring-4" />
+      </div>
+
+      <div className="hero-visual">
+        <FadeIn delay={500}>
+          <div className="hero-radar">
+            <div className="radar-rings">
+              <div className="radar-ring ring-1" />
+              <div className="radar-ring ring-2" />
+              <div className="radar-ring ring-3" />
+              <div className="radar-ring ring-4" />
+            </div>
+            <div className="radar-sweep" />
+            <div className="radar-center">
+              <Shield size={24} />
+            </div>
+            <div className="radar-blip blip-1">
+              <div className="blip-dot critical" />
+              <span className="blip-label">API1 — BOLA</span>
+            </div>
+            <div className="radar-blip blip-2">
+              <div className="blip-dot high" />
+              <span className="blip-label">API2 — Auth</span>
+            </div>
+            <div className="radar-blip blip-3">
+              <div className="blip-dot medium" />
+              <span className="blip-label">API7 — SSRF</span>
+            </div>
+            <div className="radar-blip blip-4">
+              <div className="blip-dot low" />
+              <span className="blip-label">API8 — Config</span>
+            </div>
+            <div className="radar-stats">
+              <div className="radar-stat">
+                <span className="radar-stat-lbl">SAMPLE SCAN</span>
               </div>
-              <div className="radar-sweep" />
-              <div className="radar-center">
-                <Shield size={24} />
+              <div className="radar-stat-divider" />
+              <div className="radar-stat">
+                <span className="radar-stat-val">47</span>
+                <span className="radar-stat-lbl">Endpoints</span>
               </div>
-              <div className="radar-blip blip-1">
-                <div className="blip-dot critical" />
-                <span className="blip-label">API1 — BOLA</span>
+              <div className="radar-stat-divider" />
+              <div className="radar-stat">
+                <span className="radar-stat-val">12</span>
+                <span className="radar-stat-lbl">Findings</span>
               </div>
-              <div className="radar-blip blip-2">
-                <div className="blip-dot high" />
-                <span className="blip-label">API2 — Auth</span>
-              </div>
-              <div className="radar-blip blip-3">
-                <div className="blip-dot medium" />
-                <span className="blip-label">API7 — SSRF</span>
-              </div>
-              <div className="radar-blip blip-4">
-                <div className="blip-dot low" />
-                <span className="blip-label">API8 — Config</span>
-              </div>
-              <div className="radar-stats">
-                <div className="radar-stat">
-                  <span className="radar-stat-lbl">SAMPLE SCAN</span>
-                </div>
-                <div className="radar-stat-divider" />
-                <div className="radar-stat">
-                  <span className="radar-stat-val">47</span>
-                  <span className="radar-stat-lbl">Endpoints</span>
-                </div>
-                <div className="radar-stat-divider" />
-                <div className="radar-stat">
-                  <span className="radar-stat-val">12</span>
-                  <span className="radar-stat-lbl">Findings</span>
-                </div>
-                <div className="radar-stat-divider" />
-                <div className="radar-stat">
-                  <span className="radar-stat-val danger">72</span>
-                  <span className="radar-stat-lbl">Risk Score</span>
-                </div>
+              <div className="radar-stat-divider" />
+              <div className="radar-stat">
+                <span className="radar-stat-val danger">72</span>
+                <span className="radar-stat-lbl">Risk Score</span>
               </div>
             </div>
-          </FadeIn>
-        </div>
-
-        <div className="hero-scroll-indicator">
-          <ChevronDown size={20} />
-        </div>
+          </div>
+        </FadeIn>
       </div>
     </section>
   );
@@ -265,42 +262,36 @@ const FEATURES = [
     icon: Scan,
     title: 'API Security Scanner',
     description: 'Complete OpenAPI/Swagger analysis with OWASP Top 10 coverage. Detects broken authentication, SSRF, mass assignment, and injection vulnerabilities.',
-    color: 'var(--bloom-300)',
     tag: 'Core Engine',
   },
   {
     icon: FileCode,
     title: 'Static Analysis (SAST)',
     description: '48 security rules across Python, JavaScript, and Java. Detects SQL injection, XSS, hardcoded secrets, command injection, and unsafe deserialization.',
-    color: 'var(--bloom-400)',
     tag: 'Code Analysis',
   },
   {
     icon: Package,
     title: 'Dependency Scanner',
     description: 'Cross-references your packages against known CVEs. Identifies vulnerable versions and recommends safe upgrades for Python, JavaScript, and Java ecosystems.',
-    color: 'var(--state-orange)',
     tag: 'Supply Chain',
   },
   {
     icon: Bot,
     title: 'Security Copilot',
     description: 'Ask questions about your results and get clear, data-grounded answers with remediation steps you can act on.',
-    color: 'var(--volt-400)',
     tag: 'Intelligence',
   },
   {
     icon: Shield,
     title: 'Risk Intelligence Engine',
     description: 'Composite risk scoring combining CVSS, confidence levels, and exposure analysis. Get security grades and prioritized remediation paths.',
-    color: 'var(--severity-critical)',
     tag: 'Scoring',
   },
   {
     icon: Layers,
     title: 'Reports and Exports',
     description: 'Export each scan as a PDF or a JSON file. Share findings with stakeholders and track remediation progress.',
-    color: 'var(--severity-low)',
     tag: 'Reporting',
   },
 ];
@@ -329,14 +320,13 @@ function FeaturesSection() {
             <FadeIn key={feature.title} delay={i * 80}>
               <TiltCard intensity={6} glare>
                 <div className="feature-card">
-                  <div className="feature-card-glow" style={{ background: `${feature.color}08` }} />
-                  <div className="feature-icon" style={{ color: feature.color, borderColor: `${feature.color}20` }}>
+                  <div className="feature-icon">
                     <feature.icon size={22} />
                   </div>
-                  <div className="feature-tag" style={{ color: feature.color }}>{feature.tag}</div>
+                  <div className="feature-tag">{feature.tag}</div>
                   <h3 className="feature-title">{feature.title}</h3>
                   <p className="feature-desc">{feature.description}</p>
-                  <div className="feature-arrow" style={{ color: feature.color }}>
+                  <div className="feature-arrow">
                     <ArrowUpRight size={16} />
                   </div>
                 </div>
@@ -356,28 +346,24 @@ const STEPS = [
     icon: Upload,
     title: 'Upload One File',
     description: 'Drop an OpenAPI/Swagger specification, a dependency manifest, or source files. JSON, YAML and the common manifest formats are read directly.',
-    color: 'var(--bloom-300)',
   },
   {
     step: '02',
     icon: Cpu,
     title: 'Security Analysis',
     description: 'OWASP Top 10, static code issues, and known CVEs are checked the moment you upload. Analysis is deterministic, so every result is reproducible and explainable.',
-    color: 'var(--volt-400)',
   },
   {
     step: '03',
     icon: Activity,
     title: 'Get Prioritized Results',
     description: 'Receive a comprehensive risk assessment with severity scores, confidence levels, and business impact analysis for every finding.',
-    color: 'var(--bloom-400)',
   },
   {
     step: '04',
     icon: CheckCircle2,
     title: 'Fix & Remediate',
     description: 'Get remediation guidance, secure code examples, and track progress until all issues are resolved.',
-    color: 'var(--severity-low)',
   },
 ];
 
@@ -401,9 +387,9 @@ function HowItWorksSection() {
             <FadeIn key={step.step} delay={i * 120}>
               <TiltCard intensity={5}>
                 <div className="step-card">
-                  <div className="step-number" style={{ color: step.color }}>{step.step}</div>
-                  <div className="step-connector" style={{ background: `linear-gradient(180deg, ${step.color}30, transparent)` }} />
-                  <div className="step-icon" style={{ color: step.color, borderColor: `${step.color}25` }}>
+                  <div className="step-number">{step.step}</div>
+                  <div className="step-connector" />
+                  <div className="step-icon">
                     <step.icon size={24} />
                   </div>
                   <h3 className="step-title">{step.title}</h3>
@@ -533,7 +519,7 @@ function Footer() {
         <div className="footer-brand">
           <Link to="/" className="footer-logo">
             <Shield size={20} />
-            <span>SENTINEL<span className="accent">AI</span></span>
+            <span>Sentinel<span className="accent">AI</span></span>
           </Link>
           <p className="footer-tagline">
             OpenAPI, dependency, and source-file security scanning

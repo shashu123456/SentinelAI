@@ -11,7 +11,7 @@
   z-index: 100;
 }
 
-.navbar-left { display: flex; align-items: center; gap: var(--s-3); }
+.navbar-left { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
 
 .navbar-logo {
   font-weight: 700;
@@ -19,6 +19,7 @@
   font-size: var(--fs-20);
   text-decoration: none;
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .navbar-center {
@@ -129,5 +130,6 @@
 @media (max-width: 900px) {
   .navbar-center { display: none; }
   .navbar-user-name { display: none; }
-  .navbar { padding: 0 var(--s-4); }
+  .navbar { padding: 0 16px; }
+  .navbar-right { flex: 0 0 auto; }
 }

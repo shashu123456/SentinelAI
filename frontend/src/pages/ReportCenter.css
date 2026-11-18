@@ -250,7 +250,9 @@
 @media (max-width: 720px) {
   .report-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .report-toolbar { flex-direction: column; align-items: stretch; }
-  .report-search { max-width: none; }
+  /* In a column flex container the 240px flex-basis becomes a height, which
+     produced an enormous empty search field on phones. */
+  .report-search { flex: 0 0 auto; max-width: none; width: 100%; height: 44px; }
   .report-card-header { flex-wrap: wrap; align-items: flex-start; gap: 12px; padding: 16px; }
   .report-card-icon { width: 34px; height: 34px; }
   .report-card-info { flex: 1 1 100%; order: 3; }
