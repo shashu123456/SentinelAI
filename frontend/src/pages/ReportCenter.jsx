@@ -2,12 +2,21 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, FileJson, File, Calendar, Search,
-  Trash2, ExternalLink,
+  Trash2, ExternalLink, AlertTriangle,
 } from 'lucide-react';
 import { scans, account } from '../services/api';
 import './ReportCenter.css';
 
 const KIND_LABELS = { spec: 'API Spec', deps: 'Dependencies', code: 'SAST' };
+
+// The API returns an array; older deployments wrapped it in {items} or {scans}.
+// Normalise once so no later reduce/filter can meet a non-array.
+function normalizeScanList(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.scans)) return payload.scans;
+  return [];
+}
 
 const KIND_FILTERS = [
   { value: 'all', label: 'All' },
@@ -24,23 +33,30 @@ export default function ReportCenter() {
   const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState('all');
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const load = () => {
     setLoading(true);
+    setLoadError('');
     scans.list()
-      .then(data => setScanList(data || []))
-      .catch(() => setScanList([]))
+      .then(payload => setScanList(normalizeScanList(payload)))
+      .catch(err => {
+        setScanList([]);
+        setLoadError(err?.message || 'Could not load scans.');
+      })
       .finally(() => setLoading(false));
   };
 
   const handleDeleteData = async () => {
     if (!window.confirm('Delete every scan and report on this account? The account itself is kept.')) return;
     setDeleting(true);
+    setActionError('');
     try {
       await account.deleteData();
       setScanList([]);
     } catch (err) {
-      console.error('Delete failed:', err);
+      setActionError(err?.message || 'Could not delete scan data.');
     } finally {
       setDeleting(false);
     }
@@ -53,6 +69,7 @@ export default function ReportCenter() {
 
   const handleDownload = async (scanId, format) => {
     setDownloading(`${scanId}-${format}`);
+    setActionError('');
     try {
       if (format === 'pdf') {
         await scans.downloadPdf(scanId);
@@ -60,19 +77,20 @@ export default function ReportCenter() {
         await scans.downloadJson(scanId);
       }
     } catch (err) {
-      console.error('Download failed:', err);
+      setActionError(err?.message || 'Download failed.');
     } finally {
       setDownloading(null);
     }
   };
 
   const kpis = useMemo(() => {
-    const totalFindings = scanList.reduce((sum, s) => sum + (s.total_vulnerabilities || 0), 0);
-    const highRisk = scanList.filter(s => (s.risk_score || 0) >= 60).length;
-    const avgRisk = scanList.length
-      ? Math.round(scanList.reduce((sum, s) => sum + (s.risk_score || 0), 0) / scanList.length)
+    const list = Array.isArray(scanList) ? scanList : [];
+    const totalFindings = list.reduce((sum, s) => sum + (s.total_vulnerabilities || 0), 0);
+    const highRisk = list.filter(s => (s.risk_score || 0) >= 60).length;
+    const avgRisk = list.length
+      ? Math.round(list.reduce((sum, s) => sum + (s.risk_score || 0), 0) / list.length)
       : 0;
-    return { scans: scanList.length, totalFindings, highRisk, avgRisk };
+    return { scans: list.length, totalFindings, highRisk, avgRisk };
   }, [scanList]);
 
   const visibleScans = useMemo(() => {
@@ -104,7 +122,21 @@ export default function ReportCenter() {
         )}
       </div>
 
-      {scanList.length === 0 ? (
+      {actionError && (
+        <div className="report-error" role="alert">
+          <AlertTriangle size={15} aria-hidden="true" />
+          <span>{actionError}</span>
+        </div>
+      )}
+
+      {loadError ? (
+        <div className="report-empty report-error-state" role="alert">
+          <AlertTriangle size={40} />
+          <h3>Could not load scans</h3>
+          <p>{loadError}</p>
+          <button type="button" className="report-empty-btn" onClick={load}>Retry</button>
+        </div>
+      ) : scanList.length === 0 ? (
         <div className="report-empty">
           <FileText size={40} />
           <h3>No scans yet</h3>

@@ -111,7 +111,17 @@ export default function ExecutionDetails() {
     setIsLoading(true);
     setError(null);
     try {
-      setScanData(await scans.get(scanId));
+      const payload = await scans.get(scanId);
+      const scan = payload?.scan ?? payload;
+      if (!scan || typeof scan !== 'object') {
+        throw new Error('The server returned no scan for this id.');
+      }
+      // A missing findings list is a broken response, not a clean scan. Say so
+      // instead of rendering "No vulnerabilities were detected".
+      if (!Array.isArray(scan.findings)) {
+        throw new Error('The scan response is missing its findings list, so the report cannot be rendered.');
+      }
+      setScanData(scan);
     } catch (err) {
       setError(err.message || 'Failed to load scan details.');
     } finally {
@@ -140,7 +150,7 @@ export default function ExecutionDetails() {
     }
   };
 
-  const findings = scanData?.findings || [];
+  const findings = Array.isArray(scanData?.findings) ? scanData.findings : [];
 
   const severityCounts = useMemo(() => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };

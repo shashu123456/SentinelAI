@@ -1,4 +1,5 @@
 import { API_ROOT } from '../config';
+import { unwrapEnvelope } from './api';
 
 const TOKEN_KEY = 'sentinelai_token';
 
@@ -38,7 +39,7 @@ async function rootRequest(path, options = {}) {
 
   if (res.status === 204) return null;
   const type = res.headers.get('content-type');
-  if (type && type.includes('application/json')) return res.json();
+  if (type && type.includes('application/json')) return unwrapEnvelope(await res.json());
   return res;
 }
 

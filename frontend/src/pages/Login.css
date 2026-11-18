@@ -343,3 +343,50 @@
   .login-right { padding: 40px 24px 56px; align-items: flex-start; }
   .login-card { max-width: 420px; }
 }
+
+/* ── Demo shortcut ──────────────────────────────────────────── */
+.login-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.login-demo-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: var(--font-mono);
+}
+
+.login-demo-divider::before,
+.login-demo-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
+
+.login-demo-btn {
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.login-demo-btn:hover:not(:disabled) {
+  background: var(--bg-surface-alt);
+  border-color: var(--fig-500);
+}
+
+.login-demo-btn:disabled { opacity: 0.6; cursor: progress; }

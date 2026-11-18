@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_BASE, API_ROOT } from '../config';
+import { unwrapEnvelope } from '../services/api';
 import {
   Activity, Database, Server, Shield, RefreshCw,
   CheckCircle2, XCircle, AlertTriangle, Cpu, HardDrive,
@@ -77,7 +78,7 @@ export default function SystemHealth() {
       // (unhealthy) with a valid body, so parse the payload regardless of status.
       const full = await fetch(`${API_ROOT}/api/v1/health`, { headers });
       if (full.status !== 404) {
-        setData(await full.json());
+        setData(unwrapEnvelope(await full.json()));
       } else {
         // Older deployments only expose the lightweight /api/health probe.
         const basic = await fetch(`${API_BASE}/health`, { headers });

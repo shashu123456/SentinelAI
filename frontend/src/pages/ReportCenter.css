@@ -262,3 +262,35 @@
   .report-download-btn { flex: 1 1 auto; justify-content: center; }
   .report-danger-zone { flex-direction: column; align-items: flex-start; }
 }
+
+/* ── Load / action errors ───────────────────────────────────── */
+.report-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--severity-critical) 30%, transparent);
+  background: var(--severity-critical-bg);
+  color: var(--severity-critical);
+  font-size: 13px;
+}
+
+[data-theme="dark"] .report-error { color: var(--bloom-100); }
+
+.report-error-state .report-empty-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 9px 18px;
+  border-radius: 9px;
+}
+
+.report-error-state .report-empty-btn:hover {
+  border-color: var(--fig-500);
+  background: var(--bg-surface-alt);
+}

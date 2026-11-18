@@ -2,12 +2,32 @@ import { API_BASE } from '../config';
 
 let refreshPromise = null;
 
+// Every API response is wrapped as {success, data, meta}. Callers want the
+// payload, never the envelope — but a plain object that merely *contains* a
+// data field must pass through untouched, so success === true is required.
+export function unwrapEnvelope(body) {
+  if (
+    body &&
+    typeof body === 'object' &&
+    !Array.isArray(body) &&
+    body.success === true &&
+    Object.prototype.hasOwnProperty.call(body, 'data')
+  ) {
+    return body.data;
+  }
+  return body;
+}
+
+async function readJson(response) {
+  return unwrapEnvelope(await response.json());
+}
+
 function refreshSession() {
   if (!refreshPromise) {
     refreshPromise = fetch(`${API_BASE}/auth/refresh`, { method: 'POST', credentials: 'include' })
       .then(async (res) => {
         if (!res.ok) throw new Error('Refresh failed');
-        const data = await res.json();
+        const data = unwrapEnvelope(await res.json());
         localStorage.setItem('sentinelai_token', data.access_token);
         localStorage.setItem('sentinelai_user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('sentinelai:auth-refresh'));
@@ -170,7 +190,7 @@ async function request(path, options = {}) {
 
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
-    return response.json();
+    return readJson(response);
   }
   return response;
 }

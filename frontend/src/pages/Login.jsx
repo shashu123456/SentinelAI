@@ -13,6 +13,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -25,11 +26,26 @@ export default function Login() {
         ? await auth.register({ username: username.trim(), email: email.trim().toLowerCase(), password })
         : await auth.login({ username: username.trim(), password });
       login(data.access_token, data.user);
-      navigate('/dashboard');
+      navigate('/reports');
     } catch (err) {
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemo = async () => {
+    setError('');
+    setDemoLoading(true);
+    try {
+      const data = await auth.demoLogin();
+      localStorage.setItem('sentinelai_demo', 'true');
+      login(data.access_token, data.user);
+      navigate('/reports');
+    } catch (err) {
+      setError(err.message || 'The demo is not available right now.');
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -57,7 +73,7 @@ export default function Login() {
               <span>Dependency CVE Intelligence</span>
             </div>
             <div className="login-feature">
-              <span>AI Security Analyst Copilot</span>
+              <span>Rule-based Security Copilot</span>
             </div>
           </div>
         </div>
@@ -123,6 +139,18 @@ export default function Login() {
               {loading ? 'Signing in…' : isRegister ? 'Create account' : 'Sign in'}
             </button>
           </form>
+
+          <div className="login-demo">
+            <span className="login-demo-divider">or</span>
+            <button
+              type="button"
+              className="login-demo-btn"
+              onClick={handleDemo}
+              disabled={demoLoading}
+            >
+              {demoLoading ? 'Loading demo…' : 'Try the live demo'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
