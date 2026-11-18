@@ -346,20 +346,23 @@ No page error was raised on any of the routes loaded during the verification pas
 
 ---
 
-## 11. Screenshots
+## 11. Screenshots — current UI build (`70c6fef`)
 
 All page captures were taken from `https://sentinelai-web.vercel.app` at DPR 1
 with the Playwright-installed Chromium (driven over CDP), **after** the `70c6fef`
 deploy. The live `index.html` served `/assets/index-0z65gU5H.js`, byte-identical to
-the local `frontend/dist` from that commit. Every capture is full-page; `login.png`
-is the full 900px login page. Each file was decoded with Pillow and counted for
+the local `frontend/dist` from that commit. At capture time the live API returned
+`70c6fef`. After the docs-only commit `9036ef5` the API returned `9036ef5`; the
+served JS bundle was unchanged, so the app code under capture is still `70c6fef`.
+
+Every capture is full-page; `login.png` is the full 900px login page. Each file was decoded with Pillow and counted for
 distinct RGB values, so none is blank or a placeholder.
 
 | File | Route | Session | Pixels | Distinct colours |
 |---|---|---|---|---|
 | `landing.png` | `/` | anonymous, light | 1440x3291 | 8974 |
 | `landing-mobile.png` | `/` | anonymous, light | 390x6708 | 9334 |
-| `landing-dark.png` | `/` | anonymous, dark | 1440x3291 | 10085 |
+| `landing-dark.png` | `/` | anonymous, dark | 1440x3291 | 10086 |
 | `reports.png` | `/reports` | demo | 1440x1021 | 6172 |
 | `reports-mobile.png` | `/reports` | demo | 390x1423 | 7254 |
 | `scan-detail.png` | `/scan/4` | demo | 1440x3328 | 12713 |
@@ -417,6 +420,13 @@ The recruiter-facing summary of this evidence is
 [`docs/PROJECT-PREVIEW.md`](PROJECT-PREVIEW.md); CV wording is checked claim by claim
 against the product in
 [`docs/CV-SENTINELAI-ALIGNMENT.md`](CV-SENTINELAI-ALIGNMENT.md).
+
+### Previous UI build (historical): `a38693e`
+
+The two-column hero rebuild landed in `a38693e`; its captures were replaced by the
+ones above. For the record: CI run 44347054492 was 8/8 on that commit, the landing
+captured at 1440x3567, and the folder then held 11 page captures (13 files including
+the two badge crops). This is history only — the current captures supersede it.
 
 ---
 

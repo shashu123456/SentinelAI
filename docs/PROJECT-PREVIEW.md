@@ -12,7 +12,13 @@ prioritized, reproducible findings with a fix instruction for each.
 | Source | https://github.com/shashu123456/SentinelAI |
 | CI | [run 44354201085](https://github.com/shashu123456/SentinelAI/actions/runs/44354201085) — 8/8 jobs green |
 
-> The health route is `/api/health` (or `/api/v1/health`). `/health` returns 404.
+> The health route is `/api/health` (or `/api/v1/health`). `/health` returns 404 —
+> verified against the live API on 2026-11-18.
+>
+> Screenshots and measurements were captured from the deployed `70c6fef` build, when
+> the live API reported `70c6fef`. If a later docs-only commit changes the live SHA,
+> the app code is still `70c6fef`; the served bundle hash (`index-0z65gU5H.js`) is
+> what proves the page did not change.
 
 ## What it does
 
@@ -70,7 +76,8 @@ All captured from the deployed site at DPR 1, after the `70c6fef` build.
 
 ![Reports page, mobile](screenshots/reports-mobile.png)
 
-**Landing — dark theme**: the same page after toggling the theme; the choice persists.
+**Landing — dark theme**: `sentinelai-theme=dark` written to storage and the page
+reloaded; `data-theme="dark"`, body `rgb(33, 24, 49)`, feature cards `rgb(55, 42, 78)`.
 
 ![Landing page, dark theme](screenshots/landing-dark.png)
 
