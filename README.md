@@ -13,7 +13,9 @@ An OpenAPI, dependency, and source-file security scanner with deterministic rule
 
 A one-page recruiter walkthrough — live links, the 60-second demo path, screenshots,
 architecture and the honest boundaries — is in
-[docs/PROJECT-PREVIEW.md](docs/PROJECT-PREVIEW.md).
+[docs/PROJECT-PREVIEW.md](docs/PROJECT-PREVIEW.md). The complete project reference,
+including sample uploads, local setup and the three scanners, is in
+[docs/PROJECT-DETAILS.md](docs/PROJECT-DETAILS.md).
 
 ## Try it
 
