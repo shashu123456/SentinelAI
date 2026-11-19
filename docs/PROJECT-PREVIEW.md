@@ -10,15 +10,17 @@ prioritized, reproducible findings with a fix instruction for each.
 | API health | https://sentinelai-api.vercel.app/api/health — HTTP 200 |
 | API version | https://sentinelai-api.vercel.app/api/v1/version |
 | Source | https://github.com/shashu123456/SentinelAI |
-| CI | [run 44354201085](https://github.com/shashu123456/SentinelAI/actions/runs/44354201085) — 8/8 jobs green |
+| CI | code fix [run 44374212731](https://github.com/shashu123456/SentinelAI/actions/runs/44374212731) — 8/8; docs [run 44537481731](https://github.com/shashu123456/SentinelAI/actions/runs/44537481731) — 8/8 |
 
 > The health route is `/api/health` (or `/api/v1/health`). `/health` returns 404 —
 > verified against the live API on 2026-11-18.
 >
-> Screenshots and measurements were captured from the deployed `70c6fef` build, when
-> the live API reported `70c6fef`. If a later docs-only commit changes the live SHA,
-> the app code is still `70c6fef`; the served bundle hash (`index-0z65gU5H.js`) is
-> what proves the page did not change.
+> The demo-path screenshots and measurements were captured from the deployed
+> `342b29b` build — the fix that unwrapped the API response envelope — when the live
+> API reported `342b29b`. The docs commit `6d011fa` was observed live afterwards.
+> Vercel rebuilds on every push, so a later docs-only commit can change the live
+> version SHA while the shipped code remains `342b29b`; the served bundle hash
+> (`index-XGuVbAcl.js`) is what proves the app code did not change.
 
 ## What it does
 
@@ -56,15 +58,37 @@ engine.
 5. Go back to **Reports** and press **PDF Report** on any card; **JSON Export** sits
    next to it. The demo is read-only, so the delete/danger zone is hidden.
 
+## What was fixed
+
+The API wraps every JSON response as `{success, data, meta}`, but the frontend
+returned that wrapper to its callers: login read `access_token` off the envelope,
+`/scans` reached the Reports page as an object rather than a list, and scan detail
+lost its findings. `frontend/src/services/api.js` now unwraps once, in a single
+`unwrapEnvelope` helper that only fires when `success === true` and the body owns a
+`data` key, so payloads that legitimately contain `data` pass through untouched.
+That one change restored the demo login, the Reports list and scan detail on the
+deployed build (`342b29b`):
+
+| Scan | Kind | Findings | Risk |
+|---|---|---|---|
+| 4 `Demo Petstore API` | OpenAPI spec | 12 | 80/100 Critical |
+| 5 `demo-requirements.txt` | dependency manifest | 74 | 80/100 Critical |
+| 6 `demo-code.zip` | source code (SAST) | 2 | 60/100 High |
+
 ## Screenshots
 
-All captured from the deployed site at DPR 1, after the `70c6fef` build.
+Captured from `https://sentinelai-web.vercel.app` at DPR 1. The five files named
+`reports-1440`, `reports-390`, `scan-detail-1440`, `scan-detail-390` and
+`login-demo-1440` come from the deployed `342b29b` build (live JS
+`index-XGuVbAcl.js`). `landing.png`, `landing-mobile.png`, `landing-dark.png` and
+`login.png` are earlier captures from `70c6fef` and predate the `bc798cf` visual
+pass — they are marked historical where they appear.
 
-**Landing — desktop**
+**Landing — desktop** *(historical: captured at `70c6fef`, before the `bc798cf` visual pass)*
 
 ![Landing page, desktop](screenshots/landing.png)
 
-**Landing — mobile (390px)**
+**Landing — mobile (390px)** *(historical: captured at `70c6fef`, before the `bc798cf` visual pass)*
 
 ![Landing page, mobile](screenshots/landing-mobile.png)
 
@@ -76,7 +100,7 @@ All captured from the deployed site at DPR 1, after the `70c6fef` build.
 
 ![Reports page, mobile](screenshots/reports-mobile.png)
 
-**Landing — dark theme**: `sentinelai-theme=dark` written to storage and the page
+**Landing — dark theme** *(historical: captured at `70c6fef`)*: `sentinelai-theme=dark` written to storage and the page
 reloaded; `data-theme="dark"`, body `rgb(33, 24, 49)`, feature cards `rgb(55, 42, 78)`.
 
 ![Landing page, dark theme](screenshots/landing-dark.png)
@@ -93,6 +117,35 @@ visible, technical detail collapsed.
 **Coverage**: what each scanner checks and what is deliberately out of scope.
 
 ![Coverage page, desktop](screenshots/coverage.png)
+
+### Demo data flow — current build
+
+The five captures below were taken from the deployed `342b29b` build, after the
+envelope fix. They are the proof that login, Reports and scan detail read real
+records rather than the API wrapper.
+
+**Reports — desktop (1440px)**: three seeded scans, KPI strip 3 scans / 88 findings /
+3 high-risk / average risk 73.
+
+![Reports page, desktop, current build](screenshots/reports-1440.png)
+
+**Reports — mobile (390px)**: stacked cards, bottom navigation, no horizontal scroll.
+
+![Reports page, mobile, current build](screenshots/reports-390.png)
+
+**Scan detail — desktop (1440px)**: `Demo Petstore API`, 12 findings, risk 80
+(Critical), 4 endpoints.
+
+![Scan detail, desktop, current build](screenshots/scan-detail-1440.png)
+
+**Scan detail — mobile (390px)**: same scan at 390px, scrollWidth == innerWidth.
+
+![Scan detail, mobile, current build](screenshots/scan-detail-390.png)
+
+**Login — desktop (1440px)**: the demo button sits under the sign-in form and lands
+on `/reports` with a read-only demo session.
+
+![Login page with demo entry, current build](screenshots/login-demo-1440.png)
 
 ## Architecture
 
@@ -120,12 +173,12 @@ a Docker build, and a post-deploy smoke test.
 
 | Evidence | Value |
 |---|---|
-| CI run | 44354201085 on `70c6fef` — 8/8 jobs green (backend tests, backend lint & type check, frontend test & build, CodeQL python, CodeQL javascript, secret scanning, Docker build, deployment smoke) |
+| CI runs | 44374212731 on code commit `342b29b` and 44537481731 on docs commit `6d011fa` — both 8/8 green (backend tests, backend lint & type check, frontend test & build, CodeQL python, CodeQL javascript, secret scanning, Docker build, deployment smoke) |
 | Backend tests | 1,090 passed / 2 skipped in the last full local run (`docs/EVIDENCE-FINAL.md` §7); the CI `Backend tests` job is green |
 | Frontend tests | 35 passed / 35 (`npm test` in `frontend`) |
-| Live API | `/api/v1/version` returned commit `70c6fef` at the time of this file |
+| Live API | `/api/v1/version` returned code commit `342b29b` at capture time; docs commit `6d011fa` was observed live afterwards (docs-only rebuild, same bundle) |
 | HTTP surface | 182 route decorators (`@router.get|post|put|patch|delete`) across the routers in `backend/app/api` |
-| Screenshots | 15 files in `docs/screenshots`; the 12 current page captures are listed in `docs/EVIDENCE-FINAL.md` §11 with pixel dimensions and colour counts |
+| Screenshots | 20 files in `docs/screenshots`: 5 demo-path captures from `342b29b`, 12 earlier page captures from `70c6fef`, 1 historical before-dark landing, 2 badge crops — listed in `docs/EVIDENCE-FINAL.md` §11 with pixel dimensions and colour counts |
 
 ## Honest boundaries
 
@@ -154,5 +207,6 @@ text column, so the page read as a single faint column.
 
 ![Landing after, bloom-first light theme](screenshots/landing.png)
 
-*After — capture from the deployed `70c6fef` build, full page at 1440px: two-column
-hero with a 480px radar panel, white cards on bloom surfaces, volt only on actions.*
+*After — historical capture from the deployed `70c6fef` build (later restyled in
+`bc798cf`), full page at 1440px: two-column hero with a 480px radar panel, white
+cards on bloom surfaces, volt only on actions.*

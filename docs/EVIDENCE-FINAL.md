@@ -346,14 +346,18 @@ No page error was raised on any of the routes loaded during the verification pas
 
 ---
 
-## 11. Screenshots — current UI build (`70c6fef`)
+## 11. Screenshots — page captures
 
-All page captures were taken from `https://sentinelai-web.vercel.app` at DPR 1
-with the Playwright-installed Chromium (driven over CDP), **after** the `70c6fef`
-deploy. The live `index.html` served `/assets/index-0z65gU5H.js`, byte-identical to
-the local `frontend/dist` from that commit. At capture time the live API returned
-`70c6fef`. After the docs-only commit `9036ef5` the API returned `9036ef5`; the
-served JS bundle was unchanged, so the app code under capture is still `70c6fef`.
+### UI build `70c6fef` (historical — superseded by the `342b29b` captures below)
+
+These page captures were taken from `https://sentinelai-web.vercel.app` at DPR 1
+with the Chromium driven over CDP, **after** the `70c6fef` deploy. The live
+`index.html` then served `/assets/index-0z65gU5H.js` (the historical bundle for
+the pre-`342b29b` build), byte-identical to the local `frontend/dist` from that
+commit. At capture time the live API returned `70c6fef`. After the docs-only commit
+`9036ef5` the API returned `9036ef5`; the served JS bundle was unchanged, so the
+app code under capture is still `70c6fef`. The current bundle is
+`index-XGuVbAcl.js` from the code fix `342b29b`.
 
 Every capture is full-page; `login.png` is the full 900px login page. Each file was decoded with Pillow and counted for
 distinct RGB values, so none is blank or a placeholder.
@@ -409,8 +413,11 @@ file, a log, or this document.
 
 `/authorized-use` was NOT captured: it redirects to `/login` even with a demo session.
 
-15 files = 12 page captures of this build + 1 historical landing + 2 contrast crops.
-All 12 current page captures are unique.
+That set was **15 files** at the time: 12 page captures of the `70c6fef` build + 1
+historical landing + 2 contrast crops. All 12 were unique. The folder now holds 20
+files, after the five `342b29b` demo-path captures in the subsection below. The four
+`landing*.png`/`login.png` files in the list above predate the `bc798cf` visual
+pass and are kept as history; the current build is shown by the five captures below.
 
 Inspected by eye after capture: `landing.png`, `landing-dark.png`,
 `landing-mobile.png`, `reports.png`, `reports-mobile.png`, `scan-detail.png`,
@@ -486,16 +493,17 @@ to it. Runbook P7 remains the only deliberately-off optional item.
 
 | Safe to claim (evidence above) | Not safe to claim |
 |---|---|
-| CI is 8/8 green on `70c6fef` (run 44354201085), including Docker build and Deployment smoke | CI has always been green |
+| CI is 8/8 green on the code fix `342b29b` (run 44374212731) and on the docs commit `6d011fa` (run 44537481731), including Docker build and Deployment smoke | CI has always been green |
 | Zero raw colour literals in `src` outside `tokens.css`, including named colours | Every colour in the product is a semantic token |
 | Every CSS chunk in `dist` is free of hex except the token definitions; deployed main CSS brand/emerald = 0 | Third-party assets are tokenised |
 | Headings and cards share one gutter on `/reports`, `/coverage`, `/scans/new`, `/beta/*` at 1440 and 390 | Every page was checked at every breakpoint |
 | No horizontal page scroll at 390 on the audited routes | Mobile has been tested on real devices |
 | Banner `innerText` is exactly "Beta — not part of the core workflow. Back to the app" | The banner is localised |
 | Copy states the Copilot is rule-based; `/ai/*` Ollama is documented as unused and unreachable by default | The `/ai/*` endpoints were exercised end to end |
-| At verification the live API returned commit `70c6fef`, the same commit the live web build served. |
+| Live API `/api/v1/version` returned the code fix `342b29b` when the demo path was verified; the docs commit `6d011fa` was observed live afterwards, because Vercel rebuilds on every push and a docs-only commit changes the version SHA while the shipped code stays `342b29b`. |
 | mypy clean (168 files); ruff and black pass; suite 1090/2/17 on unchanged backend | The backend suite was re-run in this pass |
-| 12 page captures (including light and dark landing) from the deployed `70c6fef` build | Screenshots cover every page and state |
+| 20 files in `docs/screenshots`: 5 demo-path captures (`reports-1440`, `reports-390`, `scan-detail-1440`, `scan-detail-390`, `login-demo-1440`) from the deployed `342b29b` build, 12 earlier page captures from `70c6fef` (the 4 landing/login files predate the `bc798cf` visual pass), 1 historical before-dark landing, 2 badge crops | Screenshots cover every page and state |
+| Demo scans 4 / 5 / 6 return 12 / 74 / 2 findings at risk 80 / 80 / 60 | The user-supplied files scanned by the demo are representative of real repositories |
 | AgentGuard is documented as not enabled | AgentGuard works |
 
 ### Known residue (documented, not defects)
