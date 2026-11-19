@@ -428,6 +428,50 @@ ones above. For the record: CI run 44347054492 was 8/8 on that commit, the landi
 captured at 1440x3567, and the folder then held 11 page captures (13 files including
 the two badge crops). This is history only — the current captures supersede it.
 
+### Demo data flow — `342b29b`
+
+The API wraps every JSON response as `{success, data, meta}`, but the frontend
+returned that envelope to callers, so login read `access_token` off the wrapper,
+`/scans` reached the Reports page as an object, and scan detail lost its findings.
+`frontend/src/services/api.js` now exposes one `unwrapEnvelope` helper (only when
+`success === true` and the body owns a `data` key) used by `request()`,
+`refreshSession()`, the enterprise client and the v1 health check.
+
+- Code commit: `342b29b` — CI run 44374212731, **8/8** (backend tests, lint &
+  type check, frontend test & build, CodeQL python, CodeQL javascript, secret
+  scanning, Docker build, deployment smoke).
+- Live API `/api/v1/version` returned `342b29b41c054cbeafc115a348c2d6415b16d042`
+  when the live run below was executed.
+
+Verified in Chromium (CDP harness) against `https://sentinelai-web.vercel.app`,
+desktop 1440x900 and mobile 390x844, with zero console errors:
+
+| Step | Result |
+|---|---|
+| Landing → "Or open the seeded demo" | `/reports`, 3 scan cards, KPIs 3 scans / 88 findings / 3 high-risk / average risk 73 |
+| Login → "Try the live demo" | `/reports`, 3 scan cards |
+| `/scan/4` | 12 findings, risk 80/100 (Critical), 4 endpoints, 5 AI-analysis sections, summary visible |
+| `/scan/5` | 74 findings, risk 80/100 (Critical) |
+| `/scan/6` | 2 findings, risk 60/100 (High) |
+| Mobile `/reports` and `/scan/4` | scrollWidth 390 == innerWidth 390, no horizontal overflow |
+| Exports (demo token) | `/api/scans/4/report/pdf` 200 `application/pdf` 27,892 bytes; `/api/scans/4/report/json` 200 `application/json` 18,876 bytes |
+
+The deployed API mounts the report routes under `/api`, so
+`/api/v1/scans/4/report/*` answers 404; the application uses `/api` and the
+downloads above are the path the UI takes.
+
+| File | Route | Viewport | Pixels | Distinct colours |
+|---|---|---|---|---|
+| `reports-1440.png` | `/reports` | 1440x900 | 1440x1019 | 3484 |
+| `reports-390.png` | `/reports` | 390x844 | 390x1421 | 4637 |
+| `scan-detail-1440.png` | `/scan/4` | 1440x900 | 1440x3326 | 6012 |
+| `scan-detail-390.png` | `/scan/4` | 390x844 | 390x5525 | 7965 |
+| `login-demo-1440.png` | `/login` | 1440x900 | 1440x900 | 4534 |
+
+`landing.png`, `landing-mobile.png`, `landing-dark.png` and `login.png` were
+captured from `70c6fef` and predate the `bc798cf` visual pass; the five files
+above were captured from the deployed `342b29b` build.
+
 ---
 
 ## 12. AgentGuard
