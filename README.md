@@ -72,10 +72,10 @@ graph TD
   end
   subgraph "Backend (FastAPI)"
     API -->|Scan orchestration| Engine
-    Engine -->|SAST| Python parser
-    Engine -->|OpenAPI analysis| Spec analyzer
-    Engine -->|Dep scan| Package index
-    Engine -->|Report generation| Markdown/HTML
+    Engine -->|SAST| PythonParser["Python parser"]
+    Engine -->|OpenAPI analysis| SpecAnalyzer["Spec analyzer"]
+    Engine -->|Dep scan| PackageIndex["Package index"]
+    Engine -->|Report generation| ReportOutput["Markdown/HTML"]
   end
   subgraph "Data (Postgres in production; SQLite in dev/test)"
     Engine -->|Results| DB
